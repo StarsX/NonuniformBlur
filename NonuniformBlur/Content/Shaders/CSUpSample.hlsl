@@ -50,8 +50,21 @@ void main(uint2 DTid : SV_DispatchThreadID)
 	const uint level = g_levelData & 0xffff;
 	const uint numLevels = g_levelData >> 16;
 
-	// Gaussian-approximating Haar coefficients (weights of box filters) 
-	float2 g = { GaussianBasis(sigma2, 0.0), 0 };
+	// Gaussian-approximating Haar coefficients (weights of box filters)
+#if 1
+	float wsum = 0.0, weight = 0.0;
+	for (uint i = level; i < numLevels; ++i)
+	{
+		// Compute next term
+		const float g = GaussianBasis(sigma2, i);
+		const float w = (1 << (i << 2)) * g;
+		weight = i == level ? w : weight;
+		wsum += w;
+	}
+
+	weight = wsum > 0.0 ? weight / wsum : 1.0;
+#else
+	float2 g = { GaussianBasis(sigma2, level), 0.0 };
 	float wsum = 0.0, weight = 0.0;
 	for (uint i = level; i < numLevels; ++i)
 	{
@@ -66,5 +79,8 @@ void main(uint2 DTid : SV_DispatchThreadID)
 		g.x = g.y;
 	}
 
-	g_txDest[DTid] = lerp(coarser, src, wsum > 0.0 ? weight / wsum : 1.0);
+	weight = wsum > 0.0 ? weight / wsum : 1.0;
+#endif
+
+	g_txDest[DTid] = lerp(coarser, src, weight);
 }
