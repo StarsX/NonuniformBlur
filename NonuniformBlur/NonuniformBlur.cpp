@@ -236,6 +236,7 @@ void NonUniformBlur::PopulateCommandList()
 
 	// Record commands.
 	m_filter->Process(m_commandList, m_focus, m_sigma);
+	//m_filter->ProcessG(m_commandList, m_focus, m_sigma);
 
 	{
 		const TextureCopyLocation dst(m_renderTargets[m_frameIndex].GetResource().get(), 0);

@@ -64,9 +64,7 @@ void main(uint2 DTid : SV_DispatchThreadID)
 	float wsum = 0.0, weight = 0.0;
 	for (uint i = g_level; i < MAX_LEVEL_COUNT; ++i)
 	{
-		// Compute next term
-		const float g = GaussianBasis(sigma2, i);
-		const float w = (1 << (i << 2)) * g;
+		const float w = MipGaussianWeight(sigma2, i);
 		weight = i == g_level ? w : weight;
 		wsum += w;
 	}

@@ -64,7 +64,7 @@ bool Filter::Init(const CommandList &commandList, uint32_t width, uint32_t heigh
 	return true;
 }
 
-void Filter::Process(const CommandList &commandList, DirectX::XMFLOAT2 focus, float sigma)
+void Filter::Process(const CommandList &commandList, XMFLOAT2 focus, float sigma)
 {
 	const uint8_t numPasses = m_numMips > 0 ? m_numMips - 1 : 0;
 	const uint32_t width = static_cast<uint32_t>(m_filtered[TABLE_DOWN_SAMPLE].GetResource()->GetDesc().Width);
@@ -122,7 +122,6 @@ void Filter::Process(const CommandList &commandList, DirectX::XMFLOAT2 focus, fl
 	{
 		const auto c = numPasses - i;
 		const auto j = c - 1;
-		//const auto w = computeWeight(j);
 		numBarriers = m_filtered[TABLE_UP_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0, c);
 		numBarriers = m_filtered[TABLE_UP_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers, j);
 		commandList.Barrier(numBarriers, barriers);
@@ -134,7 +133,7 @@ void Filter::Process(const CommandList &commandList, DirectX::XMFLOAT2 focus, fl
 	}
 }
 
-void Filter::ProcessG(const CommandList &commandList)
+void Filter::ProcessG(const CommandList &commandList, XMFLOAT2 focus, float sigma)
 {
 	const uint8_t numPasses = m_numMips > 0 ? m_numMips - 1 : 0;
 	const uint32_t width = static_cast<uint32_t>(m_filtered[TABLE_DOWN_SAMPLE].GetResource()->GetDesc().Width);
@@ -173,14 +172,15 @@ void Filter::ProcessG(const CommandList &commandList)
 	// Gaussian
 	struct G
 	{
+		XMFLOAT2	Focus;
 		float		Sigma;
 		uint32_t	NumLevels;
-	} cb = { 24.0f, m_numMips };
+	} cb = { focus, sigma, m_numMips };
 	commandList.SetComputePipelineLayout(m_pipelineLayouts[GAUSSIAN]);
 	commandList.SetPipelineState(m_pipelines[GAUSSIAN]);
 	commandList.SetComputeDescriptorTable(0, m_samplerTable);
 	commandList.SetComputeDescriptorTable(1, m_uavSrvTables[TABLE_UP_SAMPLE][numPasses]);
-	commandList.SetCompute32BitConstants(2, 2, &cb);
+	commandList.SetCompute32BitConstants(2, 4, &cb);
 	commandList.Dispatch((max)(width / 8, 1u), (max)(height / 8, 1u), 1);
 }
 
@@ -221,7 +221,7 @@ bool Filter::createPipelineLayouts()
 		utilPipelineLayout.SetRange(1, DescriptorType::SRV, 1, 0);
 		utilPipelineLayout.SetRange(1, DescriptorType::UAV, 1, 0, 0,
 			D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE);
-		utilPipelineLayout.SetConstants(2, 2, 0);
+		utilPipelineLayout.SetConstants(2, 4, 0);
 		X_RETURN(m_pipelineLayouts[GAUSSIAN], utilPipelineLayout.GetPipelineLayout(
 			m_pipelineLayoutCache, D3D12_ROOT_SIGNATURE_FLAG_NONE, L"GaussianLayout"), false);
 	}
@@ -330,42 +330,4 @@ bool Filter::createDescriptorTables()
 	X_RETURN(m_samplerTable, samplerTable.GetSamplerTable(m_descriptorTableCache), false);
 
 	return true;
-}
-
-float Filter::computeWeight(uint32_t mip) const
-{
-	const auto sigma = 24.0;//0.84089642f;
-
-	const auto GaussianExp = [](double sigma2, double mip)
-	{
-		return -exp2(2.0 * mip - 1.0) / (XM_PI * sigma2);
-	};
-
-	const auto GaussianBasis = [GaussianExp](double sigma2, double mip)
-	{
-		return mip < 0.0 ? 0.0 : exp(GaussianExp(sigma2, mip));
-	};
-
-	const auto MipWeight = [GaussianBasis](double fSigma2, uint32_t mip, double mipStep = 1.0)
-	{
-		const double g[] =
-		{
-			GaussianBasis(fSigma2, mip),
-			GaussianBasis(fSigma2, mipStep > 0 ? mip + mipStep : -1)
-		};
-
-		return static_cast<float>((1 << (2 * mip)) * (g[0] - g[1]));
-	};
-
-	auto sum = 0.0f, weight = 0.0f;
-	for (auto i = mip; i < m_numMips; ++i)
-	{
-		const auto w = MipWeight(sigma * sigma, i);
-		weight = i == mip ? w : weight;
-		sum += w;
-	}
-
-	return sum > 0.0f ? weight / sum : 1.0f;
-	//return mip == 6 ? 1.0f : 0.0f;
-	//return mip < 6 ? 0.005f : 1.0f;//0.25f / (m_numMips - mip) : 1.0f;
 }

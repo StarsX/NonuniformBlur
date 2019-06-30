@@ -18,7 +18,7 @@ public:
 		const wchar_t *fileName = L"Lenna.dds");
 
 	void Process(const XUSG::CommandList &commandList, DirectX::XMFLOAT2 focus, float sigma);
-	void ProcessG(const XUSG::CommandList &commandList);
+	void ProcessG(const XUSG::CommandList &commandList, DirectX::XMFLOAT2 focus, float sigma);
 
 	XUSG::Texture2D &GetResult();
 
@@ -45,8 +45,6 @@ protected:
 	bool createPipelineLayouts();
 	bool createPipelines();
 	bool createDescriptorTables();
-
-	float computeWeight(uint32_t mip) const;
 
 	XUSG::Device m_device;
 
