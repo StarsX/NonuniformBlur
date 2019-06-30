@@ -4,6 +4,8 @@
 
 #include "CSMipGaussian.hlsli"
 
+#define MAX_LEVEL_COUNT	12
+
 //--------------------------------------------------------------------------------------
 // Constant buffer
 //--------------------------------------------------------------------------------------
@@ -11,7 +13,7 @@ cbuffer cb
 {
 	float2	g_focus;
 	float	g_sigma;
-	uint	g_levelData;
+	uint	g_level;
 };
 
 //--------------------------------------------------------------------------------------
@@ -46,37 +48,27 @@ void main(uint2 DTid : SV_DispatchThreadID)
 	const float sigma = g_sigma * s;
 	const float sigma2 = sigma * sigma;
 
-	// Decode mip level and total number of levels
-	const uint level = g_levelData & 0xffff;
-	const uint numLevels = g_levelData >> 16;
-
 	// Gaussian-approximating Haar coefficients (weights of box filters)
-#if 1
+#ifdef _PREINTEGRATED_
+	const float c = 2.0 * PI * sigma2;
+	//const float numerator = pow(16.0, g_level) * log(4.0);
+	//const float denorminator = c * (pow(4.0, g_level) + c);
+	//const float numerator = pow(2.0, g_level * 4.0) * log(4.0);
+	//const float denorminator = c * (pow(2.0, g_level * 2.0) + c);
+	//const float numerator = (1 << (g_level * 4)) * log(4.0);
+	//const float denorminator = c * ((1 << (g_level * 2)) + c);
+	const float numerator = (1 << (g_level << 2)) * log(4.0);
+	const float denorminator = c * ((1 << (g_level << 1)) + c);
+	const float weight = saturate(numerator / denorminator);
+#else
 	float wsum = 0.0, weight = 0.0;
-	for (uint i = level; i < numLevels; ++i)
+	for (uint i = g_level; i < MAX_LEVEL_COUNT; ++i)
 	{
 		// Compute next term
 		const float g = GaussianBasis(sigma2, i);
 		const float w = (1 << (i << 2)) * g;
-		weight = i == level ? w : weight;
+		weight = i == g_level ? w : weight;
 		wsum += w;
-	}
-
-	weight = wsum > 0.0 ? weight / wsum : 1.0;
-#else
-	float2 g = { GaussianBasis(sigma2, level), 0.0 };
-	float wsum = 0.0, weight = 0.0;
-	for (uint i = level; i < numLevels; ++i)
-	{
-		// Compute next term
-		g.y = GaussianBasis(sigma2, i + 1.0);
-
-		const float w = MipGaussianWeight(i, g);
-		weight = i == level ? w : weight;
-		wsum += w;
-
-		// For next iteration
-		g.x = g.y;
 	}
 
 	weight = wsum > 0.0 ? weight / wsum : 1.0;

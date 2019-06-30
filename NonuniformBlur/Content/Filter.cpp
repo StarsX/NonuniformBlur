@@ -115,9 +115,8 @@ void Filter::Process(const CommandList &commandList, DirectX::XMFLOAT2 focus, fl
 	{
 		XMFLOAT2	Focus;
 		float		Sigma;
-		uint16_t	Level;
-		uint16_t	NumLevels;
-	} cb = { focus, sigma, 0, static_cast<uint16_t>(m_numMips) };
+		uint32_t	Level;
+	} cb = { focus, sigma };
 
 	for (auto i = 0ui8; i < numPasses; ++i)
 	{
