@@ -2,9 +2,19 @@
 #include "Filter.h"
 #include "Advanced/XUSGDDSLoader.h"
 
+#define ALIGNED_DIV(x, n)	(((x) - 1) / (n) + 1)
+#define SizeOfInUint32(obj)	ALIGNED_DIV(sizeof(obj), sizeof(uint32_t))
+
 using namespace std;
 using namespace DirectX;
 using namespace XUSG;
+
+struct GaussianConstants
+{
+	XMFLOAT2	Focus;
+	float		Sigma;
+	uint32_t	Level;
+};
 
 Filter::Filter(const Device &device) :
 	m_device(device),
@@ -92,7 +102,7 @@ void Filter::Process(const CommandList &commandList, XMFLOAT2 focus, float sigma
 		commandList.Barrier(numBarriers, barriers);
 
 		commandList.SetComputeDescriptorTable(1, m_uavSrvTables[TABLE_DOWN_SAMPLE][i]);
-		commandList.Dispatch((max)((width >> j) / 8, 1u), (max)((height >> j) / 8, 1u), 1);
+		commandList.Dispatch((max)(ALIGNED_DIV(width >> j, 8), 1u), (max)(ALIGNED_DIV(height >> j, 8), 1u), 1);
 		
 		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0, j);
 	}
@@ -111,13 +121,7 @@ void Filter::Process(const CommandList &commandList, XMFLOAT2 focus, float sigma
 	commandList.SetPipelineState(m_pipelines[UP_SAMPLE]);
 	commandList.SetComputeDescriptorTable(0, m_samplerTable);
 
-	struct G
-	{
-		XMFLOAT2	Focus;
-		float		Sigma;
-		uint32_t	Level;
-	} cb = { focus, sigma };
-
+	GaussianConstants cb = { focus, sigma };
 	for (auto i = 0ui8; i < numPasses; ++i)
 	{
 		const auto c = numPasses - i;
@@ -128,8 +132,8 @@ void Filter::Process(const CommandList &commandList, XMFLOAT2 focus, float sigma
 
 		cb.Level = j;
 		commandList.SetComputeDescriptorTable(1, m_uavSrvTables[TABLE_UP_SAMPLE][i]);
-		commandList.SetCompute32BitConstants(2, 4, &cb);
-		commandList.Dispatch((max)((width >> j) / 8, 1u), (max)((height >> j) / 8, 1u), 1);
+		commandList.SetCompute32BitConstants(2, SizeOfInUint32(GaussianConstants), &cb);
+		commandList.Dispatch((max)(ALIGNED_DIV(width >> j, 8), 1u), (max)(ALIGNED_DIV(height >> j, 8), 1u), 1);
 	}
 }
 
@@ -161,7 +165,7 @@ void Filter::ProcessG(const CommandList &commandList, XMFLOAT2 focus, float sigm
 		commandList.Barrier(numBarriers, barriers);
 
 		commandList.SetComputeDescriptorTable(1, m_uavSrvTables[TABLE_DOWN_SAMPLE][i]);
-		commandList.Dispatch((max)((width >> j) / 8, 1u), (max)((height >> j) / 8, 1u), 1);
+		commandList.Dispatch((max)(ALIGNED_DIV(width >> j, 8), 1u), (max)(ALIGNED_DIV(height >> j, 8), 1u), 1);
 
 		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0, j);
 	}
@@ -170,17 +174,12 @@ void Filter::ProcessG(const CommandList &commandList, XMFLOAT2 focus, float sigm
 	commandList.Barrier(numBarriers, barriers);
 
 	// Gaussian
-	struct G
-	{
-		XMFLOAT2	Focus;
-		float		Sigma;
-		uint32_t	NumLevels;
-	} cb = { focus, sigma, m_numMips };
+	GaussianConstants cb = { focus, sigma, m_numMips };
 	commandList.SetComputePipelineLayout(m_pipelineLayouts[GAUSSIAN]);
 	commandList.SetPipelineState(m_pipelines[GAUSSIAN]);
 	commandList.SetComputeDescriptorTable(0, m_samplerTable);
 	commandList.SetComputeDescriptorTable(1, m_uavSrvTables[TABLE_UP_SAMPLE][numPasses]);
-	commandList.SetCompute32BitConstants(2, 4, &cb);
+	commandList.SetCompute32BitConstants(2, SizeOfInUint32(GaussianConstants), &cb);
 	commandList.Dispatch((max)(width / 8, 1u), (max)(height / 8, 1u), 1);
 }
 
@@ -209,7 +208,7 @@ bool Filter::createPipelineLayouts()
 		utilPipelineLayout.SetRange(1, DescriptorType::SRV, 2, 0);
 		utilPipelineLayout.SetRange(1, DescriptorType::UAV, 1, 0, 0,
 			D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE);
-		utilPipelineLayout.SetConstants(2, 4, 0);
+		utilPipelineLayout.SetConstants(2, SizeOfInUint32(GaussianConstants), 0);
 		X_RETURN(m_pipelineLayouts[UP_SAMPLE], utilPipelineLayout.GetPipelineLayout(
 			m_pipelineLayoutCache, D3D12_ROOT_SIGNATURE_FLAG_NONE, L"UpSamplingLayout"), false);
 	}
@@ -221,7 +220,7 @@ bool Filter::createPipelineLayouts()
 		utilPipelineLayout.SetRange(1, DescriptorType::SRV, 1, 0);
 		utilPipelineLayout.SetRange(1, DescriptorType::UAV, 1, 0, 0,
 			D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE);
-		utilPipelineLayout.SetConstants(2, 4, 0);
+		utilPipelineLayout.SetConstants(2, SizeOfInUint32(GaussianConstants), 0);
 		X_RETURN(m_pipelineLayouts[GAUSSIAN], utilPipelineLayout.GetPipelineLayout(
 			m_pipelineLayoutCache, D3D12_ROOT_SIGNATURE_FLAG_NONE, L"GaussianLayout"), false);
 	}

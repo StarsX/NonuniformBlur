@@ -44,8 +44,7 @@ void main(uint2 DTid : SV_DispatchThreadID)
 
 	// Compute deviation
 	const float2 r = (2.0 * tex - 1.0) - g_focus;
-	const float s = saturate(dot(r, r) + 0.25);
-	const float sigma = g_sigma * s;
+	const float sigma = g_sigma * dot(r, r);
 	const float sigma2 = sigma * sigma;
 
 	// Gaussian-approximating Haar coefficients (weights of box filters)
