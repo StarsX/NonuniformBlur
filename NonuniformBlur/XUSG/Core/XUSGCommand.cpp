@@ -72,6 +72,20 @@ void CommandList::CopyResource(const Resource &dstResource, const Resource &srcR
 	m_commandList->CopyResource(dstResource.get(), srcResource.get());
 }
 
+void CommandList::CopyTiles(const Resource &tiledResource, const TiledResourceCoord *pTileRegionStartCoord,
+	const TileRegionSize *pTileRegionSize, const Resource &buffer, uint64_t bufferStartOffsetInBytes,
+	TileCopyFlags flags) const
+{
+	m_commandList->CopyTiles(tiledResource.get(), pTileRegionStartCoord, pTileRegionSize,
+		buffer.get(), bufferStartOffsetInBytes, flags);
+}
+
+void CommandList::ResolveSubresource(const Resource &dstResource, uint32_t dstSubresource,
+	const Resource &srcResource, uint32_t srcSubresource, Format format) const
+{
+	m_commandList->ResolveSubresource(dstResource.get(), dstSubresource, srcResource.get(), srcSubresource, format);
+}
+
 void CommandList::IASetPrimitiveTopology(PrimitiveTopology primitiveTopology) const
 {
 	m_commandList->IASetPrimitiveTopology(primitiveTopology);
@@ -105,6 +119,11 @@ void CommandList::SetPipelineState(const Pipeline &pipelineState) const
 void CommandList::Barrier(uint32_t numBarriers, const ResourceBarrier *pBarriers) const
 {
 	if (numBarriers > 0) m_commandList->ResourceBarrier(numBarriers, pBarriers);
+}
+
+void CommandList::ExecuteBundle(GraphicsCommandList &commandList) const
+{
+	m_commandList->ExecuteBundle(commandList.get());
 }
 
 void CommandList::SetDescriptorPools(uint32_t numDescriptorPools, const DescriptorPool *pDescriptorPools) const
@@ -198,6 +217,11 @@ void CommandList::IASetVertexBuffers(uint32_t startSlot, uint32_t numViews, cons
 	m_commandList->IASetVertexBuffers(startSlot, numViews, pViews);
 }
 
+void CommandList::SOSetTargets(uint32_t startSlot, uint32_t numViews, const StreamOutBufferView *pViews) const
+{
+	m_commandList->SOSetTargets(startSlot, numViews, pViews);
+}
+
 void CommandList::OMSetRenderTargets(uint32_t numRenderTargetDescriptors, const RenderTargetTable &renderTargetTable,
 	const Descriptor *pDepthStencilView, bool rtsSingleHandleToDescriptorRange) const
 {
@@ -227,6 +251,21 @@ void CommandList::ClearUnorderedAccessViewFloat(const DescriptorView &descriptor
 	const Resource &resource, const float values[4], uint32_t numRects, const RectRange *pRects) const
 {
 	m_commandList->ClearUnorderedAccessViewFloat(descriptorView, descriptor, resource.get(), values, numRects, pRects);
+}
+
+void CommandList::SetMarker(uint32_t metaData, const void *pData, uint32_t size) const
+{
+	m_commandList->SetMarker(metaData, pData, size);
+}
+
+void CommandList::BeginEvent(uint32_t metaData, const void *pData, uint32_t size) const
+{
+	m_commandList->BeginEvent(metaData, pData, size);
+}
+
+void CommandList::EndEvent()
+{
+	m_commandList->EndEvent();
 }
 
 GraphicsCommandList &CommandList::GetCommandList()

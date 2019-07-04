@@ -2,8 +2,8 @@
 #include "Filter.h"
 #include "Advanced/XUSGDDSLoader.h"
 
-#define ALIGNED_DIV(x, n)	(((x) - 1) / (n) + 1)
-#define SizeOfInUint32(obj)	ALIGNED_DIV(sizeof(obj), sizeof(uint32_t))
+#define DIV_UP(x, n)		(((x) - 1) / (n) + 1)
+#define SizeOfInUint32(obj)	DIV_UP(sizeof(obj), sizeof(uint32_t))
 
 using namespace std;
 using namespace DirectX;
@@ -102,7 +102,7 @@ void Filter::Process(const CommandList &commandList, XMFLOAT2 focus, float sigma
 		commandList.Barrier(numBarriers, barriers);
 
 		commandList.SetComputeDescriptorTable(1, m_uavSrvTables[TABLE_DOWN_SAMPLE][i]);
-		commandList.Dispatch((max)(ALIGNED_DIV(width >> j, 8), 1u), (max)(ALIGNED_DIV(height >> j, 8), 1u), 1);
+		commandList.Dispatch(DIV_UP(width >> j, 8), DIV_UP(height >> j, 8), 1);
 		
 		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0, j);
 	}
@@ -133,7 +133,7 @@ void Filter::Process(const CommandList &commandList, XMFLOAT2 focus, float sigma
 		cb.Level = j;
 		commandList.SetComputeDescriptorTable(1, m_uavSrvTables[TABLE_UP_SAMPLE][i]);
 		commandList.SetCompute32BitConstants(2, SizeOfInUint32(GaussianConstants), &cb);
-		commandList.Dispatch((max)(ALIGNED_DIV(width >> j, 8), 1u), (max)(ALIGNED_DIV(height >> j, 8), 1u), 1);
+		commandList.Dispatch(DIV_UP(width >> j, 8), DIV_UP(height >> j, 8), 1);
 	}
 }
 
@@ -165,7 +165,7 @@ void Filter::ProcessG(const CommandList &commandList, XMFLOAT2 focus, float sigm
 		commandList.Barrier(numBarriers, barriers);
 
 		commandList.SetComputeDescriptorTable(1, m_uavSrvTables[TABLE_DOWN_SAMPLE][i]);
-		commandList.Dispatch((max)(ALIGNED_DIV(width >> j, 8), 1u), (max)(ALIGNED_DIV(height >> j, 8), 1u), 1);
+		commandList.Dispatch(DIV_UP(width >> j, 8), DIV_UP(height >> j, 8), 1);
 
 		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0, j);
 	}

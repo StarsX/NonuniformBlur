@@ -58,6 +58,7 @@ namespace XUSG
 	using Resource = com_ptr<ID3D12Resource>;
 	using VertexBufferView = D3D12_VERTEX_BUFFER_VIEW;
 	using IndexBufferView = D3D12_INDEX_BUFFER_VIEW;
+	using StreamOutBufferView = D3D12_STREAM_OUTPUT_BUFFER_VIEW;
 	using Sampler = D3D12_SAMPLER_DESC;
 
 	using ResourceState = D3D12_RESOURCE_STATES;
@@ -97,6 +98,9 @@ namespace XUSG
 	using Viewport = CD3DX12_VIEWPORT;
 	using RectRange = CD3DX12_RECT;
 	using BoxRange = CD3DX12_BOX;
+	using TiledResourceCoord = CD3DX12_TILED_RESOURCE_COORDINATE;
+	using TileRegionSize = D3D12_TILE_REGION_SIZE;
+	using TileCopyFlags = D3D12_TILE_COPY_FLAGS;
 
 	// Pipeline layouts related
 	struct RootParameter : CD3DX12_ROOT_PARAMETER1

@@ -40,6 +40,11 @@ namespace XUSG
 			uint32_t dstX, uint32_t dstY, uint32_t dstZ,
 			const TextureCopyLocation &src, const BoxRange *pSrcBox = nullptr) const;
 		virtual void CopyResource(const Resource &dstResource, const Resource &srcResource) const;
+		virtual void CopyTiles(const Resource &tiledResource, const TiledResourceCoord *pTileRegionStartCoord,
+			const TileRegionSize*pTileRegionSize, const Resource &buffer, uint64_t bufferStartOffsetInBytes,
+			TileCopyFlags flags) const;
+		virtual void ResolveSubresource(const Resource &dstResource, uint32_t dstSubresource,
+			const Resource &srcResource, uint32_t srcSubresource, Format format) const;
 		virtual void IASetPrimitiveTopology(PrimitiveTopology primitiveTopology) const;
 		virtual void RSSetViewports(uint32_t numViewports, const Viewport *pViewports) const;
 		virtual void RSSetScissorRects(uint32_t numRects, const RectRange *pRects) const;
@@ -47,7 +52,7 @@ namespace XUSG
 		virtual void OMSetStencilRef(uint32_t stencilRef) const;
 		virtual void SetPipelineState(const Pipeline &pipelineState) const;
 		virtual void Barrier(uint32_t numBarriers, const ResourceBarrier *pBarriers) const;
-		//virtual void ExecuteBundle(GraphicsCommandList &commandList) const = 0;
+		virtual void ExecuteBundle(GraphicsCommandList &commandList) const;
 		virtual void SetDescriptorPools(uint32_t numDescriptorPools, const DescriptorPool *pDescriptorPools) const;
 		virtual void SetComputePipelineLayout(const PipelineLayout &pipelineLayout) const;
 		virtual void SetGraphicsPipelineLayout(const PipelineLayout &pipelineLayout) const;
@@ -66,8 +71,8 @@ namespace XUSG
 		virtual void SetComputeRootUnorderedAccessView(uint32_t index, const Resource &resource, int offset = 0) const;
 		virtual void SetGraphicsRootUnorderedAccessView(uint32_t index, const Resource &resource, int offset = 0) const;
 		virtual void IASetIndexBuffer(const IndexBufferView &view) const;
-		virtual void IASetVertexBuffers(uint32_t startSlot, uint32_t numViews,
-			const VertexBufferView *pViews) const;
+		virtual void IASetVertexBuffers(uint32_t startSlot, uint32_t numViews, const VertexBufferView *pViews) const;
+		virtual void SOSetTargets(uint32_t startSlot, uint32_t numViews, const StreamOutBufferView*pViews) const;
 		virtual void OMSetRenderTargets(
 			uint32_t numRenderTargetDescriptors,
 			const RenderTargetTable &renderTargetTable,
@@ -83,8 +88,15 @@ namespace XUSG
 		virtual void ClearUnorderedAccessViewFloat(const DescriptorView &descriptorView,
 			const Descriptor &descriptor, const Resource &resource, const float values[4],
 			uint32_t numRects = 0, const RectRange *pRects = nullptr) const;
-		//virtual void BeginEvent(uint32_t metaData, const void *pData, uint32_t size) const = 0;
-		//virtual void EndEvent() = 0;
+		//virtual void DiscardResource(const Resource &resource, const D3D12_DISCARD_REGION *pRegion) const;
+		//virtual void BeginQuery(ID3D12QueryHeap *pQueryHeap, D3D12_QUERY_TYPE type, uint32_t index) const;
+		//virtual void EndQuery(ID3D12QueryHeap *pQueryHeap, D3D12_QUERY_TYPE Type, uint32_t index) const;
+		//virtual void ResolveQueryData(ID3D12QueryHeap *pQueryHeap, D3D12_QUERY_TYPE type, uint32_t startIndex,
+			//uint32_t numQueries, const Resource &dstBuffer, uint64_t alignedDstBufferOffset) const;
+		//virtual void SetPredication(const Resource &buffer, uint64_t alignedBufferOffset, D3D12_PREDICATION_OP op)const;
+		virtual void SetMarker(uint32_t metaData, const void *pData, uint32_t size) const;
+		virtual void BeginEvent(uint32_t metaData, const void *pData, uint32_t size) const;
+		virtual void EndEvent();
 
 		GraphicsCommandList &GetCommandList();
 
