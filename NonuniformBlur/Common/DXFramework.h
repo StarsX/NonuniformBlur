@@ -54,13 +54,10 @@ protected:
 	uint32_t m_height;
 	float m_aspectRatio;
 
-	// Adapter info.
-	bool m_useWarpDevice;
+	// Window title.
+	std::wstring m_title;
 
 private:
 	// Root assets path.
 	std::wstring m_assetsPath;
-
-	// Window title.
-	std::wstring m_title;
 };

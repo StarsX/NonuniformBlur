@@ -6,7 +6,6 @@
 #include "XUSGResource.h"
 
 #define REMOVE_PACKED_UAV	ResourceFlags(~0x8000)
-#define ALIGN(x, n)			(((x) + (n - 1)) & ~(n - 1))
 
 using namespace std;
 using namespace XUSG;
@@ -81,7 +80,7 @@ bool ConstantBuffer::Create(const Device &device, uint32_t byteWidth, uint32_t n
 	{
 		auto numBytes = 0u;
 		// CB size is required to be D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT-byte aligned.
-		const auto cbvSize = ALIGN(byteWidth / numCBVs, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
+		const auto cbvSize = POW2_UP(byteWidth / numCBVs, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
 		offsetList.resize(numCBVs);
 
 		for (auto &offset : offsetList)
@@ -143,7 +142,7 @@ bool ConstantBuffer::Upload(const CommandList &commandList, Resource &uploader,
 		V_RETURN(m_device->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(ALIGN(offset + size, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT)),
+			&CD3DX12_RESOURCE_DESC::Buffer(POW2_UP(offset + size, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT)),
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
 			IID_PPV_ARGS(&uploader)), clog, false);
@@ -545,6 +544,26 @@ bool Texture2D::CreateUAVs(uint32_t arraySize, Format format, uint8_t numMips)
 	return true;
 }
 
+void Texture2D::Blit(const CommandList &commandList, uint32_t groupSizeX, uint32_t groupSizeY,
+	const DescriptorTable &uavSrvTable, uint32_t uavSrvSlot, uint8_t mipLevel, int32_t slice,
+	const DescriptorTable &samplerTable, uint32_t samplerSlot, const PipelineLayout &pipelineLayout,
+	const Pipeline &pipeline)
+{
+	// Set pipeline layout and descriptor tables
+	if (pipelineLayout) commandList.SetComputePipelineLayout(pipelineLayout);
+	if (uavSrvTable) commandList.SetComputeDescriptorTable(uavSrvSlot, uavSrvTable);
+	if (samplerTable) commandList.SetComputeDescriptorTable(samplerSlot, samplerTable);
+
+	// Set pipeline
+	if (pipeline) commandList.SetPipelineState(pipeline);
+
+	// Dispatch
+	const auto &desc = m_resource->GetDesc();
+	const auto width = (max)(static_cast<uint32_t>(desc.Width >> mipLevel), 1u);
+	const auto height = (max)(desc.Height >> mipLevel, 1u);
+	commandList.Dispatch(DIV_UP(width, groupSizeX), DIV_UP(height, groupSizeY), 1);
+}
+
 Descriptor Texture2D::GetUAV(uint8_t i) const
 {
 	return m_uavs.size() > i ? m_uavs[i] : Descriptor(D3D12_DEFAULT);
@@ -692,9 +711,9 @@ bool RenderTarget::CreateFromSwapChain(const Device &device, const SwapChain &sw
 	return true;
 }
 
-void RenderTarget::Populate(const CommandList &commandList, const DescriptorTable &srcSrvTable,
-	const DescriptorTable &samplerTable, uint32_t srcSlot, uint32_t samplerSlot, uint8_t mipLevel,
-	int32_t slice, const PipelineLayout &pipelineLayout, const Pipeline &pipeline)
+void RenderTarget::Blit(const CommandList &commandList, const DescriptorTable &srcSrvTable,
+	uint32_t srcSlot, uint8_t mipLevel, int32_t slice, const DescriptorTable &samplerTable,
+	uint32_t samplerSlot, const PipelineLayout &pipelineLayout, const Pipeline &pipeline)
 {
 	// Set render target
 	const auto rtvTable = make_shared<Descriptor>(GetRTV(slice, mipLevel));
@@ -703,14 +722,14 @@ void RenderTarget::Populate(const CommandList &commandList, const DescriptorTabl
 
 	// Set pipeline layout and descriptor tables
 	if (pipelineLayout) commandList.SetGraphicsPipelineLayout(pipelineLayout);
-	commandList.SetGraphicsDescriptorTable(srcSlot, srcSrvTable);
-	commandList.SetGraphicsDescriptorTable(samplerSlot, samplerTable);
+	if (srcSrvTable) commandList.SetGraphicsDescriptorTable(srcSlot, srcSrvTable);
+	if (samplerTable) commandList.SetGraphicsDescriptorTable(samplerSlot, samplerTable);
 
 	// Set pipeline
 	if (pipeline) commandList.SetPipelineState(pipeline);
 
 	// Set viewport
-	const auto desc = m_resource->GetDesc();
+	const auto &desc = m_resource->GetDesc();
 	const auto width = (max)(static_cast<uint32_t>(desc.Width >> mipLevel), 1u);
 	const auto height = (max)(desc.Height >> mipLevel, 1u);
 	const Viewport viewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height));

@@ -52,28 +52,20 @@ void NonUniformBlur::LoadPipeline()
 	com_ptr<IDXGIFactory4> factory;
 	ThrowIfFailed(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&factory)));
 
-	if (m_useWarpDevice)
+	DXGI_ADAPTER_DESC1 dxgiAdapterDesc;
+	com_ptr<IDXGIAdapter1> dxgiAdapter;
+	auto hr = DXGI_ERROR_UNSUPPORTED;
+	for (auto i = 0u; hr == DXGI_ERROR_UNSUPPORTED; ++i)
 	{
-		com_ptr<IDXGIAdapter> warpAdapter;
-		ThrowIfFailed(factory->EnumWarpAdapter(IID_PPV_ARGS(&warpAdapter)));
-
-		ThrowIfFailed(D3D12CreateDevice(
-			warpAdapter.get(),
-			D3D_FEATURE_LEVEL_11_0,
-			IID_PPV_ARGS(&m_device)
-			));
+		dxgiAdapter = nullptr;
+		ThrowIfFailed(factory->EnumAdapters1(i, &dxgiAdapter));
+		hr = D3D12CreateDevice(dxgiAdapter.get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_device));
 	}
-	else
-	{
-		com_ptr<IDXGIAdapter1> hardwareAdapter;
-		GetHardwareAdapter(factory.get(), &hardwareAdapter);
 
-		ThrowIfFailed(D3D12CreateDevice(
-			hardwareAdapter.get(),
-			D3D_FEATURE_LEVEL_11_0,
-			IID_PPV_ARGS(&m_device)
-			));
-	}
+	dxgiAdapter->GetDesc1(&dxgiAdapterDesc);
+	if (dxgiAdapterDesc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+		m_title += dxgiAdapterDesc.VendorId == 0x1414 && dxgiAdapterDesc.DeviceId == 0x8c ? L" (WARP)" : L" (Software)";
+	ThrowIfFailed(hr);
 
 	// Describe and create the command queue.
 	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
@@ -235,8 +227,8 @@ void NonUniformBlur::PopulateCommandList()
 	ThrowIfFailed(m_commandList.Reset(m_commandAllocators[m_frameIndex], nullptr));
 
 	// Record commands.
-	m_filter->Process(m_commandList, m_focus, m_sigma);
-	//m_filter->ProcessG(m_commandList, m_focus, m_sigma);
+	m_filter->Process(m_commandList, m_focus, m_sigma);		// V-cycle
+	//m_filter->ProcessG(m_commandList, m_focus, m_sigma);	// Naive weighted averaging
 
 	{
 		const TextureCopyLocation dst(m_renderTargets[m_frameIndex].GetResource().get(), 0);

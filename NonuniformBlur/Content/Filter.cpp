@@ -2,7 +2,6 @@
 #include "Filter.h"
 #include "Advanced/XUSGDDSLoader.h"
 
-#define DIV_UP(x, n)		(((x) - 1) / (n) + 1)
 #define SizeOfInUint32(obj)	DIV_UP(sizeof(obj), sizeof(uint32_t))
 
 using namespace std;
@@ -77,8 +76,9 @@ bool Filter::Init(const CommandList &commandList, uint32_t width, uint32_t heigh
 void Filter::Process(const CommandList &commandList, XMFLOAT2 focus, float sigma)
 {
 	const uint8_t numPasses = m_numMips > 0 ? m_numMips - 1 : 0;
-	const uint32_t width = static_cast<uint32_t>(m_filtered[TABLE_DOWN_SAMPLE].GetResource()->GetDesc().Width);
-	const auto height = m_filtered[TABLE_DOWN_SAMPLE].GetResource()->GetDesc().Height;
+	//const auto &desc = m_filtered[TABLE_DOWN_SAMPLE].GetResource()->GetDesc();
+	//const uint32_t width = static_cast<uint32_t>(desc.Width);
+	//const auto &height = desc.Height;
 
 	// Set Descriptor pools
 	const DescriptorPool descriptorPools[] =
@@ -100,10 +100,7 @@ void Filter::Process(const CommandList &commandList, XMFLOAT2 focus, float sigma
 		const auto j = i + 1;
 		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers, j);
 		commandList.Barrier(numBarriers, barriers);
-
-		commandList.SetComputeDescriptorTable(1, m_uavSrvTables[TABLE_DOWN_SAMPLE][i]);
-		commandList.Dispatch(DIV_UP(width >> j, 8), DIV_UP(height >> j, 8), 1);
-		
+		m_filtered[TABLE_DOWN_SAMPLE].Blit(commandList, 8, 8, m_uavSrvTables[TABLE_DOWN_SAMPLE][i], 1, j);
 		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0, j);
 	}
 
@@ -125,24 +122,19 @@ void Filter::Process(const CommandList &commandList, XMFLOAT2 focus, float sigma
 	for (auto i = 0ui8; i < numPasses; ++i)
 	{
 		const auto c = numPasses - i;
-		const auto j = c - 1;
+		cb.Level = c - 1;
 		numBarriers = m_filtered[TABLE_UP_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0, c);
-		numBarriers = m_filtered[TABLE_UP_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers, j);
+		numBarriers = m_filtered[TABLE_UP_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers, cb.Level);
 		commandList.Barrier(numBarriers, barriers);
-
-		cb.Level = j;
-		commandList.SetComputeDescriptorTable(1, m_uavSrvTables[TABLE_UP_SAMPLE][i]);
 		commandList.SetCompute32BitConstants(2, SizeOfInUint32(GaussianConstants), &cb);
-		commandList.Dispatch(DIV_UP(width >> j, 8), DIV_UP(height >> j, 8), 1);
+		m_filtered[TABLE_UP_SAMPLE].Blit(commandList, 8, 8, m_uavSrvTables[TABLE_UP_SAMPLE][i], 1, cb.Level);
 	}
 }
 
 void Filter::ProcessG(const CommandList &commandList, XMFLOAT2 focus, float sigma)
 {
 	const uint8_t numPasses = m_numMips > 0 ? m_numMips - 1 : 0;
-	const uint32_t width = static_cast<uint32_t>(m_filtered[TABLE_DOWN_SAMPLE].GetResource()->GetDesc().Width);
-	const auto height = m_filtered[TABLE_DOWN_SAMPLE].GetResource()->GetDesc().Height;
-
+	
 	// Set Descriptor pools
 	const DescriptorPool descriptorPools[] =
 	{
@@ -163,10 +155,7 @@ void Filter::ProcessG(const CommandList &commandList, XMFLOAT2 focus, float sigm
 		const auto j = i + 1;
 		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers, j);
 		commandList.Barrier(numBarriers, barriers);
-
-		commandList.SetComputeDescriptorTable(1, m_uavSrvTables[TABLE_DOWN_SAMPLE][i]);
-		commandList.Dispatch(DIV_UP(width >> j, 8), DIV_UP(height >> j, 8), 1);
-
+		m_filtered[TABLE_DOWN_SAMPLE].Blit(commandList, 8, 8, m_uavSrvTables[TABLE_DOWN_SAMPLE][i], 1, j);
 		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0, j);
 	}
 
@@ -176,11 +165,9 @@ void Filter::ProcessG(const CommandList &commandList, XMFLOAT2 focus, float sigm
 	// Gaussian
 	GaussianConstants cb = { focus, sigma, m_numMips };
 	commandList.SetComputePipelineLayout(m_pipelineLayouts[GAUSSIAN]);
-	commandList.SetPipelineState(m_pipelines[GAUSSIAN]);
-	commandList.SetComputeDescriptorTable(0, m_samplerTable);
-	commandList.SetComputeDescriptorTable(1, m_uavSrvTables[TABLE_UP_SAMPLE][numPasses]);
 	commandList.SetCompute32BitConstants(2, SizeOfInUint32(GaussianConstants), &cb);
-	commandList.Dispatch((max)(width / 8, 1u), (max)(height / 8, 1u), 1);
+	m_filtered[TABLE_UP_SAMPLE].Blit(commandList, 8, 8, m_uavSrvTables[TABLE_UP_SAMPLE][numPasses],
+		1, 0, 0, nullptr, 0, nullptr, m_pipelines[GAUSSIAN]);
 }
 
 Texture2D &Filter::GetResult()
