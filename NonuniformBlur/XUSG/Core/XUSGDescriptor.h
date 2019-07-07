@@ -92,6 +92,8 @@ namespace XUSG
 		
 		const std::shared_ptr<Sampler> &GetSampler(SamplerPreset preset);
 
+		uint32_t GetDescriptorStride(DescriptorPoolType type) const;
+
 	protected:
 		friend class Util::DescriptorTable;
 

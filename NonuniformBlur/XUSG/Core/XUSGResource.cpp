@@ -68,7 +68,7 @@ ConstantBuffer::~ConstantBuffer()
 	if (m_resource) Unmap();
 }
 
-bool ConstantBuffer::Create(const Device &device, uint32_t byteWidth, uint32_t numCBVs,
+bool ConstantBuffer::Create(const Device &device, uint64_t byteWidth, uint32_t numCBVs,
 	const uint32_t *offsets, MemoryType memoryType, const wchar_t *name)
 {
 	M_RETURN(!device, cerr, "The device is NULL.", false);
@@ -80,7 +80,8 @@ bool ConstantBuffer::Create(const Device &device, uint32_t byteWidth, uint32_t n
 	{
 		auto numBytes = 0u;
 		// CB size is required to be D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT-byte aligned.
-		const auto cbvSize = POW2_UP(byteWidth / numCBVs, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
+		auto cbvSize = static_cast<uint32_t>(byteWidth / numCBVs);
+		cbvSize = POW2_UP(cbvSize, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
 		offsetList.resize(numCBVs);
 
 		for (auto &offset : offsetList)
@@ -111,11 +112,12 @@ bool ConstantBuffer::Create(const Device &device, uint32_t byteWidth, uint32_t n
 
 	m_cbvs.resize(numCBVs);
 	m_cbvOffsets.resize(numCBVs);
+	const auto maxSize = static_cast<uint32_t>(byteWidth);
 	for (auto i = 0u; i < numCBVs; ++i)
 	{
 		const auto &offset = offsets[i];
 		desc.BufferLocation = m_resource->GetGPUVirtualAddress() + offset;
-		desc.SizeInBytes = (i + 1 >= numCBVs ? byteWidth : offsets[i + 1]) - offset;
+		desc.SizeInBytes = (i + 1 >= numCBVs ? maxSize : offsets[i + 1]) - offset;
 
 		m_cbvOffsets[i] = offset;
 
@@ -1340,7 +1342,7 @@ RawBuffer::~RawBuffer()
 	if (m_resource) Unmap();
 }
 
-bool RawBuffer::Create(const Device &device, uint32_t byteWidth, ResourceFlags resourceFlags,
+bool RawBuffer::Create(const Device &device, uint64_t byteWidth, ResourceFlags resourceFlags,
 	MemoryType memoryType, ResourceState state, uint32_t numSRVs, const uint32_t *firstSRVElements,
 	uint32_t numUAVs, const uint32_t *firstUAVElements, const wchar_t *name)
 {
@@ -1399,7 +1401,7 @@ bool RawBuffer::Upload(const CommandList &commandList, Resource &uploader,
 	return true;
 }
 
-bool RawBuffer::CreateSRVs(uint32_t byteWidth, const uint32_t *firstElements,
+bool RawBuffer::CreateSRVs(uint64_t byteWidth, const uint32_t *firstElements,
 	uint32_t numDescriptors)
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC desc = {};
@@ -1409,7 +1411,7 @@ bool RawBuffer::CreateSRVs(uint32_t byteWidth, const uint32_t *firstElements,
 	desc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;
 
 	const uint32_t stride = sizeof(uint32_t);
-	const auto numElements = byteWidth / stride;
+	const auto numElements = static_cast<uint32_t>(byteWidth / stride);
 
 	m_srvOffsets.resize(numDescriptors);
 	m_srvs.resize(numDescriptors);
@@ -1431,7 +1433,7 @@ bool RawBuffer::CreateSRVs(uint32_t byteWidth, const uint32_t *firstElements,
 	return true;
 }
 
-bool RawBuffer::CreateUAVs(uint32_t byteWidth, const uint32_t *firstElements,
+bool RawBuffer::CreateUAVs(uint64_t byteWidth, const uint32_t *firstElements,
 	uint32_t numDescriptors)
 {
 	D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {};
@@ -1439,7 +1441,7 @@ bool RawBuffer::CreateUAVs(uint32_t byteWidth, const uint32_t *firstElements,
 	desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 	desc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW;
 
-	const uint32_t numElements = byteWidth / sizeof(uint32_t);
+	const uint32_t numElements = static_cast<uint32_t>(byteWidth / sizeof(uint32_t));
 
 	m_uavs.resize(numDescriptors);
 	for (auto i = 0u; i < numDescriptors; ++i)
@@ -1484,7 +1486,7 @@ void RawBuffer::Unmap()
 	}
 }
 
-bool RawBuffer::create(const Device &device, uint32_t byteWidth, ResourceFlags resourceFlags,
+bool RawBuffer::create(const Device &device, uint64_t byteWidth, ResourceFlags resourceFlags,
 	MemoryType memoryType, ResourceState state, uint32_t numSRVs, uint32_t numUAVs,
 	const wchar_t *name)
 {
@@ -1808,7 +1810,7 @@ IndexBuffer::~IndexBuffer()
 {
 }
 
-bool IndexBuffer::Create(const Device &device, uint32_t byteWidth, Format format,
+bool IndexBuffer::Create(const Device &device, uint64_t byteWidth, Format format,
 	ResourceFlags resourceFlags, MemoryType memoryType, ResourceState state,
 	uint32_t numIBVs, const uint32_t *offsets,
 	uint32_t numSRVs, const uint32_t *firstSRVElements,
@@ -1827,17 +1829,19 @@ bool IndexBuffer::Create(const Device &device, uint32_t byteWidth, Format format
 	state = state ? state : (hasSRV ? D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE :
 		D3D12_RESOURCE_STATE_INDEX_BUFFER);
 
-	N_RETURN(TypedBuffer::Create(device, byteWidth / stride, stride, format, resourceFlags,
+	const auto numElements = static_cast<uint32_t>(byteWidth / stride);
+	N_RETURN(TypedBuffer::Create(device, numElements, stride, format, resourceFlags,
 		memoryType, state, numSRVs, firstSRVElements, numUAVs, firstUAVElements, name), false);
 
 	// Create index buffer view
 	m_ibvs.resize(numIBVs);
+	const auto maxSize = static_cast<uint32_t>(byteWidth);
 	for (auto i = 0u; i < numIBVs; ++i)
 	{
 		const auto offset = offsets ? offsets[i] : 0;
 		m_ibvs[i].BufferLocation = m_resource->GetGPUVirtualAddress() + offset;
 		m_ibvs[i].SizeInBytes = (!offsets || i + 1 >= numIBVs ?
-			byteWidth : offsets[i + 1]) - offset;
+			maxSize : offsets[i + 1]) - offset;
 		m_ibvs[i].Format = format;
 	}
 

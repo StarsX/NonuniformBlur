@@ -179,6 +179,11 @@ const shared_ptr<Sampler> &DescriptorTableCache::GetSampler(SamplerPreset preset
 	return m_samplerPresets[preset];
 }
 
+uint32_t DescriptorTableCache::GetDescriptorStride(DescriptorPoolType type) const
+{
+	return m_descriptorStrides[type];
+}
+
 bool DescriptorTableCache::allocateDescriptorPool(DescriptorPoolType type, uint32_t numDescriptors)
 {
 	static const D3D12_DESCRIPTOR_HEAP_TYPE heapTypes[NUM_DESCRIPTOR_POOL] =

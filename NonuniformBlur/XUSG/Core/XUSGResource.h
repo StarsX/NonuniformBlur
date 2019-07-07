@@ -21,7 +21,7 @@ namespace XUSG
 		ConstantBuffer();
 		virtual ~ConstantBuffer();
 
-		bool Create(const Device &device, uint32_t byteWidth, uint32_t numCBVs = 1,
+		bool Create(const Device &device, uint64_t byteWidth, uint32_t numCBVs = 1,
 			const uint32_t *offsets = nullptr, MemoryType memoryType = MemoryType(2),
 			const wchar_t *name = nullptr);
 		bool Upload(const CommandList &commandList, Resource &uploader, const void *pData,
@@ -242,16 +242,16 @@ namespace XUSG
 		RawBuffer();
 		virtual ~RawBuffer();
 
-		bool Create(const Device &device, uint32_t byteWidth, ResourceFlags resourceFlags = ResourceFlags(0),
+		bool Create(const Device &device, uint64_t byteWidth, ResourceFlags resourceFlags = ResourceFlags(0),
 			MemoryType memoryType = MemoryType(1), ResourceState state = ResourceState(0),
 			uint32_t numSRVs = 1, const uint32_t *firstSRVElements = nullptr,
 			uint32_t numUAVs = 1, const uint32_t *firstUAVElements = nullptr,
 			const wchar_t *name = nullptr);
 		bool Upload(const CommandList &commandList, Resource &uploader, const void *pData,
 			size_t size, ResourceState dstState = ResourceState(0), uint32_t i = 0);
-		bool CreateSRVs(uint32_t byteWidth, const uint32_t *firstElements = nullptr,
+		bool CreateSRVs(uint64_t byteWidth, const uint32_t *firstElements = nullptr,
 			uint32_t numDescriptors = 1);
-		bool CreateUAVs(uint32_t byteWidth, const uint32_t *firstElements = nullptr,
+		bool CreateUAVs(uint64_t byteWidth, const uint32_t *firstElements = nullptr,
 			uint32_t numDescriptors = 1);
 
 		Descriptor GetUAV(uint32_t i = 0) const;
@@ -260,7 +260,7 @@ namespace XUSG
 		void Unmap();
 
 	protected:
-		bool create(const Device &device, uint32_t byteWidth, ResourceFlags resourceFlags,
+		bool create(const Device &device, uint64_t byteWidth, ResourceFlags resourceFlags,
 			MemoryType memoryType, ResourceState state, uint32_t numSRVs, uint32_t numUAVs,
 			const wchar_t *name);
 
@@ -358,7 +358,7 @@ namespace XUSG
 		IndexBuffer();
 		virtual ~IndexBuffer();
 
-		bool Create(const Device &device, uint32_t byteWidth, Format format = Format(42),
+		bool Create(const Device &device, uint64_t byteWidth, Format format = Format(42),
 			ResourceFlags resourceFlags = ResourceFlags(0x8), MemoryType memoryType = MemoryType(1),
 			ResourceState state = ResourceState(0),
 			uint32_t numIBVs = 1, const uint32_t *offsets = nullptr,
