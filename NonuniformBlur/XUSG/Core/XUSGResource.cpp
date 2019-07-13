@@ -247,9 +247,18 @@ Descriptor ResourceBase::GetSRV(uint32_t i) const
 ResourceBarrier ResourceBase::Transition(ResourceState dstState,
 	uint32_t subresource, BarrierFlags flags)
 {
-	auto &state = m_states[subresource == 0xffffffff ? 0 : subresource];
-	const auto srcState = state;
-	state = flags == D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY ? state : dstState;
+	ResourceState srcState;
+	if (subresource == 0xffffffff)
+	{
+		srcState = m_states[0];
+		if (flags != D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY)
+			for (auto& state : m_states) state = dstState;
+	}
+	else
+	{
+		srcState = m_states[subresource];
+		m_states[subresource] = flags == D3D12_RESOURCE_BARRIER_FLAG_BEGIN_ONLY ? srcState : dstState;
+	}
 
 	return srcState == dstState && dstState == D3D12_RESOURCE_STATE_UNORDERED_ACCESS ?
 		ResourceBarrier::UAV(m_resource.get()) :

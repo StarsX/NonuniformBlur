@@ -236,7 +236,8 @@ void NonUniformBlur::PopulateCommandList()
 
 		ResourceBarrier barriers[2];
 		auto numBarriers = m_renderTargets[m_frameIndex].SetBarrier(barriers, D3D12_RESOURCE_STATE_COPY_DEST);
-		numBarriers = m_filter->GetResult().SetBarrier(barriers, D3D12_RESOURCE_STATE_COPY_SOURCE, numBarriers, 0);
+		numBarriers = m_filter->GetResult().SetBarrier(barriers, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE |
+			D3D12_RESOURCE_STATE_COPY_SOURCE, numBarriers, 0);
 		m_commandList.Barrier(numBarriers, barriers);
 
 		m_commandList.CopyTextureRegion(dst, 0, 0, 0, src);

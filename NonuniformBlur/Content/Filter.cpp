@@ -43,7 +43,7 @@ bool Filter::Init(const CommandList &commandList, uint32_t width, uint32_t heigh
 
 	// Create resources and pipelines
 	const auto viewportSize = static_cast<float>((max)(width, height));
-	m_numMips = static_cast<uint8_t>(log2f(viewportSize) + 1.0f);
+	m_numMips = (max)(static_cast<uint8_t>(log2f(viewportSize) + 1.0f), 1ui8);
 
 	for (auto &image : m_filtered)
 		image.Create(m_device, width, height, DXGI_FORMAT_B8G8R8A8_UNORM, 1,
@@ -75,10 +75,7 @@ bool Filter::Init(const CommandList &commandList, uint32_t width, uint32_t heigh
 
 void Filter::Process(const CommandList &commandList, XMFLOAT2 focus, float sigma)
 {
-	const uint8_t numPasses = m_numMips > 0 ? m_numMips - 1 : 0;
-	//const auto &desc = m_filtered[TABLE_DOWN_SAMPLE].GetResource()->GetDesc();
-	//const uint32_t width = static_cast<uint32_t>(desc.Width);
-	//const auto &height = desc.Height;
+	const uint8_t numPasses = m_numMips - 1;
 
 	// Set Descriptor pools
 	const DescriptorPool descriptorPools[] =
@@ -104,14 +101,11 @@ void Filter::Process(const CommandList &commandList, XMFLOAT2 focus, float sigma
 		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0, j);
 	}
 
-	if (numPasses > 0)
-	{
-		numBarriers = m_filtered[TABLE_UP_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers, numPasses);
-		commandList.Barrier(numBarriers, barriers);
+	numBarriers = m_filtered[TABLE_UP_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers);
+	commandList.Barrier(numBarriers, barriers);
 
-		commandList.SetComputeDescriptorTable(1, m_uavSrvTables[TABLE_DOWN_SAMPLE][numPasses]);
-		commandList.Dispatch(1, 1, 1);
-	}
+	commandList.SetComputeDescriptorTable(1, m_uavSrvTables[TABLE_DOWN_SAMPLE][numPasses]);
+	commandList.Dispatch(1, 1, 1);
 
 	// Up sampling
 	commandList.SetComputePipelineLayout(m_pipelineLayouts[UP_SAMPLE]);
@@ -123,8 +117,9 @@ void Filter::Process(const CommandList &commandList, XMFLOAT2 focus, float sigma
 	{
 		const auto c = numPasses - i;
 		cb.Level = c - 1;
-		numBarriers = m_filtered[TABLE_UP_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0, c);
-		numBarriers = m_filtered[TABLE_UP_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers, cb.Level);
+		numBarriers = m_filtered[TABLE_UP_SAMPLE].SetBarrier(barriers,
+			D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE |
+			D3D12_RESOURCE_STATE_COPY_SOURCE, 0, c);
 		commandList.Barrier(numBarriers, barriers);
 		commandList.SetCompute32BitConstants(2, SizeOfInUint32(GaussianConstants), &cb);
 		m_filtered[TABLE_UP_SAMPLE].Blit(commandList, 8, 8, m_uavSrvTables[TABLE_UP_SAMPLE][i], 1, cb.Level);
@@ -284,29 +279,28 @@ bool Filter::createDescriptorTables()
 		}
 	}
 
-	if (numPasses > 0)
+	// Get UAV and SRVs for the final-time down sampling
 	{
+		const Descriptor descriptors[] =
 		{
-			const Descriptor descriptors[] =
-			{
-				m_filtered[TABLE_DOWN_SAMPLE].GetSRVLevel(numPasses - 1),
-				m_filtered[TABLE_UP_SAMPLE].GetUAV(numPasses)
-			};
-			Util::DescriptorTable utilUavSrvTable;
-			utilUavSrvTable.SetDescriptors(0, static_cast<uint32_t>(size(descriptors)), descriptors);
-			X_RETURN(m_uavSrvTables[TABLE_DOWN_SAMPLE][numPasses], utilUavSrvTable.GetCbvSrvUavTable(m_descriptorTableCache), false);
-		}
+			m_filtered[TABLE_DOWN_SAMPLE].GetSRVLevel(numPasses - 1),
+			m_filtered[TABLE_UP_SAMPLE].GetUAV(numPasses)
+		};
+		Util::DescriptorTable utilUavSrvTable;
+		utilUavSrvTable.SetDescriptors(0, static_cast<uint32_t>(size(descriptors)), descriptors);
+		X_RETURN(m_uavSrvTables[TABLE_DOWN_SAMPLE][numPasses], utilUavSrvTable.GetCbvSrvUavTable(m_descriptorTableCache), false);
+	}
 
+	// Get UAV and SRVs for direct Gaussian
+	{
+		const Descriptor descriptors[] =
 		{
-			const Descriptor descriptors[] =
-			{
-				m_filtered[TABLE_DOWN_SAMPLE].GetSRV(),
-				m_filtered[TABLE_UP_SAMPLE].GetUAV()
-			};
-			Util::DescriptorTable utilUavSrvTable;
-			utilUavSrvTable.SetDescriptors(0, static_cast<uint32_t>(size(descriptors)), descriptors);
-			X_RETURN(m_uavSrvTables[TABLE_UP_SAMPLE][numPasses], utilUavSrvTable.GetCbvSrvUavTable(m_descriptorTableCache), false);
-		}
+			m_filtered[TABLE_DOWN_SAMPLE].GetSRV(),
+			m_filtered[TABLE_UP_SAMPLE].GetUAV()
+		};
+		Util::DescriptorTable utilUavSrvTable;
+		utilUavSrvTable.SetDescriptors(0, static_cast<uint32_t>(size(descriptors)), descriptors);
+		X_RETURN(m_uavSrvTables[TABLE_UP_SAMPLE][numPasses], utilUavSrvTable.GetCbvSrvUavTable(m_descriptorTableCache), false);
 	}
 
 	// Create the sampler table
