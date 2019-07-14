@@ -21,20 +21,20 @@ namespace XUSG
 		ConstantBuffer();
 		virtual ~ConstantBuffer();
 
-		bool Create(const Device &device, uint64_t byteWidth, uint32_t numCBVs = 1,
-			const uint32_t *offsets = nullptr, MemoryType memoryType = MemoryType(2),
-			const wchar_t *name = nullptr);
-		bool Upload(const CommandList &commandList, Resource &uploader, const void *pData,
+		bool Create(const Device& device, uint64_t byteWidth, uint32_t numCBVs = 1,
+			const uint32_t* offsets = nullptr, MemoryType memoryType = MemoryType(2),
+			const wchar_t* name = nullptr);
+		bool Upload(const CommandList& commandList, Resource& uploader, const void* pData,
 			size_t size, uint32_t i = 0);
 
-		void *Map(uint32_t i = 0);
+		void* Map(uint32_t i = 0);
 		void Unmap();
 
-		const Resource	&GetResource() const;
+		const Resource& GetResource() const;
 		Descriptor		GetCBV(uint32_t i = 0) const;
 
 	protected:
-		Descriptor allocateCbvPool(const wchar_t *name);
+		Descriptor allocateCbvPool(const wchar_t* name);
 
 		Device			m_device;
 
@@ -43,7 +43,7 @@ namespace XUSG
 		std::vector<Descriptor>	m_cbvs;
 		std::vector<uint32_t> m_cbvOffsets;
 
-		void			*m_pDataBegin;
+		void* m_pDataBegin;
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -55,21 +55,21 @@ namespace XUSG
 		ResourceBase();
 		virtual ~ResourceBase();
 
-		uint32_t SetBarrier(ResourceBarrier *pBarriers, ResourceState dstState,
+		uint32_t SetBarrier(ResourceBarrier* pBarriers, ResourceState dstState,
 			uint32_t numBarriers = 0, uint32_t subresource = 0xffffffff,
 			BarrierFlags flags = BarrierFlags(0));
 
-		const Resource	&GetResource() const;
+		const Resource& GetResource() const;
 		Descriptor		GetSRV(uint32_t i = 0) const;
 
 		ResourceBarrier	Transition(ResourceState dstState, uint32_t subresource = 0xffffffff,
 			BarrierFlags flags = BarrierFlags(0));
 		ResourceState	GetResourceState(uint32_t i = 0) const;
 
-		//static void CreateReadBuffer(const Device &device,
-			//CPDXBuffer &pDstBuffer, const CPDXBuffer &pSrcBuffer);
+		//static void CreateReadBuffer(const Device& device,
+			//CPDXBuffer& pDstBuffer, const CPDXBuffer& pSrcBuffer);
 	protected:
-		void setDevice(const Device &device);
+		void setDevice(const Device& device);
 		Descriptor allocateSrvUavPool();
 
 		Device			m_device;
@@ -92,15 +92,15 @@ namespace XUSG
 		Texture2D();
 		virtual ~Texture2D();
 
-		bool Create(const Device &device, uint32_t width, uint32_t height, Format format,
+		bool Create(const Device& device, uint32_t width, uint32_t height, Format format,
 			uint32_t arraySize = 1, ResourceFlags resourceFlags = ResourceFlags(0),
 			uint8_t numMips = 1, uint8_t sampleCount = 1, MemoryType memoryType = MemoryType(1),
 			ResourceState state = ResourceState(0), bool isCubeMap = false,
-			const wchar_t *name = nullptr);
-		bool Upload(const CommandList &commandList, Resource &uploader,
-			SubresourceData *pSubresourceData, uint32_t numSubresources = 1,
+			const wchar_t* name = nullptr);
+		bool Upload(const CommandList& commandList, Resource& uploader,
+			SubresourceData* pSubresourceData, uint32_t numSubresources = 1,
 			ResourceState dstState = ResourceState(0), uint32_t i = 0);
-		bool Upload(const CommandList &commandList, Resource &uploader, const void *pData,
+		bool Upload(const CommandList& commandList, Resource& uploader, const void* pData,
 			uint8_t stride = sizeof(float), ResourceState dstState = ResourceState(0));
 		bool CreateSRVs(uint32_t arraySize, Format format = Format(0), uint8_t numMips = 1,
 			uint8_t sampleCount = 1, bool isCubeMap = false);
@@ -108,10 +108,11 @@ namespace XUSG
 			uint8_t sampleCount = 1, bool isCubeMap = false);
 		bool CreateUAVs(uint32_t arraySize, Format format = Format(0), uint8_t numMips = 1);
 
-		void Blit(const CommandList &commandList, uint32_t groupSizeX, uint32_t groupSizeY,
-			const DescriptorTable &uavSrvTable, uint32_t uavSrvSlot = 0, uint8_t mipLevel = 0,
-			int32_t slice = 0, const DescriptorTable &samplerTable = nullptr, uint32_t samplerSlot = 1, 
-			const PipelineLayout &pipelineLayout = nullptr, const Pipeline &pipeline = nullptr);
+		void Blit(const CommandList& commandList, uint32_t groupSizeX, uint32_t groupSizeY,
+			const DescriptorTable& uavSrvTable, uint32_t uavSrvSlot = 0, uint8_t mipLevel = 0,
+			const DescriptorTable & srvTable = nullptr, uint32_t srvSlot = 0, int32_t slice = 0,
+			const DescriptorTable & samplerTable = nullptr, uint32_t samplerSlot = 1,
+			const PipelineLayout & pipelineLayout = nullptr, const Pipeline & pipeline = nullptr);
 
 		Descriptor GetUAV(uint8_t i = 0) const;
 		Descriptor GetSRVLevel(uint8_t i) const;
@@ -132,30 +133,30 @@ namespace XUSG
 		RenderTarget();
 		virtual ~RenderTarget();
 
-		bool Create(const Device &device, uint32_t width, uint32_t height, Format format,
+		bool Create(const Device& device, uint32_t width, uint32_t height, Format format,
 			uint32_t arraySize = 1, ResourceFlags resourceFlags = ResourceFlags(0),
 			uint8_t numMips = 1, uint8_t sampleCount = 1, ResourceState state = ResourceState(0),
-			const float *pClearColor = nullptr, bool isCubeMap = false, const wchar_t *name = nullptr);
-		bool CreateArray(const Device &device, uint32_t width, uint32_t height, uint32_t arraySize,
+			const float* pClearColor = nullptr, bool isCubeMap = false, const wchar_t* name = nullptr);
+		bool CreateArray(const Device& device, uint32_t width, uint32_t height, uint32_t arraySize,
 			Format format, ResourceFlags resourceFlags = ResourceFlags(0), uint8_t numMips = 1,
 			uint8_t sampleCount = 1, ResourceState state = ResourceState(0),
-			const float *pClearColor = nullptr, bool isCubeMap = false, const wchar_t *name = nullptr);
-		bool CreateFromSwapChain(const Device &device, const SwapChain &swapChain, uint32_t bufferIdx);
+			const float* pClearColor = nullptr, bool isCubeMap = false, const wchar_t* name = nullptr);
+		bool CreateFromSwapChain(const Device& device, const SwapChain& swapChain, uint32_t bufferIdx);
 
-		void Blit(const CommandList &commandList, const DescriptorTable &srcSrvTable, uint32_t srcSlot = 0,
-			uint8_t mipLevel = 0, int32_t slice = 0, const DescriptorTable &samplerTable = nullptr,
-			uint32_t samplerSlot = 1, const PipelineLayout &pipelineLayout = nullptr,
-			const Pipeline &pipeline = nullptr);
+		void Blit(const CommandList& commandList, const DescriptorTable& srcSrvTable, uint32_t srcSlot = 0,
+			uint8_t mipLevel = 0, int32_t slice = 0, const DescriptorTable & samplerTable = nullptr,
+			uint32_t samplerSlot = 1, const PipelineLayout & pipelineLayout = nullptr,
+			const Pipeline & pipeline = nullptr);
 
 		Descriptor	GetRTV(uint32_t slice = 0, uint8_t mipLevel = 0) const;
 		uint32_t	GetArraySize() const;
 		uint8_t		GetNumMips(uint32_t slice = 0) const;
 
 	protected:
-		bool create(const Device &device, uint32_t width, uint32_t height,
+		bool create(const Device& device, uint32_t width, uint32_t height,
 			uint32_t arraySize, Format format, uint8_t numMips, uint8_t sampleCount,
-			ResourceFlags resourceFlags, ResourceState state, const float *pClearColor,
-			bool isCubeMap, const wchar_t *name);
+			ResourceFlags resourceFlags, ResourceState state, const float* pClearColor,
+			bool isCubeMap, const wchar_t* name);
 		Descriptor allocateRtvPool();
 
 		std::vector<DescriptorPool>	m_rtvPools;
@@ -172,30 +173,30 @@ namespace XUSG
 		DepthStencil();
 		virtual ~DepthStencil();
 
-		bool Create(const Device &device, uint32_t width, uint32_t height,
+		bool Create(const Device& device, uint32_t width, uint32_t height,
 			Format format = Format(0), ResourceFlags resourceFlags = ResourceFlags(0),
 			uint32_t arraySize = 1, uint8_t numMips = 1, uint8_t sampleCount = 1,
 			ResourceState state = ResourceState(0), float clearDepth = 1.0f,
-			uint8_t clearStencil = 0, bool isCubeMap = false, const wchar_t *name = nullptr);
-		bool CreateArray(const Device &device, uint32_t width, uint32_t height, uint32_t arraySize,
+			uint8_t clearStencil = 0, bool isCubeMap = false, const wchar_t* name = nullptr);
+		bool CreateArray(const Device& device, uint32_t width, uint32_t height, uint32_t arraySize,
 			Format format = Format(0), ResourceFlags resourceFlags = ResourceFlags(0),
 			uint8_t numMips = 1, uint8_t sampleCount = 1, ResourceState state = ResourceState(0),
 			float clearDepth = 1.0f, uint8_t clearStencil = 0, bool isCubeMap = false,
-			const wchar_t *name = nullptr);
+			const wchar_t* name = nullptr);
 
 		Descriptor GetDSV(uint32_t slice = 0, uint8_t mipLevel = 0) const;
 		Descriptor GetReadOnlyDSV(uint32_t slice = 0, uint8_t mipLevel = 0) const;
-		const Descriptor &GetStencilSRV() const;
+		const Descriptor& GetStencilSRV() const;
 
 		Format		GetDSVFormat() const;
 		uint32_t	GetArraySize() const;
 		uint8_t		GetNumMips() const;
 
 	protected:
-		bool create(const Device &device, uint32_t width, uint32_t height, uint32_t arraySize,
-			uint8_t numMips, uint8_t sampleCount, Format &format, ResourceFlags resourceFlags,
-			ResourceState state, float clearDepth, uint8_t clearStencil, bool &hasSRV,
-			Format &formatStencil, bool isCubeMap, const wchar_t *name);
+		bool create(const Device& device, uint32_t width, uint32_t height, uint32_t arraySize,
+			uint8_t numMips, uint8_t sampleCount, Format& format, ResourceFlags resourceFlags,
+			ResourceState state, float clearDepth, uint8_t clearStencil, bool& hasSRV,
+			Format& formatStencil, bool isCubeMap, const wchar_t* name);
 		Descriptor allocateDsvPool();
 
 		std::vector<DescriptorPool> m_dsvPools;
@@ -215,14 +216,14 @@ namespace XUSG
 		Texture3D();
 		virtual ~Texture3D();
 
-		bool Create(const Device &device, uint32_t width, uint32_t height, uint32_t depth,
+		bool Create(const Device& device, uint32_t width, uint32_t height, uint32_t depth,
 			Format format, ResourceFlags resourceFlags = ResourceFlags(0), uint8_t numMips = 1,
 			MemoryType memoryType = MemoryType(1), ResourceState state = ResourceState(0),
-			const wchar_t *name = nullptr);
+			const wchar_t* name = nullptr);
 		bool CreateSRVs(Format format = Format(0), uint8_t numMips = 1);
 		bool CreateSRVLevels(uint8_t numMips, Format format = Format(0));
 		bool CreateUAVs(Format format = Format(0), uint8_t numMips = 1);
-		
+
 		Descriptor GetUAV(uint8_t i = 0) const;
 		Descriptor GetSRVLevel(uint8_t i) const;
 
@@ -242,33 +243,33 @@ namespace XUSG
 		RawBuffer();
 		virtual ~RawBuffer();
 
-		bool Create(const Device &device, uint64_t byteWidth, ResourceFlags resourceFlags = ResourceFlags(0),
+		bool Create(const Device& device, uint64_t byteWidth, ResourceFlags resourceFlags = ResourceFlags(0),
 			MemoryType memoryType = MemoryType(1), ResourceState state = ResourceState(0),
-			uint32_t numSRVs = 1, const uint32_t *firstSRVElements = nullptr,
-			uint32_t numUAVs = 1, const uint32_t *firstUAVElements = nullptr,
-			const wchar_t *name = nullptr);
-		bool Upload(const CommandList &commandList, Resource &uploader, const void *pData,
+			uint32_t numSRVs = 1, const uint32_t* firstSRVElements = nullptr,
+			uint32_t numUAVs = 1, const uint32_t* firstUAVElements = nullptr,
+			const wchar_t* name = nullptr);
+		bool Upload(const CommandList& commandList, Resource& uploader, const void* pData,
 			size_t size, ResourceState dstState = ResourceState(0), uint32_t i = 0);
-		bool CreateSRVs(uint64_t byteWidth, const uint32_t *firstElements = nullptr,
+		bool CreateSRVs(uint64_t byteWidth, const uint32_t* firstElements = nullptr,
 			uint32_t numDescriptors = 1);
-		bool CreateUAVs(uint64_t byteWidth, const uint32_t *firstElements = nullptr,
+		bool CreateUAVs(uint64_t byteWidth, const uint32_t* firstElements = nullptr,
 			uint32_t numDescriptors = 1);
 
 		Descriptor GetUAV(uint32_t i = 0) const;
-		
-		void *Map(uint32_t i = 0);
+
+		void* Map(uint32_t i = 0);
 		void Unmap();
 
 	protected:
-		bool create(const Device &device, uint64_t byteWidth, ResourceFlags resourceFlags,
+		bool create(const Device& device, uint64_t byteWidth, ResourceFlags resourceFlags,
 			MemoryType memoryType, ResourceState state, uint32_t numSRVs, uint32_t numUAVs,
-			const wchar_t *name);
+			const wchar_t* name);
 
 		std::vector<Descriptor>	m_uavs;
 		std::vector<uint32_t>	m_srvOffsets;
 		Resource m_counter;
 
-		void *m_pDataBegin;
+		void* m_pDataBegin;
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -281,17 +282,17 @@ namespace XUSG
 		StructuredBuffer();
 		virtual ~StructuredBuffer();
 
-		bool Create(const Device &device, uint32_t numElements, uint32_t stride,
+		bool Create(const Device& device, uint32_t numElements, uint32_t stride,
 			ResourceFlags resourceFlags = ResourceFlags(0), MemoryType memoryType = MemoryType(1),
 			ResourceState state = ResourceState(0),
-			uint32_t numSRVs = 1, const uint32_t *firstSRVElements = nullptr,
-			uint32_t numUAVs = 1, const uint32_t *firstUAVElements = nullptr,
-			const wchar_t *name = nullptr);
-		
+			uint32_t numSRVs = 1, const uint32_t* firstSRVElements = nullptr,
+			uint32_t numUAVs = 1, const uint32_t* firstUAVElements = nullptr,
+			const wchar_t* name = nullptr);
+
 		bool CreateSRVs(uint32_t numElements, uint32_t stride,
-			const uint32_t *firstElements = nullptr, uint32_t numDescriptors = 1);
+			const uint32_t* firstElements = nullptr, uint32_t numDescriptors = 1);
 		bool CreateUAVs(uint32_t numElements, uint32_t stride,
-			const uint32_t *firstElements = nullptr, uint32_t numDescriptors = 1);
+			const uint32_t* firstElements = nullptr, uint32_t numDescriptors = 1);
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -304,17 +305,17 @@ namespace XUSG
 		TypedBuffer();
 		virtual ~TypedBuffer();
 
-		bool Create(const Device &device, uint32_t numElements, uint32_t stride, Format format,
+		bool Create(const Device& device, uint32_t numElements, uint32_t stride, Format format,
 			ResourceFlags resourceFlags = ResourceFlags(0), MemoryType memoryType = MemoryType(1),
 			ResourceState state = ResourceState(0),
-			uint32_t numSRVs = 1, const uint32_t *firstSRVElements = nullptr,
-			uint32_t numUAVs = 1, const uint32_t *firstUAVElements = nullptr,
-			const wchar_t *name = nullptr);
-		
+			uint32_t numSRVs = 1, const uint32_t* firstSRVElements = nullptr,
+			uint32_t numUAVs = 1, const uint32_t* firstUAVElements = nullptr,
+			const wchar_t* name = nullptr);
+
 		bool CreateSRVs(uint32_t numElements, Format format, uint32_t stride,
-			const uint32_t *firstElements = nullptr, uint32_t numDescriptors = 1);
+			const uint32_t* firstElements = nullptr, uint32_t numDescriptors = 1);
 		bool CreateUAVs(uint32_t numElements, Format format, uint32_t stride,
-			const uint32_t *firstElements = nullptr, uint32_t numDescriptors = 1);
+			const uint32_t* firstElements = nullptr, uint32_t numDescriptors = 1);
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -327,20 +328,20 @@ namespace XUSG
 		VertexBuffer();
 		virtual ~VertexBuffer();
 
-		bool Create(const Device &device, uint32_t numVertices, uint32_t stride,
+		bool Create(const Device& device, uint32_t numVertices, uint32_t stride,
 			ResourceFlags resourceFlags = ResourceFlags(0), MemoryType memoryType = MemoryType(1),
 			ResourceState state = ResourceState(0),
-			uint32_t numVBVs = 1, const uint32_t *firstVertices = nullptr,
-			uint32_t numSRVs = 1, const uint32_t *firstSRVElements = nullptr,
-			uint32_t numUAVs = 1, const uint32_t *firstUAVElements = nullptr,
-			const wchar_t *name = nullptr);
-		bool CreateAsRaw(const Device &device, uint32_t numVertices, uint32_t stride,
+			uint32_t numVBVs = 1, const uint32_t* firstVertices = nullptr,
+			uint32_t numSRVs = 1, const uint32_t* firstSRVElements = nullptr,
+			uint32_t numUAVs = 1, const uint32_t* firstUAVElements = nullptr,
+			const wchar_t* name = nullptr);
+		bool CreateAsRaw(const Device& device, uint32_t numVertices, uint32_t stride,
 			ResourceFlags resourceFlags = ResourceFlags(0), MemoryType memoryType = MemoryType(1),
 			ResourceState state = ResourceState(0),
-			uint32_t numVBVs = 1, const uint32_t *firstVertices = nullptr,
-			uint32_t numSRVs = 1, const uint32_t *firstSRVElements = nullptr,
-			uint32_t numUAVs = 1, const uint32_t *firstUAVElements = nullptr,
-			const wchar_t *name = nullptr);
+			uint32_t numVBVs = 1, const uint32_t* firstVertices = nullptr,
+			uint32_t numSRVs = 1, const uint32_t* firstSRVElements = nullptr,
+			uint32_t numUAVs = 1, const uint32_t* firstUAVElements = nullptr,
+			const wchar_t* name = nullptr);
 
 		VertexBufferView GetVBV(uint32_t i = 0) const;
 
@@ -358,13 +359,13 @@ namespace XUSG
 		IndexBuffer();
 		virtual ~IndexBuffer();
 
-		bool Create(const Device &device, uint64_t byteWidth, Format format = Format(42),
+		bool Create(const Device& device, uint64_t byteWidth, Format format = Format(42),
 			ResourceFlags resourceFlags = ResourceFlags(0x8), MemoryType memoryType = MemoryType(1),
 			ResourceState state = ResourceState(0),
-			uint32_t numIBVs = 1, const uint32_t *offsets = nullptr,
-			uint32_t numSRVs = 1, const uint32_t *firstSRVElements = nullptr,
-			uint32_t numUAVs = 1, const uint32_t *firstUAVElements = nullptr,
-			const wchar_t *name = nullptr);
+			uint32_t numIBVs = 1, const uint32_t* offsets = nullptr,
+			uint32_t numSRVs = 1, const uint32_t* firstSRVElements = nullptr,
+			uint32_t numUAVs = 1, const uint32_t* firstUAVElements = nullptr,
+			const wchar_t* name = nullptr);
 
 		IndexBufferView GetIBV(uint32_t i = 0) const;
 

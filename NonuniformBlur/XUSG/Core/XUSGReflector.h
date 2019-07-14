@@ -14,9 +14,9 @@ namespace XUSG
 		Reflector();
 		virtual ~Reflector();
 
-		bool SetShader(const Blob &shader);
+		bool SetShader(const Blob& shader);
 		bool IsValid() const;
-		uint32_t GetResourceBindingPointByName(const char *name, uint32_t defaultVal = UINT32_MAX) const;
+		uint32_t GetResourceBindingPointByName(const char* name, uint32_t defaultVal = UINT32_MAX) const;
 
 	protected:
 		Shader::Reflection m_reflection;

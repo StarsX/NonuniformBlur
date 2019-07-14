@@ -58,12 +58,12 @@ namespace XUSG
 		public:
 			struct Key
 			{
-				void	*PipelineLayout;
-				void	*Shaders[Shader::Stage::NUM_GRAPHICS];
-				void	*Blend;
-				void	*Rasterizer;
-				void	*DepthStencil;
-				void	*InputLayout;
+				void* PipelineLayout;
+				void* Shaders[Shader::Stage::NUM_GRAPHICS];
+				void* Blend;
+				void* Rasterizer;
+				void* DepthStencil;
+				void* InputLayout;
 				uint8_t	PrimitiveTopologyType;
 				uint8_t	NumRenderTargets;
 				uint8_t	RTVFormats[8];
@@ -74,32 +74,32 @@ namespace XUSG
 			State();
 			virtual ~State();
 
-			void SetPipelineLayout(const PipelineLayout &layout);
+			void SetPipelineLayout(const PipelineLayout& layout);
 			void SetShader(Shader::Stage stage, Blob shader);
-			
-			void OMSetBlendState(const Blend &blend);
-			void RSSetState(const Rasterizer &rasterizer);
-			void DSSetState(const DepthStencil &depthStencil);
 
-			void OMSetBlendState(BlendPreset preset, PipelineCache &pipelineCache);
-			void RSSetState(RasterizerPreset preset, PipelineCache &pipelineCache);
-			void DSSetState(DepthStencilPreset preset, PipelineCache &pipelineCache);
+			void OMSetBlendState(const Blend& blend);
+			void RSSetState(const Rasterizer& rasterizer);
+			void DSSetState(const DepthStencil& depthStencil);
 
-			void IASetInputLayout(const InputLayout &layout);
+			void OMSetBlendState(BlendPreset preset, PipelineCache& pipelineCache);
+			void RSSetState(RasterizerPreset preset, PipelineCache& pipelineCache);
+			void DSSetState(DepthStencilPreset preset, PipelineCache& pipelineCache);
+
+			void IASetInputLayout(const InputLayout& layout);
 			void IASetPrimitiveTopologyType(PrimitiveTopologyType type);
 
 			void OMSetNumRenderTargets(uint8_t n);
 			void OMSetRTVFormat(uint8_t i, Format format);
-			void OMSetRTVFormats(const Format *formats, uint8_t n);
+			void OMSetRTVFormats(const Format* formats, uint8_t n);
 			void OMSetDSVFormat(Format format);
 
-			Pipeline CreatePipeline(PipelineCache &pipelineCache, const wchar_t *name = nullptr) const;
-			Pipeline GetPipeline(PipelineCache &pipelineCache, const wchar_t *name = nullptr) const;
+			Pipeline CreatePipeline(PipelineCache& pipelineCache, const wchar_t* name = nullptr) const;
+			Pipeline GetPipeline(PipelineCache& pipelineCache, const wchar_t* name = nullptr) const;
 
-			const std::string &GetKey() const;
+			const std::string& GetKey() const;
 
 		protected:
-			Key *m_pKey;
+			Key* m_pKey;
 			std::string m_key;
 		};
 
@@ -107,26 +107,26 @@ namespace XUSG
 		{
 		public:
 			PipelineCache();
-			PipelineCache(const Device &device);
+			PipelineCache(const Device& device);
 			virtual ~PipelineCache();
 
-			void SetDevice(const Device &device);
-			void SetPipeline(const std::string &key, const Pipeline &pipeline);
+			void SetDevice(const Device& device);
+			void SetPipeline(const std::string& key, const Pipeline& pipeline);
 
-			void SetInputLayout(uint32_t index, const InputElementTable &elementTable);
+			void SetInputLayout(uint32_t index, const InputElementTable& elementTable);
 			InputLayout GetInputLayout(uint32_t index) const;
-			InputLayout CreateInputLayout(const InputElementTable &elementTable);
+			InputLayout CreateInputLayout(const InputElementTable& elementTable);
 
-			Pipeline CreatePipeline(const State &state, const wchar_t *name = nullptr);
-			Pipeline GetPipeline(const State &state, const wchar_t *name = nullptr);
+			Pipeline CreatePipeline(const State& state, const wchar_t* name = nullptr);
+			Pipeline GetPipeline(const State& state, const wchar_t* name = nullptr);
 
-			const Blend			&GetBlend(BlendPreset preset);
-			const Rasterizer	&GetRasterizer(RasterizerPreset preset);
-			const DepthStencil	&GetDepthStencil(DepthStencilPreset preset);
+			const Blend& GetBlend(BlendPreset preset);
+			const Rasterizer& GetRasterizer(RasterizerPreset preset);
+			const DepthStencil& GetDepthStencil(DepthStencilPreset preset);
 
 		protected:
-			Pipeline createPipeline(const State::Key *pKey, const wchar_t *name);
-			Pipeline getPipeline(const std::string &key, const wchar_t *name);
+			Pipeline createPipeline(const State::Key* pKey, const wchar_t* name);
+			Pipeline getPipeline(const std::string& key, const wchar_t* name);
 
 			Device m_device;
 

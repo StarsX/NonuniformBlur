@@ -10,17 +10,17 @@
 class Filter
 {
 public:
-	Filter(const XUSG::Device &device);
+	Filter(const XUSG::Device& device);
 	virtual ~Filter();
 
-	bool Init(const XUSG::CommandList &commandList, uint32_t width, uint32_t height,
-		std::shared_ptr<XUSG::ResourceBase> &source, std::vector<XUSG::Resource> &uploaders,
-		const wchar_t *fileName = L"Lenna.dds");
+	bool Init(const XUSG::CommandList& commandList, uint32_t width, uint32_t height,
+		std::shared_ptr<XUSG::ResourceBase>& source, std::vector<XUSG::Resource>& uploaders,
+		const wchar_t* fileName = L"Lenna.dds");
 
-	void Process(const XUSG::CommandList &commandList, DirectX::XMFLOAT2 focus, float sigma);
-	void ProcessG(const XUSG::CommandList &commandList, DirectX::XMFLOAT2 focus, float sigma);
+	void Process(const XUSG::CommandList& commandList, DirectX::XMFLOAT2 focus, float sigma);
+	void ProcessG(const XUSG::CommandList& commandList, DirectX::XMFLOAT2 focus, float sigma);
 
-	XUSG::Texture2D &GetResult();
+	XUSG::Texture2D& GetResult();
 
 	static const uint32_t FrameCount = 3;
 

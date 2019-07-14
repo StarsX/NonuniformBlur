@@ -92,7 +92,7 @@ void NonUniformBlur::LoadPipeline()
 		nullptr,
 		nullptr,
 		&swapChain
-		));
+	));
 
 	// This sample does not support fullscreen transitions.
 	ThrowIfFailed(factory->MakeWindowAssociation(Win32Application::GetHwnd(), DXGI_MWA_NO_ALT_ENTER));
@@ -133,13 +133,13 @@ void NonUniformBlur::LoadAssets()
 
 	// Close the command list and execute it to begin the initial GPU setup.
 	ThrowIfFailed(m_commandList.Close());
-	ID3D12CommandList *const ppCommandLists[] = { m_commandList.GetCommandList().get() };
+	ID3D12CommandList* const ppCommandLists[] = { m_commandList.GetCommandList().get() };
 	m_commandQueue->ExecuteCommandLists(static_cast<uint32_t>(size(ppCommandLists)), ppCommandLists);
 
 	// Create synchronization objects and wait until assets have been uploaded to the GPU.
 	{
 		ThrowIfFailed(m_device->CreateFence(m_fenceValues[m_frameIndex]++, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
-		
+
 		// Create an event handle to use for frame synchronization.
 		m_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 		if (m_fenceEvent == nullptr)
@@ -171,7 +171,7 @@ void NonUniformBlur::OnUpdate()
 	const float r = static_cast<float>(sin(XM_PIDIV2 * t)) * 0.25f + 0.25f;
 	m_focus.x = r * static_cast<float>(cos(XM_PI * t));
 	m_focus.y = r * static_cast<float>(sin(XM_PI * t));
-	
+
 	m_sigma = 32.0f * (-static_cast<float>(cos(t)) * 0.5f + 0.5f);
 }
 
@@ -182,7 +182,7 @@ void NonUniformBlur::OnRender()
 	PopulateCommandList();
 
 	// Execute the command list.
-	ID3D12CommandList *const ppCommandLists[] = { m_commandList.GetCommandList().get() };
+	ID3D12CommandList* const ppCommandLists[] = { m_commandList.GetCommandList().get() };
 	m_commandQueue->ExecuteCommandLists(static_cast<uint32_t>(size(ppCommandLists)), ppCommandLists);
 
 	// Present the frame.
@@ -285,7 +285,7 @@ void NonUniformBlur::MoveToNextFrame()
 	m_fenceValues[m_frameIndex] = currentFenceValue + 1;
 }
 
-double NonUniformBlur::CalculateFrameStats(float *pTimeStep)
+double NonUniformBlur::CalculateFrameStats(float* pTimeStep)
 {
 	static int frameCnt = 0;
 	static double elapsedTime = 0.0;
@@ -310,7 +310,7 @@ double NonUniformBlur::CalculateFrameStats(float *pTimeStep)
 		SetCustomWindowText(windowText.str().c_str());
 	}
 
-	if (pTimeStep) *pTimeStep = static_cast<float>(totalTime - previousTime);
+	if (pTimeStep)* pTimeStep = static_cast<float>(totalTime - previousTime);
 	previousTime = totalTime;
 
 	return totalTime;

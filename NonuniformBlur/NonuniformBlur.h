@@ -44,7 +44,7 @@ private:
 	XUSG::Device			m_device;
 	XUSG::RenderTarget		m_renderTargets[Filter::FrameCount];
 	XUSG::CommandList		m_commandList;
-	
+
 	// App resources.
 	std::unique_ptr<Filter> m_filter;
 	XUSG::RenderTargetTable	m_rtvTables[Filter::FrameCount];
@@ -70,5 +70,5 @@ private:
 	void PopulateCommandList();
 	void WaitForGpu();
 	void MoveToNextFrame();
-	double CalculateFrameStats(float *fTimeStep = nullptr);
+	double CalculateFrameStats(float* fTimeStep = nullptr);
 };

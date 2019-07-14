@@ -27,19 +27,19 @@ namespace XUSG
 		com_ptr(decltype(__nullptr) null) : Microsoft::WRL::ComPtr<T>::ComPtr(null) {}
 
 		template<class U>
-		com_ptr(U *other) : Microsoft::WRL::ComPtr<T>::ComPtr(other) {}
-		com_ptr(const Microsoft::WRL::ComPtr<T> &other) : Microsoft::WRL::ComPtr<T>::ComPtr(other) {}
+		com_ptr(U* other) : Microsoft::WRL::ComPtr<T>::ComPtr(other) {}
+		com_ptr(const Microsoft::WRL::ComPtr<T>& other) : Microsoft::WRL::ComPtr<T>::ComPtr(other) {}
 
 		template<class U>
-		com_ptr(const Microsoft::WRL::ComPtr<U> &other, typename Microsoft::WRL::Details::EnableIf<__is_convertible_to(U*, T*), void *>::type *t = 0) :
+		com_ptr(const Microsoft::WRL::ComPtr<U>& other, typename Microsoft::WRL::Details::EnableIf<__is_convertible_to(U*, T*), void*>::type* t = 0) :
 			Microsoft::WRL::ComPtr<T>::ComPtr(other, t) {}
-		com_ptr(Microsoft::WRL::ComPtr<T> &&other) : Microsoft::WRL::ComPtr<T>::ComPtr(other) {}
+		com_ptr(Microsoft::WRL::ComPtr<T>&& other) : Microsoft::WRL::ComPtr<T>::ComPtr(other) {}
 
 		template<class U>
-		com_ptr(Microsoft::WRL::ComPtr<U>&& other, typename Microsoft::WRL::Details::EnableIf<__is_convertible_to(U*, T*), void *>::type *t = 0) :
+		com_ptr(Microsoft::WRL::ComPtr<U>&& other, typename Microsoft::WRL::Details::EnableIf<__is_convertible_to(U*, T*), void*>::type* t = 0) :
 			Microsoft::WRL::ComPtr<T>::ComPtr(other, t) {}
 
-		T *get() const { return Microsoft::WRL::ComPtr<T>::Get(); }
+		T* get() const { return Microsoft::WRL::ComPtr<T>::Get(); }
 	};
 
 	// Device and blobs
@@ -87,7 +87,7 @@ namespace XUSG
 	// Primitive related
 	using PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE;
 	using PrimitiveTopology = D3D12_PRIMITIVE_TOPOLOGY;
-	
+
 	// Format and resources related
 	using Format = DXGI_FORMAT;
 	using MemoryType = D3D12_HEAP_TYPE;

@@ -18,9 +18,9 @@ struct handle_closer
 typedef public unique_ptr<void, handle_closer> ScopedHandle;
 inline HANDLE safe_handle(HANDLE h) { return (h == INVALID_HANDLE_VALUE) ? 0 : h; }
 
-static bool LoadTextureDataFromFile(const wchar_t *fileName,
-	unique_ptr<uint8_t[]> &ddsData, DDS_HEADER **header,
-	uint8_t **bitData, size_t *bitSize)
+static bool LoadTextureDataFromFile(const wchar_t* fileName,
+	unique_ptr<uint8_t[]>& ddsData, DDS_HEADER** header,
+	uint8_t** bitData, size_t* bitSize)
 {
 	F_RETURN(!header || !bitData || !bitSize, cerr, E_POINTER, false);
 
@@ -178,9 +178,9 @@ static void GetSurfaceInfo(uint32_t width, uint32_t height, Format fmt,
 		numBytes = rowBytes * height;
 	}
 
-	if (outNumBytes) *outNumBytes = numBytes;
-	if (outRowBytes) *outRowBytes = rowBytes;
-	if (outNumRows) *outNumRows = numRows;
+	if (outNumBytes)* outNumBytes = numBytes;
+	if (outRowBytes)* outRowBytes = rowBytes;
+	if (outNumRows)* outNumRows = numRows;
 }
 
 #define ISBITMASK(r,g,b,a) (ddpf.RBitMask == r && ddpf.GBitMask == g && ddpf.BBitMask == b && ddpf.ABitMask == a)
@@ -348,9 +348,9 @@ static Format MakeSRGB(Format format)
 
 static bool FillInitData(uint32_t width, uint32_t height, uint32_t depth,
 	uint32_t mipCount, uint32_t arraySize, Format format,
-	size_t maxsize, size_t bitSize, const uint8_t *bitData,
-	uint32_t &twidth, uint32_t &theight, uint32_t &tdepth, uint8_t &skipMip,
-	SubresourceData *initData)
+	size_t maxsize, size_t bitSize, const uint8_t* bitData,
+	uint32_t& twidth, uint32_t& theight, uint32_t& tdepth, uint8_t& skipMip,
+	SubresourceData* initData)
 {
 	F_RETURN(!bitData || !initData, cerr, E_POINTER, false);
 
@@ -394,7 +394,7 @@ static bool FillInitData(uint32_t width, uint32_t height, uint32_t depth,
 
 			pSrcBits += NumBytes * d;
 			F_RETURN(pSrcBits > pEndBits, cerr, ERROR_HANDLE_EOF, false);
-			
+
 			w = (max)(w >> 1, 1u);
 			h = (max)(h >> 1, 1u);
 			d = (max)(d >> 1, 1u);
@@ -404,10 +404,10 @@ static bool FillInitData(uint32_t width, uint32_t height, uint32_t depth,
 	return index > 0;
 }
 
-static bool CreateTexture(const Device &device, const CommandList &commandList,
-	const DDS_HEADER* header, const uint8_t *bitData, size_t bitSize, size_t maxsize,
-	bool forceSRGB, shared_ptr<ResourceBase> &texture, Resource &uploader,
-	const wchar_t *name)
+static bool CreateTexture(const Device& device, const CommandList& commandList,
+	const DDS_HEADER* header, const uint8_t* bitData, size_t bitSize, size_t maxsize,
+	bool forceSRGB, shared_ptr<ResourceBase>& texture, Resource& uploader,
+	const wchar_t* name)
 {
 	const auto width = header->width;
 	auto height = header->height;
@@ -607,7 +607,7 @@ static bool CreateTexture(const Device &device, const CommandList &commandList,
 	return true;
 }
 
-static AlphaMode GetAlphaMode(const DDS_HEADER *header)
+static AlphaMode GetAlphaMode(const DDS_HEADER* header)
 {
 	if (header->ddspf.flags & DDS_FOURCC)
 	{
@@ -643,16 +643,16 @@ Loader::~Loader()
 {
 }
 
-bool Loader::CreateTextureFromMemory(const Device &device, const CommandList &commandList,
-	const uint8_t *ddsData, size_t ddsDataSize, size_t maxsize, bool forceSRGB,
-	std::shared_ptr<ResourceBase>& texture, Resource &uploader, AlphaMode *alphaMode)
+bool Loader::CreateTextureFromMemory(const Device& device, const CommandList& commandList,
+	const uint8_t* ddsData, size_t ddsDataSize, size_t maxsize, bool forceSRGB,
+	std::shared_ptr<ResourceBase>& texture, Resource& uploader, AlphaMode* alphaMode)
 {
-	if (alphaMode) *alphaMode = ALPHA_MODE_UNKNOWN;
+	if (alphaMode)* alphaMode = ALPHA_MODE_UNKNOWN;
 	F_RETURN(!device || !ddsData, cerr, E_INVALIDARG, false);
 
 	// Validate DDS file in memory
 	C_RETURN(ddsDataSize < sizeof(uint32_t) + sizeof(DDS_HEADER), false);
-	
+
 	const auto magicNumber = reinterpret_cast<const uint32_t&>(*ddsData);
 	C_RETURN(magicNumber != DDS_MAGIC, false);
 
@@ -674,20 +674,20 @@ bool Loader::CreateTextureFromMemory(const Device &device, const CommandList &co
 	N_RETURN(CreateTexture(device, commandList, header, ddsData + offset, ddsDataSize - offset,
 		maxsize, forceSRGB, texture, uploader, L"DDSTextureLoader"), false);
 
-	if (alphaMode) *alphaMode = GetAlphaMode(header);
+	if (alphaMode)* alphaMode = GetAlphaMode(header);
 
 	return true;
 }
 
-bool Loader::CreateTextureFromFile(const Device &device, const CommandList &commandList,
-	const wchar_t *fileName, size_t maxsize, bool forceSRGB, shared_ptr<ResourceBase> &texture,
-	Resource &uploader, AlphaMode *alphaMode)
+bool Loader::CreateTextureFromFile(const Device& device, const CommandList& commandList,
+	const wchar_t* fileName, size_t maxsize, bool forceSRGB, shared_ptr<ResourceBase>& texture,
+	Resource& uploader, AlphaMode* alphaMode)
 {
-	if (alphaMode) *alphaMode = ALPHA_MODE_UNKNOWN;
+	if (alphaMode)* alphaMode = ALPHA_MODE_UNKNOWN;
 	F_RETURN(!device || !fileName, cerr, E_INVALIDARG, false);
 
-	DDS_HEADER *header = nullptr;
-	uint8_t *bitData = nullptr;
+	DDS_HEADER* header = nullptr;
+	uint8_t* bitData = nullptr;
 	size_t bitSize = 0;
 
 	unique_ptr<uint8_t[]> ddsData;
@@ -696,7 +696,7 @@ bool Loader::CreateTextureFromFile(const Device &device, const CommandList &comm
 	N_RETURN(CreateTexture(device, commandList, header, bitData, bitSize,
 		maxsize, forceSRGB, texture, uploader, fileName), false);
 
-	if (alphaMode) *alphaMode = GetAlphaMode(header);
+	if (alphaMode)* alphaMode = GetAlphaMode(header);
 
 	return true;
 }

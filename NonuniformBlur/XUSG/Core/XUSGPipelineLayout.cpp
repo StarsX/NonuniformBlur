@@ -27,7 +27,7 @@ void Util::PipelineLayout::SetShaderStage(uint32_t index, Shader::Stage stage)
 void Util::PipelineLayout::SetRange(uint32_t index, DescriptorType type, uint32_t num, uint32_t baseBinding,
 	uint32_t space, uint32_t flags)
 {
-	auto &key = checkKeySpace(index);
+	auto& key = checkKeySpace(index);
 
 	// Append
 	const auto i = (key.size() - 1) / sizeof(DescriptorRange);
@@ -72,32 +72,32 @@ void Util::PipelineLayout::SetRootCBV(uint32_t index, uint32_t binding, uint32_t
 	SetShaderStage(index, stage);
 }
 
-PipelineLayout Util::PipelineLayout::CreatePipelineLayout(PipelineLayoutCache &pipelineLayoutCache, uint8_t flags, const wchar_t *name)
+PipelineLayout Util::PipelineLayout::CreatePipelineLayout(PipelineLayoutCache& pipelineLayoutCache, uint8_t flags, const wchar_t* name)
 {
 	return pipelineLayoutCache.CreatePipelineLayout(*this, flags, name);
 }
 
-PipelineLayout Util::PipelineLayout::GetPipelineLayout(PipelineLayoutCache &pipelineLayoutCache, uint8_t flags, const wchar_t *name)
+PipelineLayout Util::PipelineLayout::GetPipelineLayout(PipelineLayoutCache& pipelineLayoutCache, uint8_t flags, const wchar_t* name)
 {
 	return pipelineLayoutCache.GetPipelineLayout(*this, flags, name);
 }
 
-DescriptorTableLayout Util::PipelineLayout::CreateDescriptorTableLayout(uint32_t index, PipelineLayoutCache &pipelineLayoutCache) const
+DescriptorTableLayout Util::PipelineLayout::CreateDescriptorTableLayout(uint32_t index, PipelineLayoutCache& pipelineLayoutCache) const
 {
 	return pipelineLayoutCache.CreateDescriptorTableLayout(index, *this);
 }
 
-DescriptorTableLayout Util::PipelineLayout::GetDescriptorTableLayout(uint32_t index, PipelineLayoutCache &pipelineLayoutCache) const
+DescriptorTableLayout Util::PipelineLayout::GetDescriptorTableLayout(uint32_t index, PipelineLayoutCache& pipelineLayoutCache) const
 {
 	return pipelineLayoutCache.GetDescriptorTableLayout(index, *this);
 }
 
-const vector<string> &Util::PipelineLayout::GetDescriptorTableLayoutKeys() const
+const vector<string>& Util::PipelineLayout::GetDescriptorTableLayoutKeys() const
 {
 	return m_descriptorTableLayoutKeys;
 }
 
-string &Util::PipelineLayout::GetPipelineLayoutKey(PipelineLayoutCache *pPipelineLayoutCache)
+string& Util::PipelineLayout::GetPipelineLayoutKey(PipelineLayoutCache* pPipelineLayoutCache)
 {
 	if (!m_isTableLayoutsCompleted && pPipelineLayoutCache)
 	{
@@ -114,7 +114,7 @@ string &Util::PipelineLayout::GetPipelineLayoutKey(PipelineLayoutCache *pPipelin
 	return m_pipelineLayoutKey;
 }
 
-string &Util::PipelineLayout::checkKeySpace(uint32_t index)
+string& Util::PipelineLayout::checkKeySpace(uint32_t index)
 {
 	m_isTableLayoutsCompleted = false;
 
@@ -138,7 +138,7 @@ PipelineLayoutCache::PipelineLayoutCache() :
 {
 }
 
-PipelineLayoutCache::PipelineLayoutCache(const Device &device) :
+PipelineLayoutCache::PipelineLayoutCache(const Device& device) :
 	PipelineLayoutCache()
 {
 	SetDevice(device);
@@ -148,48 +148,48 @@ PipelineLayoutCache::~PipelineLayoutCache()
 {
 }
 
-void PipelineLayoutCache::SetDevice(const Device &device)
+void PipelineLayoutCache::SetDevice(const Device& device)
 {
 	m_device = device;
 }
 
-void PipelineLayoutCache::SetPipelineLayout(const string &key, const PipelineLayout &pipelineLayout)
+void PipelineLayoutCache::SetPipelineLayout(const string& key, const PipelineLayout& pipelineLayout)
 {
 	m_pipelineLayouts[key] = pipelineLayout;
 }
 
-PipelineLayout PipelineLayoutCache::CreatePipelineLayout(Util::PipelineLayout &util, uint8_t flags, const wchar_t *name)
+PipelineLayout PipelineLayoutCache::CreatePipelineLayout(Util::PipelineLayout& util, uint8_t flags, const wchar_t* name)
 {
-	auto &pipelineLayoutKey = util.GetPipelineLayoutKey(this);
+	auto& pipelineLayoutKey = util.GetPipelineLayoutKey(this);
 	pipelineLayoutKey[0] = flags;
 
 	return createPipelineLayout(pipelineLayoutKey, name);
 }
 
-PipelineLayout PipelineLayoutCache::GetPipelineLayout(Util::PipelineLayout &util, uint8_t flags,
-	const wchar_t *name, bool create)
+PipelineLayout PipelineLayoutCache::GetPipelineLayout(Util::PipelineLayout& util, uint8_t flags,
+	const wchar_t* name, bool create)
 {
-	auto &pipelineLayoutKey = util.GetPipelineLayoutKey(this);
+	auto& pipelineLayoutKey = util.GetPipelineLayoutKey(this);
 	pipelineLayoutKey[0] = flags;
 
 	return getPipelineLayout(pipelineLayoutKey, name, create);
 }
 
-DescriptorTableLayout PipelineLayoutCache::CreateDescriptorTableLayout(uint32_t index, const Util::PipelineLayout &util)
+DescriptorTableLayout PipelineLayoutCache::CreateDescriptorTableLayout(uint32_t index, const Util::PipelineLayout& util)
 {
-	const auto &keys = util.GetDescriptorTableLayoutKeys();
+	const auto& keys = util.GetDescriptorTableLayoutKeys();
 
 	return keys.size() > index ? createDescriptorTableLayout(util.GetDescriptorTableLayoutKeys()[index]) : nullptr;
 }
 
-DescriptorTableLayout PipelineLayoutCache::GetDescriptorTableLayout(uint32_t index, const Util::PipelineLayout &util)
+DescriptorTableLayout PipelineLayoutCache::GetDescriptorTableLayout(uint32_t index, const Util::PipelineLayout& util)
 {
-	const auto &keys = util.GetDescriptorTableLayoutKeys();
+	const auto& keys = util.GetDescriptorTableLayoutKeys();
 
 	return keys.size() > index ? getDescriptorTableLayout(util.GetDescriptorTableLayoutKeys()[index]) : nullptr;
 }
 
-PipelineLayout PipelineLayoutCache::createPipelineLayout(const string &key, const wchar_t *name) const
+PipelineLayout PipelineLayoutCache::createPipelineLayout(const string& key, const wchar_t* name) const
 {
 	D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
 
@@ -222,7 +222,7 @@ PipelineLayout PipelineLayoutCache::createPipelineLayout(const string &key, cons
 	return layout;
 }
 
-PipelineLayout PipelineLayoutCache::getPipelineLayout(const string &key, const wchar_t *name, bool create)
+PipelineLayout PipelineLayoutCache::getPipelineLayout(const string& key, const wchar_t* name, bool create)
 {
 	const auto layoutIter = m_pipelineLayouts.find(key);
 
@@ -242,7 +242,7 @@ PipelineLayout PipelineLayoutCache::getPipelineLayout(const string &key, const w
 	return layoutIter->second;
 }
 
-DescriptorTableLayout PipelineLayoutCache::createDescriptorTableLayout(const string &key)
+DescriptorTableLayout PipelineLayoutCache::createDescriptorTableLayout(const string& key)
 {
 	D3D12_DESCRIPTOR_RANGE_TYPE rangeTypes[static_cast<uint8_t>(DescriptorType::NUM)];
 	rangeTypes[static_cast<uint8_t>(DescriptorType::SRV)] = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
@@ -299,7 +299,7 @@ DescriptorTableLayout PipelineLayoutCache::createDescriptorTableLayout(const str
 
 			for (auto i = 0u; i < numRanges; ++i)
 			{
-				const auto &range = pRanges[i];
+				const auto& range = pRanges[i];
 				layout->ranges[i].Init(rangeTypes[static_cast<uint8_t>(range.ViewType)], range.NumDescriptors,
 					range.BaseBinding, range.Space, D3D12_DESCRIPTOR_RANGE_FLAGS(range.Flags));
 			}
@@ -312,7 +312,7 @@ DescriptorTableLayout PipelineLayoutCache::createDescriptorTableLayout(const str
 	return layout;
 }
 
-DescriptorTableLayout PipelineLayoutCache::getDescriptorTableLayout(const string &key)
+DescriptorTableLayout PipelineLayoutCache::getDescriptorTableLayout(const string& key)
 {
 	const auto layoutPtrIter = m_descriptorTableLayouts.find(key);
 

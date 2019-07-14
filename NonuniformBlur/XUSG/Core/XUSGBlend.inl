@@ -31,7 +31,7 @@ namespace XUSG
 			desc.LogicOp = D3D12_LOGIC_OP_NOOP;
 			desc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
-			for (auto &renderTarget : blend->RenderTarget)
+			for (auto& renderTarget : blend->RenderTarget)
 				renderTarget = desc;
 
 			return blend;
@@ -55,7 +55,7 @@ namespace XUSG
 			desc.LogicOp = D3D12_LOGIC_OP_NOOP;
 			desc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
-			for (auto &renderTarget : blend->RenderTarget)
+			for (auto& renderTarget : blend->RenderTarget)
 				renderTarget = desc;
 
 			return blend;
@@ -79,7 +79,7 @@ namespace XUSG
 			desc.LogicOp = D3D12_LOGIC_OP_NOOP;
 			desc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
-			for (auto &renderTarget : blend->RenderTarget)
+			for (auto& renderTarget : blend->RenderTarget)
 				renderTarget = desc;
 
 			return blend;
@@ -91,7 +91,7 @@ namespace XUSG
 			blend->AlphaToCoverageEnable = FALSE;
 			blend->IndependentBlendEnable = TRUE;
 
-			auto &desc = blend->RenderTarget[0];
+			auto& desc = blend->RenderTarget[0];
 			desc.BlendEnable = TRUE;
 			desc.LogicOpEnable = FALSE;
 			desc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
@@ -139,7 +139,7 @@ namespace XUSG
 			desc.LogicOp = D3D12_LOGIC_OP_NOOP;
 			desc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
-			for (auto &renderTarget : blend->RenderTarget)
+			for (auto& renderTarget : blend->RenderTarget)
 				renderTarget = desc;
 
 			return blend;
@@ -163,7 +163,7 @@ namespace XUSG
 			desc.LogicOp = D3D12_LOGIC_OP_NOOP;
 			desc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
-			for (auto &renderTarget : blend->RenderTarget)
+			for (auto& renderTarget : blend->RenderTarget)
 				renderTarget = desc;
 
 			return blend;
@@ -187,7 +187,7 @@ namespace XUSG
 			desc.LogicOp = D3D12_LOGIC_OP_NOOP;
 			desc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
-			for (auto &renderTarget : blend->RenderTarget)
+			for (auto& renderTarget : blend->RenderTarget)
 				renderTarget = desc;
 
 			return blend;
@@ -211,7 +211,7 @@ namespace XUSG
 			desc.LogicOp = D3D12_LOGIC_OP_NOOP;
 			desc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
-			for (auto &renderTarget : blend->RenderTarget)
+			for (auto& renderTarget : blend->RenderTarget)
 				renderTarget = desc;
 
 			return blend;
@@ -235,7 +235,7 @@ namespace XUSG
 			desc.LogicOp = D3D12_LOGIC_OP_NOOP;
 			desc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
-			for (auto &renderTarget : blend->RenderTarget)
+			for (auto& renderTarget : blend->RenderTarget)
 				renderTarget = desc;
 
 			return blend;
@@ -248,7 +248,7 @@ namespace XUSG
 			blend->IndependentBlendEnable = TRUE;
 
 			// Accumulation
-			auto &desc0 = blend->RenderTarget[0];
+			auto& desc0 = blend->RenderTarget[0];
 			desc0.BlendEnable = TRUE;
 			desc0.LogicOpEnable = FALSE;
 			desc0.SrcBlend = D3D12_BLEND_SRC_ALPHA;
@@ -261,7 +261,7 @@ namespace XUSG
 			desc0.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
 			// Production
-			auto &desc1 = blend->RenderTarget[1];
+			auto& desc1 = blend->RenderTarget[1];
 			desc1.BlendEnable = TRUE;
 			desc1.LogicOpEnable = FALSE;
 			desc1.SrcBlend = D3D12_BLEND_ZERO;
@@ -310,7 +310,7 @@ namespace XUSG
 			desc.LogicOp = D3D12_LOGIC_OP_NOOP;
 			desc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
-			for (auto &renderTarget : blend->RenderTarget)
+			for (auto& renderTarget : blend->RenderTarget)
 				renderTarget = desc;
 
 			return blend;
@@ -334,7 +334,7 @@ namespace XUSG
 			desc.LogicOp = D3D12_LOGIC_OP_NOOP;
 			desc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
-			for (auto &renderTarget : blend->RenderTarget)
+			for (auto& renderTarget : blend->RenderTarget)
 				renderTarget = desc;
 
 			return blend;

@@ -21,7 +21,7 @@ State::~State()
 {
 }
 
-void State::SetPipelineLayout(const PipelineLayout &layout)
+void State::SetPipelineLayout(const PipelineLayout& layout)
 {
 	m_pKey->PipelineLayout = layout.get();
 }
@@ -31,17 +31,17 @@ void State::SetShader(Blob shader)
 	m_pKey->Shader = shader.get();
 }
 
-Pipeline State::CreatePipeline(PipelineCache &pipelineCache, const wchar_t *name) const
+Pipeline State::CreatePipeline(PipelineCache& pipelineCache, const wchar_t* name) const
 {
 	return pipelineCache.CreatePipeline(*this, name);
 }
 
-Pipeline State::GetPipeline(PipelineCache &pipelineCache, const wchar_t *name) const
+Pipeline State::GetPipeline(PipelineCache& pipelineCache, const wchar_t* name) const
 {
 	return pipelineCache.GetPipeline(*this, name);
 }
 
-const string &State::GetKey() const
+const string& State::GetKey() const
 {
 	return m_key;
 }
@@ -54,7 +54,7 @@ PipelineCache::PipelineCache() :
 {
 }
 
-PipelineCache::PipelineCache(const Device &device) :
+PipelineCache::PipelineCache(const Device& device) :
 	PipelineCache()
 {
 	SetDevice(device);
@@ -64,27 +64,27 @@ PipelineCache::~PipelineCache()
 {
 }
 
-void PipelineCache::SetDevice(const Device &device)
+void PipelineCache::SetDevice(const Device& device)
 {
 	m_device = device;
 }
 
-void PipelineCache::SetPipeline(const string &key, const Pipeline &pipeline)
+void PipelineCache::SetPipeline(const string& key, const Pipeline& pipeline)
 {
 	m_pipelines[key] = pipeline;
 }
 
-Pipeline PipelineCache::CreatePipeline(const State &state, const wchar_t *name)
+Pipeline PipelineCache::CreatePipeline(const State& state, const wchar_t* name)
 {
 	return createPipeline(reinterpret_cast<const State::Key*>(state.GetKey().data()), name);
 }
 
-Pipeline PipelineCache::GetPipeline(const State &state, const wchar_t *name)
+Pipeline PipelineCache::GetPipeline(const State& state, const wchar_t* name)
 {
 	return getPipeline(state.GetKey(), name);
 }
 
-Pipeline PipelineCache::createPipeline(const State::Key *pKey, const wchar_t *name)
+Pipeline PipelineCache::createPipeline(const State::Key* pKey, const wchar_t* name)
 {
 	// Fill desc
 	PipelineDesc desc = {};
@@ -102,7 +102,7 @@ Pipeline PipelineCache::createPipeline(const State::Key *pKey, const wchar_t *na
 	return pipeline;
 }
 
-Pipeline PipelineCache::getPipeline(const string &key, const wchar_t *name)
+Pipeline PipelineCache::getPipeline(const string& key, const wchar_t* name)
 {
 	const auto pPipeline = m_pipelines.find(key);
 

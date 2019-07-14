@@ -14,9 +14,9 @@ namespace XUSG
 		InputLayoutPool();
 		virtual ~InputLayoutPool();
 
-		void SetLayout(uint32_t index, const InputElementTable &elementTable);
+		void SetLayout(uint32_t index, const InputElementTable& elementTable);
 
-		InputLayout CreateLayout(const InputElementTable &elementTable);
+		InputLayout CreateLayout(const InputElementTable& elementTable);
 
 		InputLayout GetLayout(uint32_t index) const;
 

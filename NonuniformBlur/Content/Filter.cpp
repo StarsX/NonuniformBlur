@@ -15,7 +15,7 @@ struct GaussianConstants
 	uint32_t	Level;
 };
 
-Filter::Filter(const Device &device) :
+Filter::Filter(const Device& device) :
 	m_device(device),
 	m_numMips(11)
 {
@@ -28,8 +28,8 @@ Filter::~Filter()
 {
 }
 
-bool Filter::Init(const CommandList &commandList, uint32_t width, uint32_t height,
-	shared_ptr<ResourceBase> &source, vector<Resource>& uploaders, const wchar_t *fileName)
+bool Filter::Init(const CommandList& commandList, uint32_t width, uint32_t height,
+	shared_ptr<ResourceBase>& source, vector<Resource>& uploaders, const wchar_t* fileName)
 {
 	// Load input image
 	{
@@ -45,7 +45,7 @@ bool Filter::Init(const CommandList &commandList, uint32_t width, uint32_t heigh
 	const auto viewportSize = static_cast<float>((max)(width, height));
 	m_numMips = (max)(static_cast<uint8_t>(log2f(viewportSize) + 1.0f), 1ui8);
 
-	for (auto &image : m_filtered)
+	for (auto& image : m_filtered)
 		image.Create(m_device, width, height, DXGI_FORMAT_B8G8R8A8_UNORM, 1,
 			D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, m_numMips);
 
@@ -73,7 +73,7 @@ bool Filter::Init(const CommandList &commandList, uint32_t width, uint32_t heigh
 	return true;
 }
 
-void Filter::Process(const CommandList &commandList, XMFLOAT2 focus, float sigma)
+void Filter::Process(const CommandList& commandList, XMFLOAT2 focus, float sigma)
 {
 	const uint8_t numPasses = m_numMips - 1;
 
@@ -126,10 +126,10 @@ void Filter::Process(const CommandList &commandList, XMFLOAT2 focus, float sigma
 	}
 }
 
-void Filter::ProcessG(const CommandList &commandList, XMFLOAT2 focus, float sigma)
+void Filter::ProcessG(const CommandList& commandList, XMFLOAT2 focus, float sigma)
 {
 	const uint8_t numPasses = m_numMips > 0 ? m_numMips - 1 : 0;
-	
+
 	// Set Descriptor pools
 	const DescriptorPool descriptorPools[] =
 	{
@@ -162,10 +162,10 @@ void Filter::ProcessG(const CommandList &commandList, XMFLOAT2 focus, float sigm
 	commandList.SetComputePipelineLayout(m_pipelineLayouts[GAUSSIAN]);
 	commandList.SetCompute32BitConstants(2, SizeOfInUint32(GaussianConstants), &cb);
 	m_filtered[TABLE_UP_SAMPLE].Blit(commandList, 8, 8, m_uavSrvTables[TABLE_UP_SAMPLE][numPasses],
-		1, 0, 0, nullptr, 0, nullptr, m_pipelines[GAUSSIAN]);
+		1, 0, nullptr, 0, 0, nullptr, 0, nullptr, m_pipelines[GAUSSIAN]);
 }
 
-Texture2D &Filter::GetResult()
+Texture2D& Filter::GetResult()
 {
 	return m_filtered[TABLE_UP_SAMPLE];
 }

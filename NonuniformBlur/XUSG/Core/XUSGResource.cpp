@@ -10,7 +10,7 @@
 using namespace std;
 using namespace XUSG;
 
-Format MapToPackedFormat(Format &format)
+Format MapToPackedFormat(Format& format)
 {
 	auto formatUAV = DXGI_FORMAT_R32_UINT;
 
@@ -68,8 +68,8 @@ ConstantBuffer::~ConstantBuffer()
 	if (m_resource) Unmap();
 }
 
-bool ConstantBuffer::Create(const Device &device, uint64_t byteWidth, uint32_t numCBVs,
-	const uint32_t *offsets, MemoryType memoryType, const wchar_t *name)
+bool ConstantBuffer::Create(const Device& device, uint64_t byteWidth, uint32_t numCBVs,
+	const uint32_t* offsets, MemoryType memoryType, const wchar_t* name)
 {
 	M_RETURN(!device, cerr, "The device is NULL.", false);
 	m_device = device;
@@ -84,7 +84,7 @@ bool ConstantBuffer::Create(const Device &device, uint64_t byteWidth, uint32_t n
 		cbvSize = POW2_UP(cbvSize, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
 		offsetList.resize(numCBVs);
 
-		for (auto &offset : offsetList)
+		for (auto& offset : offsetList)
 		{
 			offset = numBytes;
 			numBytes += cbvSize;
@@ -115,7 +115,7 @@ bool ConstantBuffer::Create(const Device &device, uint64_t byteWidth, uint32_t n
 	const auto maxSize = static_cast<uint32_t>(byteWidth);
 	for (auto i = 0u; i < numCBVs; ++i)
 	{
-		const auto &offset = offsets[i];
+		const auto& offset = offsets[i];
 		desc.BufferLocation = m_resource->GetGPUVirtualAddress() + offset;
 		desc.SizeInBytes = (i + 1 >= numCBVs ? maxSize : offsets[i + 1]) - offset;
 
@@ -129,8 +129,8 @@ bool ConstantBuffer::Create(const Device &device, uint64_t byteWidth, uint32_t n
 	return true;
 }
 
-bool ConstantBuffer::Upload(const CommandList &commandList, Resource &uploader,
-	const void *pData, size_t size, uint32_t i)
+bool ConstantBuffer::Upload(const CommandList& commandList, Resource& uploader,
+	const void* pData, size_t size, uint32_t i)
 {
 	const auto offset = m_cbvOffsets.empty() ? 0 : m_cbvOffsets[i];
 	SubresourceData subresourceData;
@@ -163,7 +163,7 @@ bool ConstantBuffer::Upload(const CommandList &commandList, Resource &uploader,
 	return true;
 }
 
-void *ConstantBuffer::Map(uint32_t i)
+void* ConstantBuffer::Map(uint32_t i)
 {
 	if (m_pDataBegin == nullptr)
 	{
@@ -185,7 +185,7 @@ void ConstantBuffer::Unmap()
 	}
 }
 
-const Resource &ConstantBuffer::GetResource() const
+const Resource& ConstantBuffer::GetResource() const
 {
 	return m_resource;
 }
@@ -195,10 +195,10 @@ Descriptor ConstantBuffer::GetCBV(uint32_t i) const
 	return m_cbvs.size() > i ? m_cbvs[i] : Descriptor(D3D12_DEFAULT);
 }
 
-Descriptor ConstantBuffer::allocateCbvPool(const wchar_t *name)
+Descriptor ConstantBuffer::allocateCbvPool(const wchar_t* name)
 {
 	m_cbvPools.push_back(DescriptorPool());
-	auto &cbvPool = m_cbvPools.back();
+	auto& cbvPool = m_cbvPools.back();
 
 	D3D12_DESCRIPTOR_HEAP_DESC desc = { D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1 };
 	V_RETURN(m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&cbvPool)), cerr, Descriptor(D3D12_DEFAULT));
@@ -224,17 +224,17 @@ ResourceBase::~ResourceBase()
 {
 }
 
-uint32_t ResourceBase::SetBarrier(ResourceBarrier *pBarriers, ResourceState dstState,
+uint32_t ResourceBase::SetBarrier(ResourceBarrier* pBarriers, ResourceState dstState,
 	uint32_t numBarriers, uint32_t subresource, BarrierFlags flags)
 {
-	const auto &state = m_states[subresource == 0xffffffff ? 0 : subresource];
+	const auto& state = m_states[subresource == 0xffffffff ? 0 : subresource];
 	if (state != dstState || dstState == D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
 		pBarriers[numBarriers++] = Transition(dstState, subresource, flags);
 
 	return numBarriers;
 }
 
-const Resource &ResourceBase::GetResource() const
+const Resource& ResourceBase::GetResource() const
 {
 	return m_resource;
 }
@@ -270,7 +270,7 @@ ResourceState ResourceBase::GetResourceState(uint32_t i) const
 	return m_states[i];
 }
 
-void ResourceBase::setDevice(const Device & device)
+void ResourceBase::setDevice(const Device& device)
 {
 	m_device = device;
 }
@@ -278,7 +278,7 @@ void ResourceBase::setDevice(const Device & device)
 Descriptor ResourceBase::allocateSrvUavPool()
 {
 	m_srvUavPools.push_back(DescriptorPool());
-	auto &srvUavPool = m_srvUavPools.back();
+	auto& srvUavPool = m_srvUavPools.back();
 
 	D3D12_DESCRIPTOR_HEAP_DESC desc = { D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1 };
 	V_RETURN(m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&srvUavPool)), cerr, Descriptor(D3D12_DEFAULT));
@@ -303,9 +303,9 @@ Texture2D::~Texture2D()
 {
 }
 
-bool Texture2D::Create(const Device &device, uint32_t width, uint32_t height, Format format,
+bool Texture2D::Create(const Device& device, uint32_t width, uint32_t height, Format format,
 	uint32_t arraySize, ResourceFlags resourceFlags, uint8_t numMips, uint8_t sampleCount,
-	MemoryType memoryType, ResourceState state, bool isCubeMap, const wchar_t *name)
+	MemoryType memoryType, ResourceState state, bool isCubeMap, const wchar_t* name)
 {
 	M_RETURN(!device, cerr, "The device is NULL.", false);
 	setDevice(device);
@@ -328,8 +328,8 @@ bool Texture2D::Create(const Device &device, uint32_t width, uint32_t height, Fo
 
 	// Determine initial state
 	m_states.resize(arraySize * numMips);
-	if (state) for (auto &initState : m_states) initState = state;
-	else for (auto &initState : m_states)
+	if (state) for (auto& initState : m_states) initState = state;
+	else for (auto& initState : m_states)
 	{
 		initState = hasSRV ? D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE |
 			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE : D3D12_RESOURCE_STATE_COMMON;
@@ -352,8 +352,8 @@ bool Texture2D::Create(const Device &device, uint32_t width, uint32_t height, Fo
 	return true;
 }
 
-bool Texture2D::Upload(const CommandList &commandList, Resource &uploader,
-	SubresourceData *pSubresourceData, uint32_t numSubresources,
+bool Texture2D::Upload(const CommandList& commandList, Resource& uploader,
+	SubresourceData* pSubresourceData, uint32_t numSubresources,
 	ResourceState dstState, uint32_t i)
 {
 	N_RETURN(pSubresourceData, false);
@@ -387,8 +387,8 @@ bool Texture2D::Upload(const CommandList &commandList, Resource &uploader,
 	return true;
 }
 
-bool Texture2D::Upload(const CommandList &commandList, Resource &uploader,
-	const void *pData, uint8_t stride, ResourceState dstState)
+bool Texture2D::Upload(const CommandList& commandList, Resource& uploader,
+	const void* pData, uint8_t stride, ResourceState dstState)
 {
 	const auto desc = m_resource->GetDesc();
 
@@ -411,7 +411,7 @@ bool Texture2D::CreateSRVs(uint32_t arraySize, Format format, uint8_t numMips,
 	auto mipLevel = 0ui8;
 	m_srvs.resize(sampleCount > 1 ? 1 : (max)(numMips, 1ui8));
 
-	for (auto &descriptor : m_srvs)
+	for (auto& descriptor : m_srvs)
 	{
 		if (isCubeMap)
 		{
@@ -479,7 +479,7 @@ bool Texture2D::CreateSRVLevels(uint32_t arraySize, uint8_t numMips, Format form
 		auto mipLevel = 0ui8;
 		m_srvLevels.resize(numMips);
 
-		for (auto &descriptor : m_srvLevels)
+		for (auto& descriptor : m_srvLevels)
 		{
 			// Setup the description of the shader resource view.
 			if (isCubeMap)
@@ -530,8 +530,8 @@ bool Texture2D::CreateUAVs(uint32_t arraySize, Format format, uint8_t numMips)
 
 	auto mipLevel = 0ui8;
 	m_uavs.resize((max)(numMips, 1ui8));
-	
-	for (auto &descriptor : m_uavs)
+
+	for (auto& descriptor : m_uavs)
 	{
 		// Setup the description of the unordered access view.
 		if (arraySize > 1)
@@ -555,21 +555,23 @@ bool Texture2D::CreateUAVs(uint32_t arraySize, Format format, uint8_t numMips)
 	return true;
 }
 
-void Texture2D::Blit(const CommandList &commandList, uint32_t groupSizeX, uint32_t groupSizeY,
-	const DescriptorTable &uavSrvTable, uint32_t uavSrvSlot, uint8_t mipLevel, int32_t slice,
-	const DescriptorTable &samplerTable, uint32_t samplerSlot, const PipelineLayout &pipelineLayout,
-	const Pipeline &pipeline)
+void Texture2D::Blit(const CommandList& commandList, uint32_t groupSizeX, uint32_t groupSizeY,
+	const DescriptorTable& uavSrvTable, uint32_t uavSrvSlot, uint8_t mipLevel,
+	const DescriptorTable& srvTable, uint32_t srvSlot, int32_t slice,
+	const DescriptorTable& samplerTable, uint32_t samplerSlot,
+	const PipelineLayout& pipelineLayout, const Pipeline& pipeline)
 {
 	// Set pipeline layout and descriptor tables
 	if (pipelineLayout) commandList.SetComputePipelineLayout(pipelineLayout);
 	if (uavSrvTable) commandList.SetComputeDescriptorTable(uavSrvSlot, uavSrvTable);
+	if (srvTable) commandList.SetComputeDescriptorTable(srvSlot, srvTable);
 	if (samplerTable) commandList.SetComputeDescriptorTable(samplerSlot, samplerTable);
 
 	// Set pipeline
 	if (pipeline) commandList.SetPipelineState(pipeline);
 
 	// Dispatch
-	const auto &desc = m_resource->GetDesc();
+	const auto& desc = m_resource->GetDesc();
 	const auto width = (max)(static_cast<uint32_t>(desc.Width >> mipLevel), 1u);
 	const auto height = (max)(desc.Height >> mipLevel, 1u);
 	commandList.Dispatch(DIV_UP(width, groupSizeX), DIV_UP(height, groupSizeY), 1);
@@ -600,9 +602,9 @@ RenderTarget::~RenderTarget()
 {
 }
 
-bool RenderTarget::Create(const Device &device, uint32_t width, uint32_t height, Format format,
+bool RenderTarget::Create(const Device& device, uint32_t width, uint32_t height, Format format,
 	uint32_t arraySize, ResourceFlags resourceFlags, uint8_t numMips, uint8_t sampleCount,
-	ResourceState state, const float *pClearColor, bool isCubeMap, const wchar_t *name)
+	ResourceState state, const float* pClearColor, bool isCubeMap, const wchar_t* name)
 {
 	N_RETURN(create(device, width, height, arraySize, format, numMips, sampleCount,
 		resourceFlags, state, pClearColor, isCubeMap, name), false);
@@ -618,7 +620,7 @@ bool RenderTarget::Create(const Device &device, uint32_t width, uint32_t height,
 		auto mipLevel = 0ui8;
 		m_rtvs[i].resize(numMips);
 
-		for (auto &descriptor : m_rtvs[i])
+		for (auto& descriptor : m_rtvs[i])
 		{
 			// Setup the description of the render target view.
 			if (arraySize > 1)
@@ -658,10 +660,10 @@ bool RenderTarget::Create(const Device &device, uint32_t width, uint32_t height,
 	return true;
 }
 
-bool RenderTarget::CreateArray(const Device &device, uint32_t width, uint32_t height,
+bool RenderTarget::CreateArray(const Device& device, uint32_t width, uint32_t height,
 	uint32_t arraySize, Format format, ResourceFlags resourceFlags, uint8_t numMips,
-	uint8_t sampleCount, ResourceState state, const float *pClearColor, bool isCubeMap,
-	const wchar_t *name)
+	uint8_t sampleCount, ResourceState state, const float* pClearColor, bool isCubeMap,
+	const wchar_t* name)
 {
 	N_RETURN(create(device, width, height, arraySize, format, numMips, sampleCount,
 		resourceFlags, state, pClearColor, isCubeMap, name), false);
@@ -674,7 +676,7 @@ bool RenderTarget::CreateArray(const Device &device, uint32_t width, uint32_t he
 	m_rtvs[0].resize((max)(numMips, 1ui8));
 
 	auto mipLevel = 0ui8;
-	for (auto &descriptor : m_rtvs[0])
+	for (auto& descriptor : m_rtvs[0])
 	{
 		// Setup the description of the render target view.
 		if (sampleCount > 1)
@@ -698,7 +700,7 @@ bool RenderTarget::CreateArray(const Device &device, uint32_t width, uint32_t he
 	return true;
 }
 
-bool RenderTarget::CreateFromSwapChain(const Device &device, const SwapChain &swapChain, uint32_t bufferIdx)
+bool RenderTarget::CreateFromSwapChain(const Device& device, const SwapChain& swapChain, uint32_t bufferIdx)
 {
 	M_RETURN(!device, cerr, "The device is NULL.", false);
 	setDevice(device);
@@ -722,9 +724,9 @@ bool RenderTarget::CreateFromSwapChain(const Device &device, const SwapChain &sw
 	return true;
 }
 
-void RenderTarget::Blit(const CommandList &commandList, const DescriptorTable &srcSrvTable,
-	uint32_t srcSlot, uint8_t mipLevel, int32_t slice, const DescriptorTable &samplerTable,
-	uint32_t samplerSlot, const PipelineLayout &pipelineLayout, const Pipeline &pipeline)
+void RenderTarget::Blit(const CommandList& commandList, const DescriptorTable& srcSrvTable,
+	uint32_t srcSlot, uint8_t mipLevel, int32_t slice, const DescriptorTable& samplerTable,
+	uint32_t samplerSlot, const PipelineLayout& pipelineLayout, const Pipeline& pipeline)
 {
 	// Set render target
 	const auto rtvTable = make_shared<Descriptor>(GetRTV(slice, mipLevel));
@@ -740,7 +742,7 @@ void RenderTarget::Blit(const CommandList &commandList, const DescriptorTable &s
 	if (pipeline) commandList.SetPipelineState(pipeline);
 
 	// Set viewport
-	const auto &desc = m_resource->GetDesc();
+	const auto& desc = m_resource->GetDesc();
 	const auto width = (max)(static_cast<uint32_t>(desc.Width >> mipLevel), 1u);
 	const auto height = (max)(desc.Height >> mipLevel, 1u);
 	const Viewport viewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height));
@@ -769,10 +771,10 @@ uint8_t RenderTarget::GetNumMips(uint32_t slice) const
 	return m_rtvs.size() > slice ? static_cast<uint8_t>(m_rtvs[slice].size()) : 0;
 }
 
-bool RenderTarget::create(const Device &device, uint32_t width, uint32_t height,
+bool RenderTarget::create(const Device& device, uint32_t width, uint32_t height,
 	uint32_t arraySize, Format format, uint8_t numMips, uint8_t sampleCount,
-	ResourceFlags resourceFlags, ResourceState state, const float *pClearColor,
-	bool isCubeMap, const wchar_t *name)
+	ResourceFlags resourceFlags, ResourceState state, const float* pClearColor,
+	bool isCubeMap, const wchar_t* name)
 {
 	M_RETURN(!device, cerr, "The device is NULL.", false);
 	setDevice(device);
@@ -795,7 +797,7 @@ bool RenderTarget::create(const Device &device, uint32_t width, uint32_t height,
 
 	// Determine initial state
 	m_states.resize(arraySize * numMips);
-	for (auto &initState : m_states) initState = state ? state : D3D12_RESOURCE_STATE_RENDER_TARGET;
+	for (auto& initState : m_states) initState = state ? state : D3D12_RESOURCE_STATE_RENDER_TARGET;
 
 	// Optimized clear value
 	D3D12_CLEAR_VALUE clearValue = { format };
@@ -822,7 +824,7 @@ bool RenderTarget::create(const Device &device, uint32_t width, uint32_t height,
 Descriptor RenderTarget::allocateRtvPool()
 {
 	m_rtvPools.push_back(DescriptorPool());
-	auto &rtvPool = m_rtvPools.back();
+	auto& rtvPool = m_rtvPools.back();
 
 	D3D12_DESCRIPTOR_HEAP_DESC desc = { D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 1 };
 	V_RETURN(m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&rtvPool)), cerr, Descriptor(D3D12_DEFAULT));
@@ -848,10 +850,10 @@ DepthStencil::~DepthStencil()
 {
 }
 
-bool DepthStencil::Create(const Device &device, uint32_t width, uint32_t height, Format format,
+bool DepthStencil::Create(const Device& device, uint32_t width, uint32_t height, Format format,
 	ResourceFlags resourceFlags, uint32_t arraySize, uint8_t numMips, uint8_t sampleCount,
 	ResourceState state, float clearDepth, uint8_t clearStencil, bool isCubeMap,
-	const wchar_t *name)
+	const wchar_t* name)
 {
 	bool hasSRV;
 	Format formatStencil;
@@ -874,8 +876,8 @@ bool DepthStencil::Create(const Device &device, uint32_t width, uint32_t height,
 
 		for (auto j = 0ui8; j < numMips; ++j)
 		{
-			auto &dsv = m_dsvs[i][j];
-			auto &readOnlyDsv = m_readOnlyDsvs[i][j];
+			auto& dsv = m_dsvs[i][j];
+			auto& readOnlyDsv = m_readOnlyDsvs[i][j];
 
 			// Setup the description of the depth stencil view.
 			if (arraySize > 1)
@@ -929,9 +931,9 @@ bool DepthStencil::Create(const Device &device, uint32_t width, uint32_t height,
 	return true;
 }
 
-bool DepthStencil::CreateArray(const Device &device, uint32_t width, uint32_t height, uint32_t arraySize,
+bool DepthStencil::CreateArray(const Device& device, uint32_t width, uint32_t height, uint32_t arraySize,
 	Format format, ResourceFlags resourceFlags, uint8_t numMips, uint8_t sampleCount, ResourceState state,
-	float clearDepth, uint8_t clearStencil, bool isCubeMap, const wchar_t *name)
+	float clearDepth, uint8_t clearStencil, bool isCubeMap, const wchar_t* name)
 {
 	bool hasSRV;
 	Format formatStencil;
@@ -950,8 +952,8 @@ bool DepthStencil::CreateArray(const Device &device, uint32_t width, uint32_t he
 
 	for (auto i = 0ui8; i < numMips; ++i)
 	{
-		auto &dsv = m_dsvs[0][i];
-		auto &readOnlyDsv = m_readOnlyDsvs[0][i];
+		auto& dsv = m_dsvs[0][i];
+		auto& readOnlyDsv = m_readOnlyDsvs[0][i];
 
 		// Setup the description of the depth stencil view.
 		if (arraySize > 1)
@@ -983,7 +985,7 @@ bool DepthStencil::CreateArray(const Device &device, uint32_t width, uint32_t he
 		dsv = allocateDsvPool();
 		N_RETURN(dsv.ptr, false);
 		m_device->CreateDepthStencilView(m_resource.get(), &desc, dsv);
-		
+
 		// Read-only depth stencil
 		if (hasSRV)
 		{
@@ -1014,7 +1016,7 @@ Descriptor DepthStencil::GetReadOnlyDSV(uint32_t slice, uint8_t mipLevel) const
 		m_readOnlyDsvs[slice][mipLevel] : Descriptor(D3D12_DEFAULT);
 }
 
-const Descriptor &DepthStencil::GetStencilSRV() const
+const Descriptor& DepthStencil::GetStencilSRV() const
 {
 	return m_stencilSrv;
 }
@@ -1034,10 +1036,10 @@ uint8_t DepthStencil::GetNumMips() const
 	return static_cast<uint8_t>(m_dsvs.size());
 }
 
-bool DepthStencil::create(const Device &device, uint32_t width, uint32_t height, uint32_t arraySize,
-	uint8_t numMips, uint8_t sampleCount, Format &format, ResourceFlags resourceFlags, ResourceState state,
-	float clearDepth, uint8_t clearStencil, bool &hasSRV, Format &formatStencil, bool isCubeMap,
-	const wchar_t *name)
+bool DepthStencil::create(const Device& device, uint32_t width, uint32_t height, uint32_t arraySize,
+	uint8_t numMips, uint8_t sampleCount, Format& format, ResourceFlags resourceFlags, ResourceState state,
+	float clearDepth, uint8_t clearStencil, bool& hasSRV, Format& formatStencil, bool isCubeMap,
+	const wchar_t* name)
 {
 	M_RETURN(!device, cerr, "The device is NULL.", false);
 	setDevice(device);
@@ -1089,7 +1091,7 @@ bool DepthStencil::create(const Device &device, uint32_t width, uint32_t height,
 
 		// Determine initial state
 		m_states.resize(arraySize * numMips);
-		for (auto &initState : m_states) initState = state ? state : D3D12_RESOURCE_STATE_DEPTH_WRITE;
+		for (auto& initState : m_states) initState = state ? state : D3D12_RESOURCE_STATE_DEPTH_WRITE;
 
 		// Optimized clear value
 		D3D12_CLEAR_VALUE clearValue = { format };
@@ -1168,7 +1170,7 @@ bool DepthStencil::create(const Device &device, uint32_t width, uint32_t height,
 Descriptor DepthStencil::allocateDsvPool()
 {
 	m_dsvPools.push_back(DescriptorPool());
-	auto &dsvPool = m_dsvPools.back();
+	auto& dsvPool = m_dsvPools.back();
 
 	D3D12_DESCRIPTOR_HEAP_DESC desc = { D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1 };
 	V_RETURN(m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&dsvPool)), cerr, Descriptor(D3D12_DEFAULT));
@@ -1193,9 +1195,9 @@ Texture3D::~Texture3D()
 {
 }
 
-bool Texture3D::Create(const Device &device, uint32_t width, uint32_t height,
+bool Texture3D::Create(const Device& device, uint32_t width, uint32_t height,
 	uint32_t depth, Format format, ResourceFlags resourceFlags, uint8_t numMips,
-	MemoryType memoryType, ResourceState state, const wchar_t *name)
+	MemoryType memoryType, ResourceState state, const wchar_t* name)
 {
 	M_RETURN(!device, cerr, "The device is NULL.", false);
 	setDevice(device);
@@ -1218,14 +1220,14 @@ bool Texture3D::Create(const Device &device, uint32_t width, uint32_t height,
 
 	// Determine initial state
 	m_states.resize(numMips);
-	if (state) for (auto &initState : m_states) initState = state;
-	else for (auto &initState : m_states)
+	if (state) for (auto& initState : m_states) initState = state;
+	else for (auto& initState : m_states)
 	{
 		initState = hasSRV ? D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE |
 			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE : D3D12_RESOURCE_STATE_COMMON;
 		initState = hasUAV ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS : initState;
 	}
-	
+
 	V_RETURN(m_device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(memoryType),
 		D3D12_HEAP_FLAG_NONE, &desc, m_states[0], nullptr, IID_PPV_ARGS(&m_resource)), clog, false);
 	if (!m_name.empty()) m_resource->SetName((m_name + L".Resource").c_str());
@@ -1253,7 +1255,7 @@ bool Texture3D::CreateSRVs(Format format, uint8_t numMips)
 	auto mipLevel = 0ui8;
 	m_srvs.resize((max)(numMips, 1ui8));
 
-	for (auto &descriptor : m_srvs)
+	for (auto& descriptor : m_srvs)
 	{
 		// Setup the description of the shader resource view.
 		desc.Texture3D.MipLevels = numMips - mipLevel;
@@ -1280,7 +1282,7 @@ bool Texture3D::CreateSRVLevels(uint8_t numMips, Format format)
 		auto mipLevel = 0ui8;
 		m_srvLevels.resize(numMips);
 
-		for (auto &descriptor : m_srvLevels)
+		for (auto& descriptor : m_srvLevels)
 		{
 			// Setup the description of the shader resource view.
 			desc.Texture3D.MostDetailedMip = mipLevel++;
@@ -1308,7 +1310,7 @@ bool Texture3D::CreateUAVs(Format format, uint8_t numMips)
 	auto mipLevel = 0ui8;
 	m_uavs.resize(numMips);
 
-	for (auto &descriptor : m_uavs)
+	for (auto& descriptor : m_uavs)
 	{
 		// Setup the description of the unordered access view.
 		desc.Texture3D.WSize = txDesc.DepthOrArraySize >> mipLevel;
@@ -1351,9 +1353,9 @@ RawBuffer::~RawBuffer()
 	if (m_resource) Unmap();
 }
 
-bool RawBuffer::Create(const Device &device, uint64_t byteWidth, ResourceFlags resourceFlags,
-	MemoryType memoryType, ResourceState state, uint32_t numSRVs, const uint32_t *firstSRVElements,
-	uint32_t numUAVs, const uint32_t *firstUAVElements, const wchar_t *name)
+bool RawBuffer::Create(const Device& device, uint64_t byteWidth, ResourceFlags resourceFlags,
+	MemoryType memoryType, ResourceState state, uint32_t numSRVs, const uint32_t* firstSRVElements,
+	uint32_t numUAVs, const uint32_t* firstUAVElements, const wchar_t* name)
 {
 	const auto hasSRV = !(resourceFlags & D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE);
 	const bool hasUAV = resourceFlags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
@@ -1373,8 +1375,8 @@ bool RawBuffer::Create(const Device &device, uint64_t byteWidth, ResourceFlags r
 	return true;
 }
 
-bool RawBuffer::Upload(const CommandList &commandList, Resource &uploader,
-	const void *pData, size_t size, ResourceState dstState, uint32_t i)
+bool RawBuffer::Upload(const CommandList& commandList, Resource& uploader,
+	const void* pData, size_t size, ResourceState dstState, uint32_t i)
 {
 	const auto offset = m_srvOffsets.empty() ? 0 : m_srvOffsets[i];
 	D3D12_SUBRESOURCE_DATA subresourceData;
@@ -1410,7 +1412,7 @@ bool RawBuffer::Upload(const CommandList &commandList, Resource &uploader,
 	return true;
 }
 
-bool RawBuffer::CreateSRVs(uint64_t byteWidth, const uint32_t *firstElements,
+bool RawBuffer::CreateSRVs(uint64_t byteWidth, const uint32_t* firstElements,
 	uint32_t numDescriptors)
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC desc = {};
@@ -1430,7 +1432,7 @@ bool RawBuffer::CreateSRVs(uint64_t byteWidth, const uint32_t *firstElements,
 		desc.Buffer.FirstElement = firstElement;
 		desc.Buffer.NumElements = (!firstElements || i + 1 >= numDescriptors ?
 			numElements : firstElements[i + 1]) - firstElement;
-		
+
 		m_srvOffsets[i] = stride * firstElement;
 
 		// Create a shader resource view
@@ -1442,7 +1444,7 @@ bool RawBuffer::CreateSRVs(uint64_t byteWidth, const uint32_t *firstElements,
 	return true;
 }
 
-bool RawBuffer::CreateUAVs(uint64_t byteWidth, const uint32_t *firstElements,
+bool RawBuffer::CreateUAVs(uint64_t byteWidth, const uint32_t* firstElements,
 	uint32_t numDescriptors)
 {
 	D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {};
@@ -1474,7 +1476,7 @@ Descriptor RawBuffer::GetUAV(uint32_t i) const
 	return m_uavs.size() > i ? m_uavs[i] : Descriptor(D3D12_DEFAULT);
 }
 
-void *RawBuffer::Map(uint32_t i)
+void* RawBuffer::Map(uint32_t i)
 {
 	if (m_pDataBegin == nullptr)
 	{
@@ -1495,9 +1497,9 @@ void RawBuffer::Unmap()
 	}
 }
 
-bool RawBuffer::create(const Device &device, uint64_t byteWidth, ResourceFlags resourceFlags,
+bool RawBuffer::create(const Device& device, uint64_t byteWidth, ResourceFlags resourceFlags,
 	MemoryType memoryType, ResourceState state, uint32_t numSRVs, uint32_t numUAVs,
-	const wchar_t *name)
+	const wchar_t* name)
 {
 	M_RETURN(!device, cerr, "The device is NULL.", false);
 	setDevice(device);
@@ -1509,7 +1511,7 @@ bool RawBuffer::create(const Device &device, uint64_t byteWidth, ResourceFlags r
 
 	// Determine initial state
 	m_states.resize(1);
-	auto &initState = m_states[0];
+	auto& initState = m_states[0];
 	if (state) initState = state;
 	else
 	{
@@ -1538,10 +1540,10 @@ StructuredBuffer::~StructuredBuffer()
 {
 }
 
-bool StructuredBuffer::Create(const Device &device, uint32_t numElements, uint32_t stride,
+bool StructuredBuffer::Create(const Device& device, uint32_t numElements, uint32_t stride,
 	ResourceFlags resourceFlags, MemoryType memoryType, ResourceState state, uint32_t numSRVs,
-	const uint32_t *firstSRVElements, uint32_t numUAVs, const uint32_t *firstUAVElements,
-	const wchar_t *name)
+	const uint32_t* firstSRVElements, uint32_t numUAVs, const uint32_t* firstUAVElements,
+	const wchar_t* name)
 {
 	const auto hasSRV = !(resourceFlags & D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE);
 	const bool hasUAV = resourceFlags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
@@ -1563,7 +1565,7 @@ bool StructuredBuffer::Create(const Device &device, uint32_t numElements, uint32
 }
 
 bool StructuredBuffer::CreateSRVs(uint32_t numElements, uint32_t stride,
-	const uint32_t *firstElements, uint32_t numDescriptors)
+	const uint32_t* firstElements, uint32_t numDescriptors)
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC desc = {};
 	desc.Format = m_resource->GetDesc().Format;
@@ -1592,7 +1594,7 @@ bool StructuredBuffer::CreateSRVs(uint32_t numElements, uint32_t stride,
 }
 
 bool StructuredBuffer::CreateUAVs(uint32_t numElements, uint32_t stride,
-	const uint32_t *firstElements, uint32_t numDescriptors)
+	const uint32_t* firstElements, uint32_t numDescriptors)
 {
 	D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {};
 	desc.Format = m_resource->GetDesc().Format;
@@ -1629,11 +1631,11 @@ TypedBuffer::~TypedBuffer()
 {
 }
 
-bool TypedBuffer::Create(const Device &device, uint32_t numElements, uint32_t stride,
+bool TypedBuffer::Create(const Device& device, uint32_t numElements, uint32_t stride,
 	Format format, ResourceFlags resourceFlags, MemoryType memoryType, ResourceState state,
-	uint32_t numSRVs, const uint32_t *firstSRVElements,
-	uint32_t numUAVs, const uint32_t *firstUAVElements,
-	const wchar_t *name)
+	uint32_t numSRVs, const uint32_t* firstSRVElements,
+	uint32_t numUAVs, const uint32_t* firstUAVElements,
+	const wchar_t* name)
 {
 	M_RETURN(!device, cerr, "The device is NULL.", false);
 	setDevice(device);
@@ -1665,7 +1667,7 @@ bool TypedBuffer::Create(const Device &device, uint32_t numElements, uint32_t st
 }
 
 bool TypedBuffer::CreateSRVs(uint32_t numElements, Format format, uint32_t stride,
-	const uint32_t *firstElements, uint32_t numDescriptors)
+	const uint32_t* firstElements, uint32_t numDescriptors)
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC desc = {};
 	desc.Format = format ? format : m_resource->GetDesc().Format;
@@ -1693,7 +1695,7 @@ bool TypedBuffer::CreateSRVs(uint32_t numElements, Format format, uint32_t strid
 }
 
 bool TypedBuffer::CreateUAVs(uint32_t numElements, Format format, uint32_t stride,
-	const uint32_t *firstElements, uint32_t numDescriptors)
+	const uint32_t* firstElements, uint32_t numDescriptors)
 {
 	D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {};
 	desc.Format = format ? format : m_resource->GetDesc().Format;
@@ -1730,12 +1732,12 @@ VertexBuffer::~VertexBuffer()
 {
 }
 
-bool VertexBuffer::Create(const Device &device, uint32_t numVertices, uint32_t stride,
+bool VertexBuffer::Create(const Device& device, uint32_t numVertices, uint32_t stride,
 	ResourceFlags resourceFlags, MemoryType memoryType, ResourceState state,
-	uint32_t numVBVs, const uint32_t *firstVertices,
-	uint32_t numSRVs, const uint32_t *firstSRVElements,
-	uint32_t numUAVs, const uint32_t *firstUAVElements,
-	const wchar_t *name)
+	uint32_t numVBVs, const uint32_t* firstVertices,
+	uint32_t numSRVs, const uint32_t* firstSRVElements,
+	uint32_t numUAVs, const uint32_t* firstUAVElements,
+	const wchar_t* name)
 {
 	const auto hasSRV = !(resourceFlags & D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE);
 	const bool hasUAV = resourceFlags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
@@ -1765,12 +1767,12 @@ bool VertexBuffer::Create(const Device &device, uint32_t numVertices, uint32_t s
 	return true;
 }
 
-bool VertexBuffer::CreateAsRaw(const Device &device, uint32_t numVertices, uint32_t stride,
+bool VertexBuffer::CreateAsRaw(const Device& device, uint32_t numVertices, uint32_t stride,
 	ResourceFlags resourceFlags, MemoryType memoryType, ResourceState state,
-	uint32_t numVBVs, const uint32_t *firstVertices,
-	uint32_t numSRVs, const uint32_t *firstSRVElements,
-	uint32_t numUAVs, const uint32_t *firstUAVElements,
-	const wchar_t *name)
+	uint32_t numVBVs, const uint32_t* firstVertices,
+	uint32_t numSRVs, const uint32_t* firstSRVElements,
+	uint32_t numUAVs, const uint32_t* firstUAVElements,
+	const wchar_t* name)
 {
 	const auto hasSRV = !(resourceFlags & D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE);
 	const bool hasUAV = resourceFlags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
@@ -1819,12 +1821,12 @@ IndexBuffer::~IndexBuffer()
 {
 }
 
-bool IndexBuffer::Create(const Device &device, uint64_t byteWidth, Format format,
+bool IndexBuffer::Create(const Device& device, uint64_t byteWidth, Format format,
 	ResourceFlags resourceFlags, MemoryType memoryType, ResourceState state,
-	uint32_t numIBVs, const uint32_t *offsets,
-	uint32_t numSRVs, const uint32_t *firstSRVElements,
-	uint32_t numUAVs, const uint32_t *firstUAVElements,
-	const wchar_t *name)
+	uint32_t numIBVs, const uint32_t* offsets,
+	uint32_t numSRVs, const uint32_t* firstSRVElements,
+	uint32_t numUAVs, const uint32_t* firstUAVElements,
+	const wchar_t* name)
 {
 	setDevice(device);
 

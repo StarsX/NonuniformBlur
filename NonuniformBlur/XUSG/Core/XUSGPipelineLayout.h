@@ -26,7 +26,7 @@ namespace XUSG
 
 	struct DescriptorRange
 	{
-		DescriptorType	ViewType;
+		DescriptorType ViewType;
 		uint32_t NumDescriptors;
 		uint32_t BaseBinding;
 		uint32_t Space;
@@ -53,19 +53,19 @@ namespace XUSG
 			void SetRootCBV(uint32_t index, uint32_t binding,
 				uint32_t space = 0, uint8_t flags = 0, Shader::Stage stage = Shader::Stage::ALL);
 
-			XUSG::PipelineLayout CreatePipelineLayout(PipelineLayoutCache &pipelineLayoutCache, uint8_t flags,
-				const wchar_t *name = nullptr);
-			XUSG::PipelineLayout GetPipelineLayout(PipelineLayoutCache &pipelineLayoutCache, uint8_t flags,
-				const wchar_t *name = nullptr);
+			XUSG::PipelineLayout CreatePipelineLayout(PipelineLayoutCache& pipelineLayoutCache, uint8_t flags,
+				const wchar_t* name = nullptr);
+			XUSG::PipelineLayout GetPipelineLayout(PipelineLayoutCache& pipelineLayoutCache, uint8_t flags,
+				const wchar_t* name = nullptr);
 
-			DescriptorTableLayout CreateDescriptorTableLayout(uint32_t index, PipelineLayoutCache &pipelineLayoutCache) const;
-			DescriptorTableLayout GetDescriptorTableLayout(uint32_t index, PipelineLayoutCache &pipelineLayoutCache) const;
+			DescriptorTableLayout CreateDescriptorTableLayout(uint32_t index, PipelineLayoutCache& pipelineLayoutCache) const;
+			DescriptorTableLayout GetDescriptorTableLayout(uint32_t index, PipelineLayoutCache& pipelineLayoutCache) const;
 
-			const std::vector<std::string> &GetDescriptorTableLayoutKeys() const;
-			std::string &GetPipelineLayoutKey(PipelineLayoutCache *pPipelineLayoutCache);
+			const std::vector<std::string>& GetDescriptorTableLayoutKeys() const;
+			std::string& GetPipelineLayoutKey(PipelineLayoutCache* pPipelineLayoutCache);
 
 		protected:
-			std::string &checkKeySpace(uint32_t index);
+			std::string& checkKeySpace(uint32_t index);
 
 			std::vector<std::string> m_descriptorTableLayoutKeys;
 			std::string m_pipelineLayoutKey;
@@ -78,26 +78,26 @@ namespace XUSG
 	{
 	public:
 		PipelineLayoutCache();
-		PipelineLayoutCache(const Device &device);
+		PipelineLayoutCache(const Device& device);
 		virtual ~PipelineLayoutCache();
 
-		void SetDevice(const Device &device);
-		void SetPipelineLayout(const std::string &key, const PipelineLayout &pipelineLayout);
+		void SetDevice(const Device& device);
+		void SetPipelineLayout(const std::string& key, const PipelineLayout& pipelineLayout);
 
-		PipelineLayout CreatePipelineLayout(Util::PipelineLayout &util, uint8_t flags,
-			const wchar_t *name = nullptr);
-		PipelineLayout GetPipelineLayout(Util::PipelineLayout &util, uint8_t flags,
-			const wchar_t *name = nullptr, bool create = true);
+		PipelineLayout CreatePipelineLayout(Util::PipelineLayout& util, uint8_t flags,
+			const wchar_t* name = nullptr);
+		PipelineLayout GetPipelineLayout(Util::PipelineLayout& util, uint8_t flags,
+			const wchar_t* name = nullptr, bool create = true);
 
-		DescriptorTableLayout CreateDescriptorTableLayout(uint32_t index, const Util::PipelineLayout &util);
-		DescriptorTableLayout GetDescriptorTableLayout(uint32_t index, const Util::PipelineLayout &util);
+		DescriptorTableLayout CreateDescriptorTableLayout(uint32_t index, const Util::PipelineLayout& util);
+		DescriptorTableLayout GetDescriptorTableLayout(uint32_t index, const Util::PipelineLayout& util);
 
 	protected:
-		PipelineLayout createPipelineLayout(const std::string &key, const wchar_t *name) const;
-		PipelineLayout getPipelineLayout(const std::string &key, const wchar_t *name, bool create);
+		PipelineLayout createPipelineLayout(const std::string& key, const wchar_t* name) const;
+		PipelineLayout getPipelineLayout(const std::string& key, const wchar_t* name, bool create);
 
-		DescriptorTableLayout createDescriptorTableLayout(const std::string &key);
-		DescriptorTableLayout getDescriptorTableLayout(const std::string &key);
+		DescriptorTableLayout createDescriptorTableLayout(const std::string& key);
+		DescriptorTableLayout getDescriptorTableLayout(const std::string& key);
 
 		Device m_device;
 

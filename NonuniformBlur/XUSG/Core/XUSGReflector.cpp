@@ -48,32 +48,32 @@ struct DxilPartHeader
 
 enum DxilFourCC
 {
-	DFCC_Container					= DXIL_FOURCC('D', 'X', 'B', 'C'), // for back-compat with tools that look for DXBC containers
-	DFCC_ResourceDef				= DXIL_FOURCC('R', 'D', 'E', 'F'),
-	DFCC_InputSignature				= DXIL_FOURCC('I', 'S', 'G', '1'),
-	DFCC_OutputSignature			= DXIL_FOURCC('O', 'S', 'G', '1'),
-	DFCC_PatchConstantSignature		= DXIL_FOURCC('P', 'S', 'G', '1'),
-	DFCC_ShaderStatistics			= DXIL_FOURCC('S', 'T', 'A', 'T'),
-	DFCC_ShaderDebugInfoDXIL		= DXIL_FOURCC('I', 'L', 'D', 'B'),
-	DFCC_ShaderDebugName			= DXIL_FOURCC('I', 'L', 'D', 'N'),
-	DFCC_FeatureInfo				= DXIL_FOURCC('S', 'F', 'I', '0'),
-	DFCC_PrivateData				= DXIL_FOURCC('P', 'R', 'I', 'V'),
-	DFCC_RootSignature				= DXIL_FOURCC('R', 'T', 'S', '0'),
-	DFCC_DXIL						= DXIL_FOURCC('D', 'X', 'I', 'L'),
-	DFCC_PipelineStateValidation	= DXIL_FOURCC('P', 'S', 'V', '0'),
-	DFCC_RuntimeData				= DXIL_FOURCC('R', 'D', 'A', 'T'),
+	DFCC_Container = DXIL_FOURCC('D', 'X', 'B', 'C'), // for back-compat with tools that look for DXBC containers
+	DFCC_ResourceDef = DXIL_FOURCC('R', 'D', 'E', 'F'),
+	DFCC_InputSignature = DXIL_FOURCC('I', 'S', 'G', '1'),
+	DFCC_OutputSignature = DXIL_FOURCC('O', 'S', 'G', '1'),
+	DFCC_PatchConstantSignature = DXIL_FOURCC('P', 'S', 'G', '1'),
+	DFCC_ShaderStatistics = DXIL_FOURCC('S', 'T', 'A', 'T'),
+	DFCC_ShaderDebugInfoDXIL = DXIL_FOURCC('I', 'L', 'D', 'B'),
+	DFCC_ShaderDebugName = DXIL_FOURCC('I', 'L', 'D', 'N'),
+	DFCC_FeatureInfo = DXIL_FOURCC('S', 'F', 'I', '0'),
+	DFCC_PrivateData = DXIL_FOURCC('P', 'R', 'I', 'V'),
+	DFCC_RootSignature = DXIL_FOURCC('R', 'T', 'S', '0'),
+	DFCC_DXIL = DXIL_FOURCC('D', 'X', 'I', 'L'),
+	DFCC_PipelineStateValidation = DXIL_FOURCC('P', 'S', 'V', '0'),
+	DFCC_RuntimeData = DXIL_FOURCC('R', 'D', 'A', 'T'),
 };
 
 // Gets a part header by index.
-inline const DxilPartHeader *GetDxilContainerPart(const DxilContainerHeader *pHeader, uint32_t index)
+inline const DxilPartHeader* GetDxilContainerPart(const DxilContainerHeader* pHeader, uint32_t index)
 {
 	const auto pLinearContainer = reinterpret_cast<const uint8_t*>(pHeader);
-	const auto pPartOffsetTable = reinterpret_cast<const uint32_t *>(pHeader + 1);
+	const auto pPartOffsetTable = reinterpret_cast<const uint32_t*>(pHeader + 1);
 
-	return reinterpret_cast<const DxilPartHeader *>(pLinearContainer + pPartOffsetTable[index]);
+	return reinterpret_cast<const DxilPartHeader*>(pLinearContainer + pPartOffsetTable[index]);
 }
 
-static const DxilContainerHeader *IsDxilContainerLike(const void *ptr, size_t length)
+static const DxilContainerHeader* IsDxilContainerLike(const void* ptr, size_t length)
 {
 	C_RETURN(!ptr || length < 4, nullptr);
 
@@ -82,7 +82,7 @@ static const DxilContainerHeader *IsDxilContainerLike(const void *ptr, size_t le
 	return reinterpret_cast<const DxilContainerHeader*>(ptr);
 }
 
-static bool IsValidDxilContainer(const DxilContainerHeader *pHeader, size_t length)
+static bool IsValidDxilContainer(const DxilContainerHeader* pHeader, size_t length)
 {
 	// Validate that the header is where it's supposed to be.
 	N_RETURN(pHeader, false);
@@ -159,7 +159,7 @@ static DxcCreateInstanceProc GetDxcCreateInstanceProc()
 				if (GetModuleFileNameEx(hProcess, hMods[i], szModName, sizeof(szModName) / sizeof(char)))
 				{
 					// Remove path
-					wchar_t *p = wcsrchr(szModName, L'\\');
+					wchar_t* p = wcsrchr(szModName, L'\\');
 					if (!p) p = wcsrchr(szModName, L'/');
 					if (!p)
 					{
@@ -179,7 +179,7 @@ static DxcCreateInstanceProc GetDxcCreateInstanceProc()
 		// If dxcompiler.dll is not loaded, try some default candidates
 		if (!isDXCompilerLoaded)
 		{
-			static const wchar_t *modules[] = { L"dxcompiler.dll" };
+			static const wchar_t* modules[] = { L"dxcompiler.dll" };
 
 			for (size_t i = 0; i < sizeof(modules) / sizeof(modules[0]); i++)
 			{
@@ -202,7 +202,7 @@ Reflector::~Reflector()
 {
 }
 
-bool Reflector::SetShader(const Blob &shader)
+bool Reflector::SetShader(const Blob& shader)
 {
 	if (IsDxil(shader->GetBufferPointer(), shader->GetBufferSize()))
 	{
@@ -226,7 +226,7 @@ bool Reflector::SetShader(const Blob &shader)
 			IID_PPV_ARGS(&m_reflection)), cerr, false);
 	}
 	else V_RETURN(D3DReflect(shader->GetBufferPointer(), shader->GetBufferSize(),
-			IID_PPV_ARGS(&m_reflection)), cerr, false);
+		IID_PPV_ARGS(&m_reflection)), cerr, false);
 
 	return true;
 }
@@ -236,7 +236,7 @@ bool Reflector::IsValid() const
 	return m_reflection;
 }
 
-uint32_t Reflector::GetResourceBindingPointByName(const char *name, uint32_t defaultVal) const
+uint32_t Reflector::GetResourceBindingPointByName(const char* name, uint32_t defaultVal) const
 {
 	D3D12_SHADER_INPUT_BIND_DESC desc;
 	const auto hr = m_reflection->GetResourceBindingDescByName(name, &desc);

@@ -25,7 +25,7 @@ State::~State()
 {
 }
 
-void State::SetPipelineLayout(const PipelineLayout &layout)
+void State::SetPipelineLayout(const PipelineLayout& layout)
 {
 	m_pKey->PipelineLayout = layout.get();
 }
@@ -35,37 +35,37 @@ void State::SetShader(Shader::Stage stage, Blob shader)
 	m_pKey->Shaders[stage] = shader.get();
 }
 
-void State::OMSetBlendState(const Blend &blend)
+void State::OMSetBlendState(const Blend& blend)
 {
 	m_pKey->Blend = blend.get();
 }
 
-void State::RSSetState(const Rasterizer &rasterizer)
+void State::RSSetState(const Rasterizer& rasterizer)
 {
 	m_pKey->Rasterizer = rasterizer.get();
 }
 
-void State::DSSetState(const DepthStencil &depthStencil)
+void State::DSSetState(const DepthStencil& depthStencil)
 {
 	m_pKey->DepthStencil = depthStencil.get();
 }
 
-void State::OMSetBlendState(BlendPreset preset, PipelineCache &pipelineCache)
+void State::OMSetBlendState(BlendPreset preset, PipelineCache& pipelineCache)
 {
 	OMSetBlendState(pipelineCache.GetBlend(preset));
 }
 
-void State::RSSetState(RasterizerPreset preset, PipelineCache &pipelineCache)
+void State::RSSetState(RasterizerPreset preset, PipelineCache& pipelineCache)
 {
 	RSSetState(pipelineCache.GetRasterizer(preset));
 }
 
-void State::DSSetState(DepthStencilPreset preset, PipelineCache &pipelineCache)
+void State::DSSetState(DepthStencilPreset preset, PipelineCache& pipelineCache)
 {
 	DSSetState(pipelineCache.GetDepthStencil(preset));
 }
 
-void State::IASetInputLayout(const InputLayout &layout)
+void State::IASetInputLayout(const InputLayout& layout)
 {
 	m_pKey->InputLayout = layout.get();
 }
@@ -85,7 +85,7 @@ void State::OMSetRTVFormat(uint8_t i, Format format)
 	m_pKey->RTVFormats[i] = format;
 }
 
-void State::OMSetRTVFormats(const Format *formats, uint8_t n)
+void State::OMSetRTVFormats(const Format* formats, uint8_t n)
 {
 	OMSetNumRenderTargets(n);
 
@@ -98,17 +98,17 @@ void State::OMSetDSVFormat(Format format)
 	m_pKey->DSVFormat = format;
 }
 
-Pipeline State::CreatePipeline(PipelineCache &pipelineCache, const wchar_t *name) const
+Pipeline State::CreatePipeline(PipelineCache& pipelineCache, const wchar_t* name) const
 {
 	return pipelineCache.CreatePipeline(*this, name);
 }
 
-Pipeline State::GetPipeline(PipelineCache &pipelineCache, const wchar_t *name) const
+Pipeline State::GetPipeline(PipelineCache& pipelineCache, const wchar_t* name) const
 {
 	return pipelineCache.GetPipeline(*this, name);
 }
 
-const string &State::GetKey() const
+const string& State::GetKey() const
 {
 	return m_key;
 }
@@ -150,7 +150,7 @@ PipelineCache::PipelineCache() :
 	m_pfnDepthStencils[DepthStencilPreset::DEPTH_READ_EQUAL] = DepthReadEqual;
 }
 
-PipelineCache::PipelineCache(const Device &device) :
+PipelineCache::PipelineCache(const Device& device) :
 	PipelineCache()
 {
 	SetDevice(device);
@@ -160,17 +160,17 @@ PipelineCache::~PipelineCache()
 {
 }
 
-void PipelineCache::SetDevice(const Device &device)
+void PipelineCache::SetDevice(const Device& device)
 {
 	m_device = device;
 }
 
-void PipelineCache::SetPipeline(const string &key, const Pipeline &pipeline)
+void PipelineCache::SetPipeline(const string& key, const Pipeline& pipeline)
 {
 	m_pipelines[key] = pipeline;
 }
 
-void PipelineCache::SetInputLayout(uint32_t index, const InputElementTable &elementTable)
+void PipelineCache::SetInputLayout(uint32_t index, const InputElementTable& elementTable)
 {
 	m_inputLayoutPool.SetLayout(index, elementTable);
 }
@@ -180,22 +180,22 @@ InputLayout PipelineCache::GetInputLayout(uint32_t index) const
 	return m_inputLayoutPool.GetLayout(index);
 }
 
-InputLayout PipelineCache::CreateInputLayout(const InputElementTable &elementTable)
+InputLayout PipelineCache::CreateInputLayout(const InputElementTable& elementTable)
 {
 	return m_inputLayoutPool.CreateLayout(elementTable);
 }
 
-Pipeline PipelineCache::CreatePipeline(const State &state, const wchar_t *name)
+Pipeline PipelineCache::CreatePipeline(const State& state, const wchar_t* name)
 {
 	return createPipeline(reinterpret_cast<const State::Key*>(state.GetKey().data()), name);
 }
 
-Pipeline PipelineCache::GetPipeline(const State &state, const wchar_t *name)
+Pipeline PipelineCache::GetPipeline(const State& state, const wchar_t* name)
 {
 	return getPipeline(state.GetKey(), name);
 }
 
-const Blend &PipelineCache::GetBlend(BlendPreset preset)
+const Blend& PipelineCache::GetBlend(BlendPreset preset)
 {
 	if (m_blends[preset] == nullptr)
 		m_blends[preset] = m_pfnBlends[preset]();
@@ -203,7 +203,7 @@ const Blend &PipelineCache::GetBlend(BlendPreset preset)
 	return m_blends[preset];
 }
 
-const Rasterizer &PipelineCache::GetRasterizer(RasterizerPreset preset)
+const Rasterizer& PipelineCache::GetRasterizer(RasterizerPreset preset)
 {
 	if (m_rasterizers[preset] == nullptr)
 		m_rasterizers[preset] = m_pfnRasterizers[preset]();
@@ -211,7 +211,7 @@ const Rasterizer &PipelineCache::GetRasterizer(RasterizerPreset preset)
 	return m_rasterizers[preset];
 }
 
-const DepthStencil &PipelineCache::GetDepthStencil(DepthStencilPreset preset)
+const DepthStencil& PipelineCache::GetDepthStencil(DepthStencilPreset preset)
 {
 	if (m_depthStencils[preset] == nullptr)
 		m_depthStencils[preset] = m_pfnDepthStencils[preset]();
@@ -219,7 +219,7 @@ const DepthStencil &PipelineCache::GetDepthStencil(DepthStencilPreset preset)
 	return m_depthStencils[preset];
 }
 
-Pipeline PipelineCache::createPipeline(const State::Key *pKey, const wchar_t *name)
+Pipeline PipelineCache::createPipeline(const State::Key* pKey, const wchar_t* name)
 {
 	// Fill desc
 	PipelineDesc desc = {};
@@ -263,7 +263,7 @@ Pipeline PipelineCache::createPipeline(const State::Key *pKey, const wchar_t *na
 	return pipeline;
 }
 
-Pipeline PipelineCache::getPipeline(const string &key, const wchar_t *name)
+Pipeline PipelineCache::getPipeline(const string& key, const wchar_t* name)
 {
 	const auto pPipeline = m_pipelines.find(key);
 
