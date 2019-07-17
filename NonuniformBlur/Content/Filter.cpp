@@ -90,13 +90,8 @@ void Filter::Process(const CommandList& commandList, XMFLOAT2 focus, float sigma
 	auto numBarriers = 0u;
 	const auto dstState = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
 	for (auto i = 0ui8; i + 1 < numPasses; ++i)
-	{
-		const auto j = i + 1;
-		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, j, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-		commandList.Barrier(numBarriers, barriers);
-		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].Blit(commandList, 8, 8, j, dstState, barriers,
-			m_uavSrvTables[TABLE_DOWN_SAMPLE][i], 1);
-	}
+		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].Blit(commandList, 8, 8, i + 1, dstState,
+			barriers, m_uavSrvTables[TABLE_DOWN_SAMPLE][i], 1, numBarriers);
 	if (numPasses > 0)
 		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, dstState, numBarriers, numPasses - 1);
 	numBarriers = m_filtered[TABLE_UP_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers);
@@ -145,13 +140,8 @@ void Filter::ProcessG(const CommandList& commandList, XMFLOAT2 focus, float sigm
 	auto numBarriers = 0u;
 	const auto dstState = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
 	for (auto i = 0ui8; i < numPasses; ++i)
-	{
-		const auto j = i + 1;
-		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, j, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-		commandList.Barrier(numBarriers, barriers);
-		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].Blit(commandList, 8, 8, j, dstState, barriers,
-			m_uavSrvTables[TABLE_DOWN_SAMPLE][i], 1);
-	}
+		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].Blit(commandList, 8, 8, i + 1, dstState,
+			barriers, m_uavSrvTables[TABLE_DOWN_SAMPLE][i], 1, numBarriers);
 	numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, dstState, numBarriers, numPasses);
 	numBarriers = m_filtered[TABLE_UP_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers, 0);
 	commandList.Barrier(numBarriers, barriers);

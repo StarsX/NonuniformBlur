@@ -598,8 +598,12 @@ uint32_t Texture2D::Blit(const CommandList& commandList, uint32_t groupSizeX, ui
 	const DescriptorTable& srvTable, uint32_t srvSlot, uint32_t slice)
 {
 	const auto prevBarriers = numBarriers;
-	if (mipLevel > 0) numBarriers = SetBarrier(pBarriers, mipLevel - 1, prevMipLevelState, numBarriers, slice);
-	else numBarriers = SetBarrier(pBarriers, D3D12_RESOURCE_STATE_RENDER_TARGET, numBarriers);
+	if (mipLevel > 0)
+	{
+		numBarriers = SetBarrier(pBarriers, mipLevel, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers, slice);
+		numBarriers = SetBarrier(pBarriers, mipLevel - 1, prevMipLevelState, numBarriers, slice);
+	}
+	else numBarriers = SetBarrier(pBarriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers);
 
 	if (numBarriers > prevBarriers)
 	{
@@ -793,7 +797,11 @@ uint32_t RenderTarget::Blit(const CommandList& commandList, uint8_t mipLevel, Re
 	uint32_t slice)
 {
 	const auto prevBarriers = numBarriers;
-	if (mipLevel > 0) numBarriers = SetBarrier(pBarriers, mipLevel - 1, prevMipLevelState, numBarriers, slice);
+	if (mipLevel > 0)
+	{
+		numBarriers = SetBarrier(pBarriers, mipLevel, D3D12_RESOURCE_STATE_RENDER_TARGET, numBarriers, slice);
+		numBarriers = SetBarrier(pBarriers, mipLevel - 1, prevMipLevelState, numBarriers, slice);
+	}
 	else numBarriers = SetBarrier(pBarriers, D3D12_RESOURCE_STATE_RENDER_TARGET, numBarriers);
 
 	if (numBarriers > prevBarriers)
