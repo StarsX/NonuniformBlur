@@ -69,7 +69,7 @@ bool Filter::Init(const CommandList& commandList, uint32_t width, uint32_t heigh
 	return true;
 }
 
-void Filter::Process(const CommandList& commandList, XMFLOAT2 focus, float sigma)
+void Filter::Process(const CommandList& commandList, XMFLOAT2 focus, float sigma, ResourceState dstState)
 {
 	const uint8_t numPasses = m_numMips - 1;
 
@@ -82,20 +82,15 @@ void Filter::Process(const CommandList& commandList, XMFLOAT2 focus, float sigma
 	commandList.SetDescriptorPools(static_cast<uint32_t>(size(descriptorPools)), descriptorPools);
 
 	// Generate Mips
-	commandList.SetComputePipelineLayout(m_pipelineLayouts[RESAMPLE]);
-	commandList.SetPipelineState(m_pipelines[RESAMPLE]);
-	commandList.SetComputeDescriptorTable(0, m_samplerTable);
-
 	ResourceBarrier barriers[2];
 	auto numBarriers = 0u;
-	const auto dstState = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-	for (auto i = 0ui8; i + 1 < numPasses; ++i)
-		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].Blit(commandList, 8, 8, i + 1, dstState,
-			barriers, m_uavSrvTables[TABLE_DOWN_SAMPLE][i], 1, numBarriers);
-	if (numPasses > 0)
-		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, dstState, numBarriers, numPasses - 1);
+	if (numPasses > 0) numBarriers = m_filtered[TABLE_DOWN_SAMPLE].GenerateMips(commandList, barriers,
+		8, 8, 1, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, m_pipelineLayouts[RESAMPLE],
+		m_pipelines[RESAMPLE], m_uavSrvTables[TABLE_DOWN_SAMPLE].data(), 1, m_samplerTable,
+		0, numBarriers, nullptr, 0, 1, numPasses - 1);
 	numBarriers = m_filtered[TABLE_UP_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers);
 	commandList.Barrier(numBarriers, barriers);
+	numBarriers = 0;
 
 	commandList.SetComputeDescriptorTable(1, m_uavSrvTables[TABLE_DOWN_SAMPLE][numPasses]);
 	commandList.Dispatch(1, 1, 1);
@@ -110,12 +105,9 @@ void Filter::Process(const CommandList& commandList, XMFLOAT2 focus, float sigma
 	{
 		const auto c = numPasses - i;
 		cb.Level = c - 1;
-		numBarriers = m_filtered[TABLE_UP_SAMPLE].SetBarrier(barriers,
-			D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE |
-			D3D12_RESOURCE_STATE_COPY_SOURCE, 0, c);
-		commandList.Barrier(numBarriers, barriers);
 		commandList.SetCompute32BitConstants(2, SizeOfInUint32(GaussianConstants), &cb);
-		m_filtered[TABLE_UP_SAMPLE].Blit(commandList, 8, 8, m_uavSrvTables[TABLE_UP_SAMPLE][i], 1, cb.Level);
+		numBarriers = m_filtered[TABLE_UP_SAMPLE].Blit(commandList, barriers, 8, 8, 1,
+			cb.Level, c, dstState, m_uavSrvTables[TABLE_UP_SAMPLE][i], 1, numBarriers);
 	}
 }
 
@@ -138,11 +130,10 @@ void Filter::ProcessG(const CommandList& commandList, XMFLOAT2 focus, float sigm
 
 	ResourceBarrier barriers[2];
 	auto numBarriers = 0u;
-	const auto dstState = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-	for (auto i = 0ui8; i < numPasses; ++i)
-		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].Blit(commandList, 8, 8, i + 1, dstState,
-			barriers, m_uavSrvTables[TABLE_DOWN_SAMPLE][i], 1, numBarriers);
-	numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, dstState, numBarriers, numPasses);
+	if (numPasses > 0) numBarriers = m_filtered[TABLE_DOWN_SAMPLE].GenerateMips(commandList, barriers,
+		8, 8, 1, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, m_pipelineLayouts[RESAMPLE],
+		m_pipelines[RESAMPLE], m_uavSrvTables[TABLE_DOWN_SAMPLE].data(), 1, m_samplerTable,
+		0, numBarriers);
 	numBarriers = m_filtered[TABLE_UP_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers, 0);
 	commandList.Barrier(numBarriers, barriers);
 
@@ -150,7 +141,7 @@ void Filter::ProcessG(const CommandList& commandList, XMFLOAT2 focus, float sigm
 	GaussianConstants cb = { focus, sigma, m_numMips };
 	commandList.SetComputePipelineLayout(m_pipelineLayouts[GAUSSIAN]);
 	commandList.SetCompute32BitConstants(2, SizeOfInUint32(GaussianConstants), &cb);
-	m_filtered[TABLE_UP_SAMPLE].Blit(commandList, 8, 8, m_uavSrvTables[TABLE_UP_SAMPLE][numPasses],
+	m_filtered[TABLE_UP_SAMPLE].Blit(commandList, 8, 8, 1, m_uavSrvTables[TABLE_UP_SAMPLE][numPasses],
 		1, 0, nullptr, 0, nullptr, 0, m_pipelines[GAUSSIAN]);
 }
 

@@ -17,7 +17,7 @@ public:
 		std::shared_ptr<XUSG::ResourceBase>& source, std::vector<XUSG::Resource>& uploaders,
 		const wchar_t* fileName = L"Lenna.dds");
 
-	void Process(const XUSG::CommandList& commandList, DirectX::XMFLOAT2 focus, float sigma);
+	void Process(const XUSG::CommandList& commandList, DirectX::XMFLOAT2 focus, float sigma, XUSG::ResourceState dstState);
 	void ProcessG(const XUSG::CommandList& commandList, DirectX::XMFLOAT2 focus, float sigma);
 
 	XUSG::Texture2D& GetResult();

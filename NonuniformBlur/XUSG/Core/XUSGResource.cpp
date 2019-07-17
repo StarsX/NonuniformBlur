@@ -572,10 +572,9 @@ uint32_t Texture2D::SetBarrier(ResourceBarrier* pBarriers, uint8_t mipLevel, Res
 }
 
 void Texture2D::Blit(const CommandList& commandList, uint32_t groupSizeX, uint32_t groupSizeY,
-	const DescriptorTable& uavSrvTable, uint32_t uavSrvSlot, uint8_t mipLevel,
-	const DescriptorTable& srvTable, uint32_t srvSlot,
-	const DescriptorTable& samplerTable, uint32_t samplerSlot,
-	const Pipeline& pipeline)
+	uint32_t groupSizeZ, const DescriptorTable& uavSrvTable, uint32_t uavSrvSlot, uint8_t mipLevel,
+	const DescriptorTable& srvTable, uint32_t srvSlot, const DescriptorTable& samplerTable,
+	uint32_t samplerSlot, const Pipeline& pipeline)
 {
 	// Set pipeline layout and descriptor tables
 	if (uavSrvTable) commandList.SetComputeDescriptorTable(uavSrvSlot, uavSrvTable);
@@ -589,21 +588,27 @@ void Texture2D::Blit(const CommandList& commandList, uint32_t groupSizeX, uint32
 	const auto& desc = m_resource->GetDesc();
 	const auto width = (max)(static_cast<uint32_t>(desc.Width >> mipLevel), 1u);
 	const auto height = (max)(desc.Height >> mipLevel, 1u);
-	commandList.Dispatch(DIV_UP(width, groupSizeX), DIV_UP(height, groupSizeY), 1);
+	commandList.Dispatch(DIV_UP(width, groupSizeX), DIV_UP(height, groupSizeY),
+		DIV_UP(desc.DepthOrArraySize, groupSizeZ));
 }
 
-uint32_t Texture2D::Blit(const CommandList& commandList, uint32_t groupSizeX, uint32_t groupSizeY,
-	uint8_t mipLevel, ResourceState prevMipLevelState, ResourceBarrier* pBarriers,
-	const DescriptorTable& uavSrvTable, uint32_t uavSrvSlot, uint32_t numBarriers,
-	const DescriptorTable& srvTable, uint32_t srvSlot, uint32_t slice)
+uint32_t Texture2D::Blit(const CommandList& commandList, ResourceBarrier* pBarriers,
+	uint32_t groupSizeX, uint32_t groupSizeY, uint32_t groupSizeZ, uint8_t mipLevel,
+	int8_t srcMipLevel, ResourceState srcState, const DescriptorTable& uavSrvTable,
+	uint32_t uavSrvSlot, uint32_t numBarriers, const DescriptorTable& srvTable,
+	uint32_t srvSlot, uint32_t baseSlice, uint32_t numSlices)
 {
 	const auto prevBarriers = numBarriers;
-	if (mipLevel > 0)
+	if (numSlices == 0) numSlices = m_resource->GetDesc().DepthOrArraySize - baseSlice;
+
+	if (mipLevel == 0 && srcMipLevel <= mipLevel)
+		numBarriers = SetBarrier(pBarriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers);
+	else for (auto i = 0u; i < numSlices; ++i)
 	{
-		numBarriers = SetBarrier(pBarriers, mipLevel, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers, slice);
-		numBarriers = SetBarrier(pBarriers, mipLevel - 1, prevMipLevelState, numBarriers, slice);
+		const auto j = baseSlice + i;
+		numBarriers = SetBarrier(pBarriers, mipLevel, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers, j);
+		numBarriers = SetBarrier(pBarriers, srcMipLevel, srcState, numBarriers, j);
 	}
-	else numBarriers = SetBarrier(pBarriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers);
 
 	if (numBarriers > prevBarriers)
 	{
@@ -611,7 +616,50 @@ uint32_t Texture2D::Blit(const CommandList& commandList, uint32_t groupSizeX, ui
 		numBarriers = 0;
 	}
 
-	Blit(commandList, groupSizeX, groupSizeY, uavSrvTable, uavSrvSlot, mipLevel, srvTable, srvSlot);
+	Blit(commandList, groupSizeX, groupSizeY, groupSizeZ, uavSrvTable, uavSrvSlot, mipLevel, srvTable, srvSlot);
+
+	return numBarriers;
+}
+
+uint32_t Texture2D::GenerateMips(const CommandList& commandList, ResourceBarrier* pBarriers, uint32_t groupSizeX,
+	uint32_t groupSizeY, uint32_t groupSizeZ, ResourceState dstState, const PipelineLayout& pipelineLayout,
+	const Pipeline& pipeline, const DescriptorTable* pUavSrvTables, uint32_t uavSrvSlot, const DescriptorTable& samplerTable,
+	uint32_t samplerSlot, uint32_t numBarriers, const DescriptorTable* pSrvTables, uint32_t srvSlot, uint8_t baseMip,
+	uint8_t numMips, uint32_t baseSlice, uint32_t numSlices)
+{
+	commandList.SetComputePipelineLayout(pipelineLayout);
+	commandList.SetComputeDescriptorTable(samplerSlot, samplerTable);
+	commandList.SetPipelineState(pipeline);
+
+	const auto& desc = m_resource->GetDesc();
+	if (numSlices == 0) numSlices = desc.DepthOrArraySize - baseSlice;
+	if (numMips == 0)
+	{
+		numMips = desc.MipLevels - baseMip;
+		if (baseMip == 0) numBarriers = SetBarrier(pBarriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers);
+	}
+
+	for (auto i = 0ui8; i < numMips; ++i)
+	{
+		const auto j = baseMip + i;
+		const auto prevBarriers = numBarriers;
+
+		if (j > 0) for (auto k = 0u; k < numSlices; ++k)
+		{
+			const auto n = baseSlice + k;
+			numBarriers = SetBarrier(pBarriers, j, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers, n);
+			numBarriers = SetBarrier(pBarriers, j - 1, dstState, numBarriers, n);
+		}
+
+		commandList.Barrier(numBarriers, pBarriers);
+		numBarriers = 0;
+
+		Blit(commandList, groupSizeX, groupSizeY, groupSizeZ, pUavSrvTables[i], uavSrvSlot, j,
+			pSrvTables ? pSrvTables[i] : nullptr, srvSlot);
+	}
+
+	if (baseMip + numMips > 0) for (auto k = 0u; k < numSlices; ++k)
+		numBarriers = SetBarrier(pBarriers, baseMip + numMips - 1, dstState, numBarriers, baseSlice + k);
 
 	return numBarriers;
 }
@@ -764,12 +812,15 @@ bool RenderTarget::CreateFromSwapChain(const Device& device, const SwapChain& sw
 }
 
 void RenderTarget::Blit(const CommandList& commandList, const DescriptorTable& srcSrvTable,
-	uint32_t srcSlot, uint8_t mipLevel, uint32_t slice, const DescriptorTable& samplerTable,
-	uint32_t samplerSlot, const Pipeline& pipeline)
+	uint32_t srcSlot, uint8_t mipLevel, uint32_t baseSlice, uint32_t numSlices,
+	const DescriptorTable& samplerTable, uint32_t samplerSlot, const Pipeline& pipeline)
 {
 	// Set render target
-	const auto rtvTable = make_shared<Descriptor>(GetRTV(slice, mipLevel));
-	commandList.OMSetRenderTargets(1, rtvTable, nullptr);
+	if (numSlices == 0) numSlices = GetArraySize() - baseSlice;
+	vector<Descriptor> rtvs(numSlices);
+	for (auto i = 0u; i < numSlices; ++i) rtvs[i] = GetRTV(baseSlice + i, mipLevel);
+	const auto rtvTable = make_shared<Descriptor>(*rtvs.data());
+	commandList.OMSetRenderTargets(numSlices, rtvTable, nullptr);
 
 	// Set pipeline layout and descriptor tables
 	if (srcSrvTable) commandList.SetGraphicsDescriptorTable(srcSlot, srcSrvTable);
@@ -792,17 +843,21 @@ void RenderTarget::Blit(const CommandList& commandList, const DescriptorTable& s
 	commandList.Draw(3, 1, 0, 0);
 }
 
-uint32_t RenderTarget::Blit(const CommandList& commandList, uint8_t mipLevel, ResourceState prevMipLevelState,
-	ResourceBarrier* pBarriers, const DescriptorTable& srcSrvTable, uint32_t srcSlot, uint32_t numBarriers,
-	uint32_t slice)
+uint32_t RenderTarget::Blit(const CommandList& commandList, ResourceBarrier* pBarriers, uint8_t mipLevel,
+	int8_t srcMipLevel, ResourceState srcState, const DescriptorTable& srcSrvTable, uint32_t srcSlot,
+	uint32_t numBarriers, uint32_t baseSlice, uint32_t numSlices)
 {
 	const auto prevBarriers = numBarriers;
-	if (mipLevel > 0)
+	if (numSlices == 0) numSlices = GetArraySize() - baseSlice;
+
+	if (mipLevel == 0 && srcMipLevel <= mipLevel)
+		numBarriers = SetBarrier(pBarriers, D3D12_RESOURCE_STATE_RENDER_TARGET, numBarriers);
+	else for (auto i = 0u; i < numSlices; ++i)
 	{
-		numBarriers = SetBarrier(pBarriers, mipLevel, D3D12_RESOURCE_STATE_RENDER_TARGET, numBarriers, slice);
-		numBarriers = SetBarrier(pBarriers, mipLevel - 1, prevMipLevelState, numBarriers, slice);
+		const auto j = baseSlice + i;
+		numBarriers = SetBarrier(pBarriers, mipLevel, D3D12_RESOURCE_STATE_RENDER_TARGET, numBarriers, j);
+		numBarriers = SetBarrier(pBarriers, srcMipLevel, srcState, numBarriers, j);
 	}
-	else numBarriers = SetBarrier(pBarriers, D3D12_RESOURCE_STATE_RENDER_TARGET, numBarriers);
 
 	if (numBarriers > prevBarriers)
 	{
@@ -810,7 +865,48 @@ uint32_t RenderTarget::Blit(const CommandList& commandList, uint8_t mipLevel, Re
 		numBarriers = 0;
 	}
 
-	Blit(commandList, srcSrvTable, srcSlot, mipLevel, slice);
+	Blit(commandList, srcSrvTable, srcSlot, mipLevel, baseSlice, numSlices);
+
+	return numBarriers;
+}
+
+uint32_t RenderTarget::GenerateMips(const CommandList& commandList, ResourceBarrier* pBarriers,
+	ResourceState dstState, const PipelineLayout& pipelineLayout, const Pipeline& pipeline,
+	const DescriptorTable* pSrcSrvTables, uint32_t srcSlot, const DescriptorTable& samplerTable,
+	uint32_t samplerSlot, uint32_t numBarriers, uint8_t baseMip, uint8_t numMips,
+	uint32_t baseSlice, uint32_t numSlices)
+{
+	commandList.SetGraphicsPipelineLayout(pipelineLayout);
+	commandList.SetGraphicsDescriptorTable(samplerSlot, samplerTable);
+	commandList.SetPipelineState(pipeline);
+
+	if (numSlices == 0) numSlices = GetArraySize() - baseSlice;
+	if (numMips == 0)
+	{
+		numMips = GetNumMips() - baseMip;
+		if (baseMip == 0) numBarriers = SetBarrier(pBarriers, D3D12_RESOURCE_STATE_RENDER_TARGET, numBarriers);
+	}
+
+	for (auto i = 0ui8; i < numMips; ++i)
+	{
+		const auto j = baseMip + i;
+		const auto prevBarriers = numBarriers;
+
+		if (j > 0) for (auto k = 0u; k < numSlices; ++k)
+		{
+			const auto n = baseSlice + k;
+			numBarriers = SetBarrier(pBarriers, j, D3D12_RESOURCE_STATE_RENDER_TARGET, numBarriers, n);
+			numBarriers = SetBarrier(pBarriers, j - 1, dstState, numBarriers, n);
+		}
+
+		commandList.Barrier(numBarriers, pBarriers);
+		numBarriers = 0;
+
+		Blit(commandList, pSrcSrvTables[i], srcSlot, j, baseSlice, numSlices);
+	}
+
+	if (baseMip + numMips > 0) for (auto k = 0u; k < numSlices; ++k)
+		numBarriers = SetBarrier(pBarriers, baseMip + numMips - 1, dstState, numBarriers, baseSlice + k);
 
 	return numBarriers;
 }

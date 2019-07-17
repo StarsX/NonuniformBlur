@@ -227,8 +227,9 @@ void NonUniformBlur::PopulateCommandList()
 	ThrowIfFailed(m_commandList.Reset(m_commandAllocators[m_frameIndex], nullptr));
 
 	// Record commands.
-	m_filter->Process(m_commandList, m_focus, m_sigma);		// V-cycle
-	//m_filter->ProcessG(m_commandList, m_focus, m_sigma);	// Naive weighted averaging
+	const auto dstState = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_COPY_SOURCE;
+	m_filter->Process(m_commandList, m_focus, m_sigma, dstState);	// V-cycle
+	//m_filter->ProcessG(m_commandList, m_focus, m_sigma);			// Naive weighted averaging
 
 	{
 		const TextureCopyLocation dst(m_renderTargets[m_frameIndex].GetResource().get(), 0);
@@ -236,8 +237,7 @@ void NonUniformBlur::PopulateCommandList()
 
 		ResourceBarrier barriers[2];
 		auto numBarriers = m_renderTargets[m_frameIndex].SetBarrier(barriers, D3D12_RESOURCE_STATE_COPY_DEST);
-		numBarriers = m_filter->GetResult().SetBarrier(barriers, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE |
-			D3D12_RESOURCE_STATE_COPY_SOURCE, numBarriers, 0);
+		numBarriers = m_filter->GetResult().SetBarrier(barriers, dstState, numBarriers, 0);
 		m_commandList.Barrier(numBarriers, barriers);
 
 		m_commandList.CopyTextureRegion(dst, 0, 0, 0, src);
