@@ -7,8 +7,6 @@
 #include "XUSGCommand.h"
 
 #define BIND_PACKED_UAV	ResourceFlags(0x4 | 0x8000)
-#define POW2_UP(x, n)	(((x) + (n - 1)) & ~(n - 1))
-#define DIV_UP(x, n)	(((x) - 1) / (n) + 1)
 
 namespace XUSG
 {
@@ -108,11 +106,21 @@ namespace XUSG
 			uint8_t sampleCount = 1, bool isCubeMap = false);
 		bool CreateUAVs(uint32_t arraySize, Format format = Format(0), uint8_t numMips = 1);
 
+		uint32_t SetBarrier(ResourceBarrier* pBarriers, ResourceState dstState,
+			uint32_t numBarriers = 0, uint32_t subresource = 0xffffffff,
+			BarrierFlags flags = BarrierFlags(0));
+		uint32_t SetBarrier(ResourceBarrier* pBarriers, uint8_t mipLevel, ResourceState dstState,
+			uint32_t numBarriers = 0, uint32_t slice = 0, BarrierFlags flags = BarrierFlags(0));
+
 		void Blit(const CommandList& commandList, uint32_t groupSizeX, uint32_t groupSizeY,
 			const DescriptorTable& uavSrvTable, uint32_t uavSrvSlot = 0, uint8_t mipLevel = 0,
-			const DescriptorTable & srvTable = nullptr, uint32_t srvSlot = 0, int32_t slice = 0,
-			const DescriptorTable & samplerTable = nullptr, uint32_t samplerSlot = 1,
-			const PipelineLayout & pipelineLayout = nullptr, const Pipeline & pipeline = nullptr);
+			const DescriptorTable& srvTable = nullptr, uint32_t srvSlot = 0,
+			const DescriptorTable& samplerTable = nullptr, uint32_t samplerSlot = 1,
+			const Pipeline& pipeline = nullptr);
+		uint32_t Blit(const CommandList& commandList, uint32_t groupSizeX, uint32_t groupSizeY,
+			uint8_t mipLevel, ResourceState prevMipLevelState, ResourceBarrier* pBarriers,
+			const DescriptorTable& uavSrvTable, uint32_t uavSrvSlot = 0, uint32_t numBarriers = 0,
+			const DescriptorTable & srvTable = nullptr, uint32_t srvSlot = 0, uint32_t slice = 0);
 
 		Descriptor GetUAV(uint8_t i = 0) const;
 		Descriptor GetSRVLevel(uint8_t i) const;
@@ -144,9 +152,11 @@ namespace XUSG
 		bool CreateFromSwapChain(const Device& device, const SwapChain& swapChain, uint32_t bufferIdx);
 
 		void Blit(const CommandList& commandList, const DescriptorTable& srcSrvTable, uint32_t srcSlot = 0,
-			uint8_t mipLevel = 0, int32_t slice = 0, const DescriptorTable & samplerTable = nullptr,
-			uint32_t samplerSlot = 1, const PipelineLayout & pipelineLayout = nullptr,
-			const Pipeline & pipeline = nullptr);
+			uint8_t mipLevel = 0, uint32_t slice = 0, const DescriptorTable& samplerTable = nullptr,
+			uint32_t samplerSlot = 1, const Pipeline& pipeline = nullptr);
+		uint32_t Blit(const CommandList& commandList, uint8_t mipLevel, ResourceState prevMipLevelState,
+			ResourceBarrier* pBarriers, const DescriptorTable& srcSrvTable, uint32_t srcSlot = 0,
+			uint32_t numBarriers = 0, uint32_t slice = 0);
 
 		Descriptor	GetRTV(uint32_t slice = 0, uint8_t mipLevel = 0) const;
 		uint32_t	GetArraySize() const;

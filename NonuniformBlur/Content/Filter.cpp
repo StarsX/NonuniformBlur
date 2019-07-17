@@ -60,14 +60,10 @@ bool Filter::Init(const CommandList& commandList, uint32_t width, uint32_t heigh
 
 		ResourceBarrier barriers[2];
 		auto numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_COPY_DEST, 0, 0);
-		numBarriers = source->SetBarrier(barriers, D3D12_RESOURCE_STATE_COPY_SOURCE, numBarriers, 0);
+		numBarriers = source->SetBarrier(barriers, D3D12_RESOURCE_STATE_COPY_SOURCE, numBarriers);
 		commandList.Barrier(numBarriers, barriers);
 
 		commandList.CopyTextureRegion(dst, 0, 0, 0, src);
-
-		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers,
-			D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0, 0);
-		commandList.Barrier(numBarriers, barriers);
 	}
 
 	return true;
@@ -92,15 +88,17 @@ void Filter::Process(const CommandList& commandList, XMFLOAT2 focus, float sigma
 
 	ResourceBarrier barriers[2];
 	auto numBarriers = 0u;
+	const auto dstState = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
 	for (auto i = 0ui8; i + 1 < numPasses; ++i)
 	{
 		const auto j = i + 1;
-		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers, j);
+		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, j, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 		commandList.Barrier(numBarriers, barriers);
-		m_filtered[TABLE_DOWN_SAMPLE].Blit(commandList, 8, 8, m_uavSrvTables[TABLE_DOWN_SAMPLE][i], 1, j);
-		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0, j);
+		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].Blit(commandList, 8, 8, j, dstState, barriers,
+			m_uavSrvTables[TABLE_DOWN_SAMPLE][i], 1);
 	}
-
+	if (numPasses > 0)
+		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, dstState, numBarriers, numPasses - 1);
 	numBarriers = m_filtered[TABLE_UP_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers);
 	commandList.Barrier(numBarriers, barriers);
 
@@ -145,15 +143,16 @@ void Filter::ProcessG(const CommandList& commandList, XMFLOAT2 focus, float sigm
 
 	ResourceBarrier barriers[2];
 	auto numBarriers = 0u;
+	const auto dstState = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
 	for (auto i = 0ui8; i < numPasses; ++i)
 	{
 		const auto j = i + 1;
-		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers, j);
+		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, j, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 		commandList.Barrier(numBarriers, barriers);
-		m_filtered[TABLE_DOWN_SAMPLE].Blit(commandList, 8, 8, m_uavSrvTables[TABLE_DOWN_SAMPLE][i], 1, j);
-		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, 0, j);
+		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].Blit(commandList, 8, 8, j, dstState, barriers,
+			m_uavSrvTables[TABLE_DOWN_SAMPLE][i], 1);
 	}
-
+	numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, dstState, numBarriers, numPasses);
 	numBarriers = m_filtered[TABLE_UP_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers, 0);
 	commandList.Barrier(numBarriers, barriers);
 
@@ -162,7 +161,7 @@ void Filter::ProcessG(const CommandList& commandList, XMFLOAT2 focus, float sigm
 	commandList.SetComputePipelineLayout(m_pipelineLayouts[GAUSSIAN]);
 	commandList.SetCompute32BitConstants(2, SizeOfInUint32(GaussianConstants), &cb);
 	m_filtered[TABLE_UP_SAMPLE].Blit(commandList, 8, 8, m_uavSrvTables[TABLE_UP_SAMPLE][numPasses],
-		1, 0, nullptr, 0, 0, nullptr, 0, nullptr, m_pipelines[GAUSSIAN]);
+		1, 0, nullptr, 0, nullptr, 0, m_pipelines[GAUSSIAN]);
 }
 
 Texture2D& Filter::GetResult()

@@ -14,6 +14,8 @@
 #define N_RETURN(x, r)			C_RETURN(!(x), r)
 #define X_RETURN(x, f, r)		{ x = f; N_RETURN(x, r); }
 
+#define DIV_UP(x, n)			(((x) - 1) / (n) + 1)
+
 namespace XUSG
 {
 	template <typename T>
