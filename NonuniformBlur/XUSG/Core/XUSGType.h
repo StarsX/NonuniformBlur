@@ -15,6 +15,7 @@
 #define X_RETURN(x, f, r)		{ x = f; N_RETURN(x, r); }
 
 #define DIV_UP(x, n)			(((x) - 1) / (n) + 1)
+#define SizeOfInUint32(obj)		DIV_UP(sizeof(obj), sizeof(uint32_t))
 
 namespace XUSG
 {
@@ -43,6 +44,18 @@ namespace XUSG
 
 		T* get() const { return Microsoft::WRL::ComPtr<T>::Get(); }
 	};
+
+	__forceinline uint8_t Log2(uint32_t value)
+	{
+		unsigned long mssb; // most significant set bit
+		unsigned long lssb; // least significant set bit
+
+							// If perfect power of two (only one set bit), return index of bit.  Otherwise round up
+							// fractional log by adding 1 to most signicant set bit's index.
+		if (BitScanReverse(&mssb, value) > 0 && BitScanForward(&lssb, value) > 0)
+			return uint8_t(mssb + (mssb == lssb ? 0 : 1));
+		else return 0;
+	}
 
 	// Device and blobs
 	using BlobType = ID3DBlob;

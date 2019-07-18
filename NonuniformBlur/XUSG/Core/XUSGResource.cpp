@@ -599,9 +599,9 @@ uint32_t Texture2D::Blit(const CommandList& commandList, ResourceBarrier* pBarri
 	uint32_t srvSlot, uint32_t baseSlice, uint32_t numSlices)
 {
 	const auto prevBarriers = numBarriers;
-	if (numSlices == 0) numSlices = m_resource->GetDesc().DepthOrArraySize - baseSlice;
+	if (!numSlices) numSlices = m_resource->GetDesc().DepthOrArraySize - baseSlice;
 
-	if (mipLevel == 0 && srcMipLevel <= mipLevel)
+	if (!mipLevel && srcMipLevel <= mipLevel)
 		numBarriers = SetBarrier(pBarriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers);
 	else for (auto i = 0u; i < numSlices; ++i)
 	{
@@ -631,13 +631,12 @@ uint32_t Texture2D::GenerateMips(const CommandList& commandList, ResourceBarrier
 	commandList.SetComputeDescriptorTable(samplerSlot, samplerTable);
 	commandList.SetPipelineState(pipeline);
 
+	if (!(numMips || baseMip || numSlices || baseSlice))
+		numBarriers = SetBarrier(pBarriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers);
+
 	const auto& desc = m_resource->GetDesc();
-	if (numSlices == 0) numSlices = desc.DepthOrArraySize - baseSlice;
-	if (numMips == 0)
-	{
-		numMips = desc.MipLevels - baseMip;
-		if (baseMip == 0) numBarriers = SetBarrier(pBarriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers);
-	}
+	if (!numSlices) numSlices = desc.DepthOrArraySize - baseSlice;
+	if (!numMips) numMips = desc.MipLevels - baseMip;
 
 	for (auto i = 0ui8; i < numMips; ++i)
 	{
@@ -658,8 +657,9 @@ uint32_t Texture2D::GenerateMips(const CommandList& commandList, ResourceBarrier
 			pSrvTables ? pSrvTables[i] : nullptr, srvSlot);
 	}
 
-	if (baseMip + numMips > 0) for (auto k = 0u; k < numSlices; ++k)
-		numBarriers = SetBarrier(pBarriers, baseMip + numMips - 1, dstState, numBarriers, baseSlice + k);
+	const auto m = baseMip + numMips - 1;
+	for (auto i = 0u; i < numSlices; ++i)
+		numBarriers = SetBarrier(pBarriers, m, dstState, numBarriers, baseSlice + i);
 
 	return numBarriers;
 }
@@ -816,7 +816,8 @@ void RenderTarget::Blit(const CommandList& commandList, const DescriptorTable& s
 	const DescriptorTable& samplerTable, uint32_t samplerSlot, const Pipeline& pipeline)
 {
 	// Set render target
-	if (numSlices == 0) numSlices = GetArraySize() - baseSlice;
+	const auto& desc = m_resource->GetDesc();
+	if (numSlices == 0) numSlices = desc.DepthOrArraySize - baseSlice;
 	vector<Descriptor> rtvs(numSlices);
 	for (auto i = 0u; i < numSlices; ++i) rtvs[i] = GetRTV(baseSlice + i, mipLevel);
 	const auto rtvTable = make_shared<Descriptor>(*rtvs.data());
@@ -830,7 +831,6 @@ void RenderTarget::Blit(const CommandList& commandList, const DescriptorTable& s
 	if (pipeline) commandList.SetPipelineState(pipeline);
 
 	// Set viewport
-	const auto& desc = m_resource->GetDesc();
 	const auto width = (max)(static_cast<uint32_t>(desc.Width >> mipLevel), 1u);
 	const auto height = (max)(desc.Height >> mipLevel, 1u);
 	const Viewport viewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height));
@@ -848,9 +848,9 @@ uint32_t RenderTarget::Blit(const CommandList& commandList, ResourceBarrier* pBa
 	uint32_t numBarriers, uint32_t baseSlice, uint32_t numSlices)
 {
 	const auto prevBarriers = numBarriers;
-	if (numSlices == 0) numSlices = GetArraySize() - baseSlice;
+	if (!numSlices) numSlices = m_resource->GetDesc().DepthOrArraySize - baseSlice;
 
-	if (mipLevel == 0 && srcMipLevel <= mipLevel)
+	if (!mipLevel && srcMipLevel <= mipLevel)
 		numBarriers = SetBarrier(pBarriers, D3D12_RESOURCE_STATE_RENDER_TARGET, numBarriers);
 	else for (auto i = 0u; i < numSlices; ++i)
 	{
@@ -880,12 +880,12 @@ uint32_t RenderTarget::GenerateMips(const CommandList& commandList, ResourceBarr
 	commandList.SetGraphicsDescriptorTable(samplerSlot, samplerTable);
 	commandList.SetPipelineState(pipeline);
 
-	if (numSlices == 0) numSlices = GetArraySize() - baseSlice;
-	if (numMips == 0)
-	{
-		numMips = GetNumMips() - baseMip;
-		if (baseMip == 0) numBarriers = SetBarrier(pBarriers, D3D12_RESOURCE_STATE_RENDER_TARGET, numBarriers);
-	}
+	if (!(numMips || baseMip || numSlices || baseSlice))
+		numBarriers = SetBarrier(pBarriers, D3D12_RESOURCE_STATE_RENDER_TARGET, numBarriers);
+
+	const auto& desc = m_resource->GetDesc();
+	if (!numSlices) numSlices = desc.DepthOrArraySize - baseSlice;
+	if (!numMips) numMips = desc.MipLevels - baseMip;
 
 	for (auto i = 0ui8; i < numMips; ++i)
 	{
@@ -905,8 +905,9 @@ uint32_t RenderTarget::GenerateMips(const CommandList& commandList, ResourceBarr
 		Blit(commandList, pSrcSrvTables[i], srcSlot, j, baseSlice, numSlices);
 	}
 
-	if (baseMip + numMips > 0) for (auto k = 0u; k < numSlices; ++k)
-		numBarriers = SetBarrier(pBarriers, baseMip + numMips - 1, dstState, numBarriers, baseSlice + k);
+	const auto m = baseMip + numMips - 1;
+	for (auto i = 0u; i < numSlices; ++i)
+		numBarriers = SetBarrier(pBarriers, m, dstState, numBarriers, baseSlice + i);
 
 	return numBarriers;
 }
