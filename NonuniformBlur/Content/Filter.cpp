@@ -38,15 +38,17 @@ bool Filter::Init(const CommandList& commandList, uint32_t width, uint32_t heigh
 
 		uploaders.push_back(nullptr);
 		N_RETURN(textureLoader.CreateTextureFromFile(m_device, commandList, fileName,
-			8192, true, source, uploaders.back(), &alphaMode), false);
+			8192, false, source, uploaders.back(), &alphaMode), false);
 	}
 
 	// Create resources and pipelines
-	const auto viewportSize = static_cast<float>((max)(width, height));
-	m_numMips = (max)(static_cast<uint8_t>(log2f(viewportSize) + 1.0f), 1ui8);
+	const auto& desc = source->GetResource()->GetDesc();
+	const auto texWidth = static_cast<uint32_t>(desc.Width);
+	const auto& texHeight = desc.Height;
+	m_numMips = (max)(Log2((max)(texWidth, texHeight)), 0ui8) + 1;
 
 	for (auto& image : m_filtered)
-		image.Create(m_device, width, height, DXGI_FORMAT_B8G8R8A8_UNORM, 1,
+		image.Create(m_device, texWidth, texHeight, desc.Format, 1,
 			D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, m_numMips);
 
 	N_RETURN(createPipelineLayouts(), false);
@@ -59,8 +61,8 @@ bool Filter::Init(const CommandList& commandList, uint32_t width, uint32_t heigh
 		const TextureCopyLocation src(source->GetResource().get(), 0);
 
 		ResourceBarrier barriers[2];
-		auto numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_COPY_DEST, 0, 0);
-		numBarriers = source->SetBarrier(barriers, D3D12_RESOURCE_STATE_COPY_SOURCE, numBarriers);
+		auto numBarriers = source->SetBarrier(barriers, D3D12_RESOURCE_STATE_COPY_SOURCE);
+		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_COPY_DEST, numBarriers);
 		commandList.Barrier(numBarriers, barriers);
 
 		commandList.CopyTextureRegion(dst, 0, 0, 0, src);

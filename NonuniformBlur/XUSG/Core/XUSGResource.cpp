@@ -820,8 +820,7 @@ void RenderTarget::Blit(const CommandList& commandList, const DescriptorTable& s
 	if (numSlices == 0) numSlices = desc.DepthOrArraySize - baseSlice;
 	vector<Descriptor> rtvs(numSlices);
 	for (auto i = 0u; i < numSlices; ++i) rtvs[i] = GetRTV(baseSlice + i, mipLevel);
-	const auto rtvTable = make_shared<Descriptor>(*rtvs.data());
-	commandList.OMSetRenderTargets(numSlices, rtvTable, nullptr);
+	commandList.OMSetRenderTargets(numSlices, rtvs.data());
 
 	// Set pipeline layout and descriptor tables
 	if (srcSrvTable) commandList.SetGraphicsDescriptorTable(srcSlot, srcSrvTable);

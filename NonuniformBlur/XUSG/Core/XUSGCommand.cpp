@@ -223,9 +223,15 @@ void CommandList::SOSetTargets(uint32_t startSlot, uint32_t numViews, const Stre
 }
 
 void CommandList::OMSetRenderTargets(uint32_t numRenderTargetDescriptors, const RenderTargetTable& renderTargetTable,
+	const Descriptor* pDepthStencilView) const
+{
+	OMSetRenderTargets(numRenderTargetDescriptors, renderTargetTable.get(), pDepthStencilView, true);
+}
+
+void CommandList::OMSetRenderTargets(uint32_t numRenderTargetDescriptors, const Descriptor* pRenderTargetViews,
 	const Descriptor* pDepthStencilView, bool rtsSingleHandleToDescriptorRange) const
 {
-	m_commandList->OMSetRenderTargets(numRenderTargetDescriptors, renderTargetTable.get(),
+	m_commandList->OMSetRenderTargets(numRenderTargetDescriptors, pRenderTargetViews,
 		rtsSingleHandleToDescriptorRange, pDepthStencilView);
 }
 

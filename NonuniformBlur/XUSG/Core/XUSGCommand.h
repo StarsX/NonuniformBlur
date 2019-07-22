@@ -76,7 +76,11 @@ namespace XUSG
 		virtual void OMSetRenderTargets(
 			uint32_t numRenderTargetDescriptors,
 			const RenderTargetTable& renderTargetTable,
-			const Descriptor* pDepthStencilView,
+			const Descriptor* pDepthStencilView = nullptr) const;
+		virtual void OMSetRenderTargets(
+			uint32_t numRenderTargetDescriptors,
+			const Descriptor* pRenderTargetViews,
+			const Descriptor* pDepthStencilView = nullptr,
 			bool rtsSingleHandleToDescriptorRange = false) const;
 		virtual void ClearDepthStencilView(const Descriptor& depthStencilView, ClearFlags clearFlags,
 			float depth, uint8_t stencil = 0, uint32_t numRects = 0, const RectRange* pRects = nullptr) const;
