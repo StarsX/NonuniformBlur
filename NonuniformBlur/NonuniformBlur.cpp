@@ -76,7 +76,7 @@ void NonUniformBlur::LoadPipeline()
 
 	// Describe and create the swap chain.
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
-	swapChainDesc.BufferCount = Filter::FrameCount;
+	swapChainDesc.BufferCount = FrameCount;
 	swapChainDesc.Width = m_width;
 	swapChainDesc.Height = m_height;
 	swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -100,18 +100,11 @@ void NonUniformBlur::LoadPipeline()
 	ThrowIfFailed(swapChain.As(&m_swapChain));
 	m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
 
-	m_descriptorTableCache.SetDevice(m_device);
-
 	// Create frame resources.
 	// Create a RTV and a command allocator for each frame.
-	for (auto n = 0u; n < Filter::FrameCount; n++)
+	for (auto n = 0u; n < FrameCount; n++)
 	{
 		N_RETURN(m_renderTargets[n].CreateFromSwapChain(m_device, m_swapChain, n), ThrowIfFailed(E_FAIL));
-
-		Util::DescriptorTable rtvTable;
-		rtvTable.SetDescriptors(0, 1, &m_renderTargets[n].GetRTV());
-		m_rtvTables[n] = rtvTable.GetRtvTable(m_descriptorTableCache);
-
 		ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocators[n])));
 	}
 }

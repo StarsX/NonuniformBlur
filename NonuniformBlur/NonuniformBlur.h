@@ -35,19 +35,18 @@ public:
 	virtual void OnKeyUp(uint8_t /*key*/);
 
 private:
-	XUSG::DescriptorTableCache m_descriptorTableCache;
+	static const uint32_t FrameCount = 3;
 
 	XUSG::SwapChain			m_swapChain;
-	XUSG::CommandAllocator	m_commandAllocators[Filter::FrameCount];
+	XUSG::CommandAllocator	m_commandAllocators[FrameCount];
 	XUSG::CommandQueue		m_commandQueue;
 
 	XUSG::Device			m_device;
-	XUSG::RenderTarget		m_renderTargets[Filter::FrameCount];
+	XUSG::RenderTarget		m_renderTargets[FrameCount];
 	XUSG::CommandList		m_commandList;
 
 	// App resources.
 	std::unique_ptr<Filter> m_filter;
-	XUSG::RenderTargetTable	m_rtvTables[Filter::FrameCount];
 
 	// Animation
 	XMFLOAT2	m_focus;
@@ -57,7 +56,7 @@ private:
 	uint32_t	m_frameIndex;
 	HANDLE		m_fenceEvent;
 	XUSG::Fence	m_fence;
-	uint64_t	m_fenceValues[Filter::FrameCount];
+	uint64_t	m_fenceValues[FrameCount];
 
 	// Application state
 	bool		m_showFPS;

@@ -22,8 +22,6 @@ public:
 
 	XUSG::Texture2D& GetResult();
 
-	static const uint32_t FrameCount = 3;
-
 protected:
 	enum PipelineIndex : uint8_t
 	{
