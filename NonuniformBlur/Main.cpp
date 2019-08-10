@@ -14,7 +14,7 @@
 _Use_decl_annotations_
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
 {
-	NonUniformBlur nonUniformBlur(512, 512, L"DirectX 12 Nonuniform Blur Filter");
+	NonUniformBlur nonUniformBlur(1024, 1024, L"DirectX 12 Nonuniform Blur Filter");
 
 	return Win32Application::Run(&nonUniformBlur, hInstance, nCmdShow);
 }

@@ -119,9 +119,10 @@ void NonUniformBlur::LoadAssets()
 	m_filter = make_unique<Filter>(m_device);
 	if (!m_filter) ThrowIfFailed(E_FAIL);
 
+	DescriptorTable uavSrvTable;
 	shared_ptr<ResourceBase> source;
 	vector<Resource> uploaders(0);
-	if (!m_filter->Init(m_commandList, m_width, m_height, source, uploaders))
+	if (!m_filter->Init(m_commandList, m_width, m_height, uavSrvTable, source, uploaders, DXGI_FORMAT_B8G8R8A8_UNORM))
 		ThrowIfFailed(E_FAIL);
 
 	// Close the command list and execute it to begin the initial GPU setup.

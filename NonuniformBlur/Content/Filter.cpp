@@ -29,7 +29,8 @@ Filter::~Filter()
 }
 
 bool Filter::Init(const CommandList& commandList, uint32_t width, uint32_t height,
-	shared_ptr<ResourceBase>& source, vector<Resource>& uploaders, const wchar_t* fileName)
+	DescriptorTable& uavSrvTable, shared_ptr<ResourceBase>& source,
+	vector<Resource>& uploaders, Format rtFormat, const wchar_t* fileName)
 {
 	// Load input image
 	{
@@ -42,14 +43,10 @@ bool Filter::Init(const CommandList& commandList, uint32_t width, uint32_t heigh
 	}
 
 	// Create resources and pipelines
-	const auto& desc = source->GetResource()->GetDesc();
-	const auto texWidth = static_cast<uint32_t>(desc.Width);
-	const auto& texHeight = desc.Height;
-	m_numMips = (max)(Log2((max)(texWidth, texHeight)), 0ui8) + 1;
+	m_numMips = (max)(Log2((max)(width, height)), 0ui8) + 1;
 
 	for (auto& image : m_filtered)
-		image.Create(m_device, texWidth, texHeight, desc.Format, 1,
-			D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, m_numMips);
+		image.Create(m_device, width, height, rtFormat, 1, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, m_numMips);
 
 	N_RETURN(createPipelineLayouts(), false);
 	N_RETURN(createPipelines(), false);
@@ -57,15 +54,28 @@ bool Filter::Init(const CommandList& commandList, uint32_t width, uint32_t heigh
 
 	// Copy source
 	{
-		const TextureCopyLocation dst(m_filtered[TABLE_DOWN_SAMPLE].GetResource().get(), 0);
-		const TextureCopyLocation src(source->GetResource().get(), 0);
+		const Descriptor descriptors[] =
+		{
+			source->GetSRV(),
+			m_filtered[TABLE_DOWN_SAMPLE].GetUAV()
+		};
+		Util::DescriptorTable utilUavSrvTable;
+		utilUavSrvTable.SetDescriptors(0, static_cast<uint32_t>(size(descriptors)), descriptors);
+		X_RETURN(uavSrvTable, utilUavSrvTable.GetCbvSrvUavTable(m_descriptorTableCache), false);
 
-		ResourceBarrier barriers[2];
-		auto numBarriers = source->SetBarrier(barriers, D3D12_RESOURCE_STATE_COPY_SOURCE);
-		numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_COPY_DEST, numBarriers);
-		commandList.Barrier(numBarriers, barriers);
+		// Set Descriptor pools
+		const DescriptorPool descriptorPools[] =
+		{
+			m_descriptorTableCache.GetDescriptorPool(CBV_SRV_UAV_POOL),
+			m_descriptorTableCache.GetDescriptorPool(SAMPLER_POOL)
+		};
+		commandList.SetDescriptorPools(static_cast<uint32_t>(size(descriptorPools)), descriptorPools);
 
-		commandList.CopyTextureRegion(dst, 0, 0, 0, src);
+		commandList.SetComputePipelineLayout(m_pipelineLayouts[RESAMPLE]);
+		commandList.SetPipelineState(m_pipelines[RESAMPLE]);
+		commandList.SetComputeDescriptorTable(0, m_samplerTable);
+
+		m_filtered[TABLE_DOWN_SAMPLE].Blit(commandList, 8, 8, 1, uavSrvTable, 1);
 	}
 
 	return true;

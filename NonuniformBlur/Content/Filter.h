@@ -14,7 +14,8 @@ public:
 	virtual ~Filter();
 
 	bool Init(const XUSG::CommandList& commandList, uint32_t width, uint32_t height,
-		std::shared_ptr<XUSG::ResourceBase>& source, std::vector<XUSG::Resource>& uploaders,
+		XUSG::DescriptorTable& uavSrvTable, std::shared_ptr<XUSG::ResourceBase>& source,
+		std::vector<XUSG::Resource>& uploaders, XUSG::Format rtFormat,
 		const wchar_t* fileName = L"Lenna.dds");
 
 	void Process(const XUSG::CommandList& commandList, DirectX::XMFLOAT2 focus, float sigma, XUSG::ResourceState dstState);
