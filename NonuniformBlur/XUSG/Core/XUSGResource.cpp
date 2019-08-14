@@ -627,9 +627,9 @@ uint32_t Texture2D::GenerateMips(const CommandList& commandList, ResourceBarrier
 	uint32_t samplerSlot, uint32_t numBarriers, const DescriptorTable* pSrvTables, uint32_t srvSlot, uint8_t baseMip,
 	uint8_t numMips, uint32_t baseSlice, uint32_t numSlices)
 {
-	commandList.SetComputePipelineLayout(pipelineLayout);
-	commandList.SetComputeDescriptorTable(samplerSlot, samplerTable);
-	commandList.SetPipelineState(pipeline);
+	if (pipelineLayout) commandList.SetComputePipelineLayout(pipelineLayout);
+	if (samplerTable) commandList.SetComputeDescriptorTable(samplerSlot, samplerTable);
+	if (pipeline) commandList.SetPipelineState(pipeline);
 
 	if (!(numMips || baseMip || numSlices || baseSlice))
 		numBarriers = SetBarrier(pBarriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers);
