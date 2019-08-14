@@ -599,14 +599,17 @@ uint32_t Texture2D::Blit(const CommandList& commandList, ResourceBarrier* pBarri
 	uint32_t srvSlot, uint32_t baseSlice, uint32_t numSlices)
 {
 	const auto prevBarriers = numBarriers;
-	if (!numSlices) numSlices = m_resource->GetDesc().DepthOrArraySize - baseSlice;
+	const auto& desc = m_resource->GetDesc();
+	if (!numSlices) numSlices = desc.DepthOrArraySize - baseSlice;
 
 	if (!mipLevel && srcMipLevel <= mipLevel)
 		numBarriers = SetBarrier(pBarriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers);
 	else for (auto i = 0u; i < numSlices; ++i)
 	{
 		const auto j = baseSlice + i;
-		numBarriers = SetBarrier(pBarriers, mipLevel, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers, j);
+		const auto subresource = D3D12CalcSubresource(mipLevel, j, 0, desc.MipLevels, desc.DepthOrArraySize);
+		if (m_states[subresource] != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+			numBarriers = SetBarrier(pBarriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers, subresource);
 		numBarriers = SetBarrier(pBarriers, srcMipLevel, srcState, numBarriers, j);
 	}
 
@@ -646,7 +649,9 @@ uint32_t Texture2D::GenerateMips(const CommandList& commandList, ResourceBarrier
 		if (j > 0) for (auto k = 0u; k < numSlices; ++k)
 		{
 			const auto n = baseSlice + k;
-			numBarriers = SetBarrier(pBarriers, j, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers, n);
+			const auto subresource = D3D12CalcSubresource(j, n, 0, desc.MipLevels, desc.DepthOrArraySize);
+			if (m_states[subresource] != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+				numBarriers = SetBarrier(pBarriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers, subresource);
 			numBarriers = SetBarrier(pBarriers, j - 1, dstState, numBarriers, n);
 		}
 
