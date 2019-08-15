@@ -609,7 +609,11 @@ uint32_t Texture2D::Blit(const CommandList& commandList, ResourceBarrier* pBarri
 		const auto j = baseSlice + i;
 		const auto subresource = D3D12CalcSubresource(mipLevel, j, 0, desc.MipLevels, desc.DepthOrArraySize);
 		if (m_states[subresource] != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
-			numBarriers = SetBarrier(pBarriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers, subresource);
+		{
+			const auto& srcState = m_states[subresource];
+			pBarriers[numBarriers++] = ResourceBarrier::Transition(m_resource.get(), srcState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, subresource);
+			m_states[subresource] = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+		}
 		numBarriers = SetBarrier(pBarriers, srcMipLevel, srcState, numBarriers, j);
 	}
 
@@ -651,7 +655,11 @@ uint32_t Texture2D::GenerateMips(const CommandList& commandList, ResourceBarrier
 			const auto n = baseSlice + k;
 			const auto subresource = D3D12CalcSubresource(j, n, 0, desc.MipLevels, desc.DepthOrArraySize);
 			if (m_states[subresource] != D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
-				numBarriers = SetBarrier(pBarriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers, subresource);
+			{
+				const auto& srcState = m_states[subresource];
+				pBarriers[numBarriers++] = ResourceBarrier::Transition(m_resource.get(), srcState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, subresource);
+				m_states[subresource] = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+			}
 			numBarriers = SetBarrier(pBarriers, j - 1, dstState, numBarriers, n);
 		}
 
