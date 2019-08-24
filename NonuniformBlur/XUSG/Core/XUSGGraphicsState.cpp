@@ -2,7 +2,6 @@
 // By Stars XU Tianchen
 //--------------------------------------------------------------------------------------
 
-#include "DXFrameworkHelper.h"
 #include "XUSGGraphicsState.h"
 #include "XUSGBlend.inl"
 #include "XUSGRasterizer.inl"

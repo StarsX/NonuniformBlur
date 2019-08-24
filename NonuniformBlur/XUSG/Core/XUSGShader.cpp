@@ -2,7 +2,6 @@
 // By Stars XU Tianchen
 //--------------------------------------------------------------------------------------
 
-#include "DXFrameworkHelper.h"
 #include "XUSGShader.h"
 
 using namespace std;

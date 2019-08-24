@@ -2,7 +2,6 @@
 // By Stars XU Tianchen
 //--------------------------------------------------------------------------------------
 
-#include "DXFrameworkHelper.h"
 #include "XUSGInputLayout.h"
 
 using namespace std;

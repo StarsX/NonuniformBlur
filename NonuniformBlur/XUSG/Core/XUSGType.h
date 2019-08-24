@@ -4,10 +4,10 @@
 
 #pragma once
 
-#define H_RETURN(x, o, m, r)	{ const auto hr = x; if (FAILED(hr)) { o << m << endl; return r; } }
+#define H_RETURN(x, o, m, r)	{ const auto hr = x; if (FAILED(hr)) { o << m << std::endl; return r; } }
 #define V_RETURN(x, o, r)		H_RETURN(x, o, HrToString(hr), r)
 
-#define M_RETURN(x, o, m, r)	if (x) { o << m << endl; return r; }
+#define M_RETURN(x, o, m, r)	if (x) { o << m << std::endl; return r; }
 #define F_RETURN(x, o, h, r)	M_RETURN(x, o, HrToString(h), r)
 
 #define C_RETURN(x, r)			if (x) return r
@@ -56,80 +56,33 @@ namespace XUSG
 		else return 0;
 	}
 
-	// Device and blobs
-	using BlobType = ID3DBlob;
-	using Blob = com_ptr<BlobType>;
-	using Device = com_ptr<ID3D12Device>;
-	using SwapChain = com_ptr<IDXGISwapChain3>;
-
-	// Command lists related
-	using GraphicsCommandList = com_ptr<ID3D12GraphicsCommandList>;
-	using CommandAllocator = com_ptr<ID3D12CommandAllocator>;
-	using CommandQueue = com_ptr<ID3D12CommandQueue>;
-	using Fence = com_ptr<ID3D12Fence>;
-
-	// Resources related
-	using Resource = com_ptr<ID3D12Resource>;
-	using VertexBufferView = D3D12_VERTEX_BUFFER_VIEW;
-	using IndexBufferView = D3D12_INDEX_BUFFER_VIEW;
-	using StreamOutBufferView = D3D12_STREAM_OUTPUT_BUFFER_VIEW;
-	using Sampler = D3D12_SAMPLER_DESC;
-	using ResourceBarrier = CD3DX12_RESOURCE_BARRIER;
-
-	// Descriptors related
-	using DescriptorPool = com_ptr<ID3D12DescriptorHeap>;
-	using Descriptor = CD3DX12_CPU_DESCRIPTOR_HANDLE;
-	using DescriptorView = CD3DX12_GPU_DESCRIPTOR_HANDLE;
-	using DescriptorTable = std::shared_ptr<DescriptorView>;
-	using RenderTargetTable = std::shared_ptr<Descriptor>;
-
-	// Pipeline layouts related
-	using PipelineLayout = com_ptr<ID3D12RootSignature>;
-	using DescriptorRangeList = std::vector<CD3DX12_DESCRIPTOR_RANGE1>;
-
-	// Resources related
-	using SubresourceData = D3D12_SUBRESOURCE_DATA;
-	using TextureCopyLocation = CD3DX12_TEXTURE_COPY_LOCATION;
-	using Viewport = CD3DX12_VIEWPORT;
-	using RectRange = CD3DX12_RECT;
-	using BoxRange = CD3DX12_BOX;
-	using TiledResourceCoord = CD3DX12_TILED_RESOURCE_COORDINATE;
-	using TileRegionSize = D3D12_TILE_REGION_SIZE;
-	using TileCopyFlags = D3D12_TILE_COPY_FLAGS;
-
-	// Pipeline layouts related
-	struct RootParameter : CD3DX12_ROOT_PARAMETER1
+	inline std::string HrToString(HRESULT hr)
 	{
-		DescriptorRangeList ranges;
-	};
-	using DescriptorTableLayout = std::shared_ptr<RootParameter>;
-
-	using Pipeline = com_ptr<ID3D12PipelineState>;
-
-	// Shaders related
-	namespace Shader
-	{
-		using ByteCode = CD3DX12_SHADER_BYTECODE;
-		using Reflection = com_ptr<ID3D12ShaderReflection>;
-	}
-
-	// Graphics pipelines related
-	namespace Graphics
-	{
-		using PipelineDesc = D3D12_GRAPHICS_PIPELINE_STATE_DESC;
-
-		using Blend = std::shared_ptr<D3D12_BLEND_DESC>;
-		using Rasterizer = std::shared_ptr < D3D12_RASTERIZER_DESC>;
-		using DepthStencil = std::shared_ptr < D3D12_DEPTH_STENCIL_DESC>;
-	}
-
-	// Compute pipelines related
-	namespace Compute
-	{
-		using PipelineDesc = D3D12_COMPUTE_PIPELINE_STATE_DESC;
+		char s_str[64] = {};
+		sprintf_s(s_str, "HRESULT of 0x%08X", static_cast<uint32_t>(hr));
+		return std::string(s_str);
 	}
 
 	// Enumerations
+	enum class CommandQueueFlags
+	{
+		NONE				= D3D12_COMMAND_QUEUE_FLAG_NONE,
+		DISABLE_GPU_TIMEOUT	= D3D12_COMMAND_QUEUE_FLAG_DISABLE_GPU_TIMEOUT
+	};
+
+	DEFINE_ENUM_FLAG_OPERATORS(CommandQueueFlags);
+
+	enum class CommandListType
+	{
+		DIRECT			= D3D12_COMMAND_LIST_TYPE_DIRECT,
+		BUNDLE			= D3D12_COMMAND_LIST_TYPE_BUNDLE,
+		COMPUTE			= D3D12_COMMAND_LIST_TYPE_COMPUTE,
+		COPY			= D3D12_COMMAND_LIST_TYPE_COPY,
+		VIDEO_DECODE	= D3D12_COMMAND_LIST_TYPE_VIDEO_DECODE,
+		VIDEO_PROCESS	= D3D12_COMMAND_LIST_TYPE_VIDEO_PROCESS,
+		VIDEO_ENCODE	= D3D12_COMMAND_LIST_TYPE_VIDEO_ENCODE
+	};
+
 	enum class Format
 	{
 		UNKNOWN						= DXGI_FORMAT_UNKNOWN,
@@ -425,6 +378,16 @@ namespace XUSG
 		TEXTURE3D = D3D12_RESOURCE_DIMENSION_TEXTURE3D
 	};
 
+	enum class FenceFlag
+	{
+		NONE					= D3D12_FENCE_FLAG_NONE,
+		SHARED					= D3D12_FENCE_FLAG_SHARED,
+		SHARED_CROSS_ADAPTER	= D3D12_FENCE_FLAG_SHARED_CROSS_ADAPTER,
+		NON_MONITORED			= D3D12_FENCE_FLAG_NON_MONITORED
+	};
+
+	DEFINE_ENUM_FLAG_OPERATORS(FenceFlag);
+
 	enum Requirements
 	{
 		REQ_MIP_LEVELS						= D3D12_REQ_MIP_LEVELS,
@@ -435,6 +398,46 @@ namespace XUSG
 		REQ_TEXTURE1D_ARRAY_AXIS_DIMENSION	= D3D12_REQ_TEXTURE1D_ARRAY_AXIS_DIMENSION,
 		REQ_TEXTURE2D_ARRAY_AXIS_DIMENSION	= D3D12_REQ_TEXTURE2D_ARRAY_AXIS_DIMENSION,
 	};
+
+	// Swapchain and blobs
+	using BlobType = ID3DBlob;
+	using Blob = com_ptr<BlobType>;
+	using SwapChain = com_ptr<IDXGISwapChain3>;
+
+	// Command lists related
+	using BaseCommandList = ID3D12CommandList;
+	using GraphicsCommandList = com_ptr<ID3D12GraphicsCommandList>;
+	using CommandAllocator = com_ptr<ID3D12CommandAllocator>;
+	using CommandQueue = com_ptr<ID3D12CommandQueue>;
+	using Fence = com_ptr<ID3D12Fence>;
+
+	// Resources related
+	using Resource = com_ptr<ID3D12Resource>;
+	using VertexBufferView = D3D12_VERTEX_BUFFER_VIEW;
+	using IndexBufferView = D3D12_INDEX_BUFFER_VIEW;
+	using StreamOutBufferView = D3D12_STREAM_OUTPUT_BUFFER_VIEW;
+	using Sampler = D3D12_SAMPLER_DESC;
+	using ResourceBarrier = CD3DX12_RESOURCE_BARRIER;
+
+	using SubresourceData = D3D12_SUBRESOURCE_DATA;
+	using TextureCopyLocation = CD3DX12_TEXTURE_COPY_LOCATION;
+	using Viewport = CD3DX12_VIEWPORT;
+	using RectRange = CD3DX12_RECT;
+	using BoxRange = CD3DX12_BOX;
+	using TiledResourceCoord = CD3DX12_TILED_RESOURCE_COORDINATE;
+	using TileRegionSize = D3D12_TILE_REGION_SIZE;
+	using TileCopyFlags = D3D12_TILE_COPY_FLAGS;
+
+	// Descriptors related
+	using DescriptorPool = com_ptr<ID3D12DescriptorHeap>;
+	using Descriptor = CD3DX12_CPU_DESCRIPTOR_HANDLE;
+	using DescriptorView = CD3DX12_GPU_DESCRIPTOR_HANDLE;
+	using DescriptorTable = std::shared_ptr<DescriptorView>;
+	using RenderTargetTable = std::shared_ptr<Descriptor>;
+
+	// Pipeline layouts related
+	using PipelineLayout = com_ptr<ID3D12RootSignature>;
+	using DescriptorRangeList = std::vector<CD3DX12_DESCRIPTOR_RANGE1>;
 
 	// Input layouts related
 	struct InputElementDesc
@@ -453,4 +456,73 @@ namespace XUSG
 		InputElementTable elements;
 	};
 	using InputLayout = std::shared_ptr<InputLayoutDesc>;
+
+	// Pipeline layouts related
+	struct RootParameter : CD3DX12_ROOT_PARAMETER1
+	{
+		DescriptorRangeList ranges;
+	};
+	using DescriptorTableLayout = std::shared_ptr<RootParameter>;
+
+	using Pipeline = com_ptr<ID3D12PipelineState>;
+
+	// Device
+	struct InteralDevice : ID3D12Device
+	{
+		bool GetCommandQueue(CommandQueue& commandQueue, CommandListType type, CommandQueueFlags flags, int32_t priority = 0, uint32_t nodeMask = 0)
+		{
+			D3D12_COMMAND_QUEUE_DESC queueDesc;
+			queueDesc.Type = static_cast<D3D12_COMMAND_LIST_TYPE>(type);
+			queueDesc.Priority = priority;
+			queueDesc.Flags = static_cast<D3D12_COMMAND_QUEUE_FLAGS>(flags);
+			queueDesc.NodeMask = nodeMask;
+
+			V_RETURN(CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&commandQueue)), std::cerr, false);
+			return true;
+		}
+
+		bool GetCommandAllocator(CommandAllocator& commandAllocator, CommandListType type)
+		{
+			V_RETURN(CreateCommandAllocator(static_cast<D3D12_COMMAND_LIST_TYPE>(type), IID_PPV_ARGS(&commandAllocator)), std::cerr, false);
+			return true;
+		}
+
+		bool GetCommandList(GraphicsCommandList& commandList, uint32_t nodeMask, CommandListType type,
+			const CommandAllocator& commandAllocator, const Pipeline& pipeline)
+		{
+			V_RETURN(CreateCommandList(nodeMask, static_cast<D3D12_COMMAND_LIST_TYPE>(type), commandAllocator.get(),
+				pipeline.get(), IID_PPV_ARGS(&commandList)), std::cerr, false);
+			return true;
+		}
+
+		bool GetFence(Fence& fence, uint64_t initialValue, FenceFlag flags)
+		{
+			V_RETURN(CreateFence(initialValue, static_cast<D3D12_FENCE_FLAGS>(flags), IID_PPV_ARGS(&fence)), std::cerr, false);
+			return true;
+		}
+	};
+	using Device = com_ptr<InteralDevice>;
+
+	// Shaders related
+	namespace Shader
+	{
+		using ByteCode = CD3DX12_SHADER_BYTECODE;
+		using Reflection = com_ptr<ID3D12ShaderReflection>;
+	}
+
+	// Graphics pipelines related
+	namespace Graphics
+	{
+		using PipelineDesc = D3D12_GRAPHICS_PIPELINE_STATE_DESC;
+
+		using Blend = std::shared_ptr<D3D12_BLEND_DESC>;
+		using Rasterizer = std::shared_ptr < D3D12_RASTERIZER_DESC>;
+		using DepthStencil = std::shared_ptr < D3D12_DEPTH_STENCIL_DESC>;
+	}
+
+	// Compute pipelines related
+	namespace Compute
+	{
+		using PipelineDesc = D3D12_COMPUTE_PIPELINE_STATE_DESC;
+	}
 }
