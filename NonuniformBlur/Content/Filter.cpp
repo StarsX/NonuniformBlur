@@ -46,7 +46,7 @@ bool Filter::Init(const CommandList& commandList, uint32_t width, uint32_t heigh
 	m_numMips = (max)(Log2((max)(width, height)), 0ui8) + 1;
 
 	for (auto& image : m_filtered)
-		image.Create(m_device, width, height, rtFormat, 1, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, m_numMips);
+		image.Create(m_device, width, height, rtFormat, 1, ResourceFlag::ALLOW_UNORDERED_ACCESS, m_numMips);
 
 	N_RETURN(createPipelineLayouts(), false);
 	N_RETURN(createPipelines(), false);
@@ -97,10 +97,10 @@ void Filter::Process(const CommandList& commandList, XMFLOAT2 focus, float sigma
 	ResourceBarrier barriers[2];
 	auto numBarriers = 0u;
 	if (numPasses > 0) numBarriers = m_filtered[TABLE_DOWN_SAMPLE].GenerateMips(commandList, barriers,
-		8, 8, 1, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, m_pipelineLayouts[RESAMPLE],
+		8, 8, 1, ResourceState::NON_PIXEL_SHADER_RESOURCE, m_pipelineLayouts[RESAMPLE],
 		m_pipelines[RESAMPLE], m_uavSrvTables[TABLE_DOWN_SAMPLE].data(), 1, m_samplerTable,
 		0, numBarriers, nullptr, 0, 1, numPasses - 1);
-	numBarriers = m_filtered[TABLE_UP_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers);
+	numBarriers = m_filtered[TABLE_UP_SAMPLE].SetBarrier(barriers, ResourceState::UNORDERED_ACCESS, numBarriers);
 	commandList.Barrier(numBarriers, barriers);
 	numBarriers = 0;
 
@@ -143,10 +143,10 @@ void Filter::ProcessG(const CommandList& commandList, XMFLOAT2 focus, float sigm
 	ResourceBarrier barriers[2];
 	auto numBarriers = 0u;
 	if (numPasses > 0) numBarriers = m_filtered[TABLE_DOWN_SAMPLE].GenerateMips(commandList, barriers,
-		8, 8, 1, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, m_pipelineLayouts[RESAMPLE],
+		8, 8, 1, ResourceState::NON_PIXEL_SHADER_RESOURCE, m_pipelineLayouts[RESAMPLE],
 		m_pipelines[RESAMPLE], m_uavSrvTables[TABLE_DOWN_SAMPLE].data(), 1, m_samplerTable,
 		0, numBarriers);
-	numBarriers = m_filtered[TABLE_UP_SAMPLE].SetBarrier(barriers, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, numBarriers, 0);
+	numBarriers = m_filtered[TABLE_UP_SAMPLE].SetBarrier(barriers, ResourceState::UNORDERED_ACCESS, numBarriers, 0);
 	commandList.Barrier(numBarriers, barriers);
 
 	// Gaussian
@@ -170,9 +170,9 @@ bool Filter::createPipelineLayouts()
 		utilPipelineLayout.SetRange(0, DescriptorType::SAMPLER, 1, 0);
 		utilPipelineLayout.SetRange(1, DescriptorType::SRV, 1, 0);
 		utilPipelineLayout.SetRange(1, DescriptorType::UAV, 1, 0, 0,
-			D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE);
+			DescriptorRangeFlag::DATA_STATIC_WHILE_SET_AT_EXECUTE);
 		X_RETURN(m_pipelineLayouts[RESAMPLE], utilPipelineLayout.GetPipelineLayout(
-			m_pipelineLayoutCache, D3D12_ROOT_SIGNATURE_FLAG_NONE, L"ResamplingLayout"), false);
+			m_pipelineLayoutCache, PipelineLayoutFlag::NONE, L"ResamplingLayout"), false);
 	}
 
 	// Up sampling
@@ -181,10 +181,10 @@ bool Filter::createPipelineLayouts()
 		utilPipelineLayout.SetRange(0, DescriptorType::SAMPLER, 1, 0);
 		utilPipelineLayout.SetRange(1, DescriptorType::SRV, 2, 0);
 		utilPipelineLayout.SetRange(1, DescriptorType::UAV, 1, 0, 0,
-			D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE);
+			DescriptorRangeFlag::DATA_STATIC_WHILE_SET_AT_EXECUTE);
 		utilPipelineLayout.SetConstants(2, SizeOfInUint32(GaussianConstants), 0);
 		X_RETURN(m_pipelineLayouts[UP_SAMPLE], utilPipelineLayout.GetPipelineLayout(
-			m_pipelineLayoutCache, D3D12_ROOT_SIGNATURE_FLAG_NONE, L"UpSamplingLayout"), false);
+			m_pipelineLayoutCache, PipelineLayoutFlag::NONE, L"UpSamplingLayout"), false);
 	}
 
 	// Gaussian
@@ -193,10 +193,10 @@ bool Filter::createPipelineLayouts()
 		utilPipelineLayout.SetRange(0, DescriptorType::SAMPLER, 1, 0);
 		utilPipelineLayout.SetRange(1, DescriptorType::SRV, 1, 0);
 		utilPipelineLayout.SetRange(1, DescriptorType::UAV, 1, 0, 0,
-			D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC_WHILE_SET_AT_EXECUTE);
+			DescriptorRangeFlag::DATA_STATIC_WHILE_SET_AT_EXECUTE);
 		utilPipelineLayout.SetConstants(2, SizeOfInUint32(GaussianConstants), 0);
 		X_RETURN(m_pipelineLayouts[GAUSSIAN], utilPipelineLayout.GetPipelineLayout(
-			m_pipelineLayoutCache, D3D12_ROOT_SIGNATURE_FLAG_NONE, L"GaussianLayout"), false);
+			m_pipelineLayoutCache, PipelineLayoutFlag::NONE, L"GaussianLayout"), false);
 	}
 
 	return true;

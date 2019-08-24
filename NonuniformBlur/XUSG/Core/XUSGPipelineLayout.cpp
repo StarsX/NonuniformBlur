@@ -25,7 +25,7 @@ void Util::PipelineLayout::SetShaderStage(uint32_t index, Shader::Stage stage)
 }
 
 void Util::PipelineLayout::SetRange(uint32_t index, DescriptorType type, uint32_t num, uint32_t baseBinding,
-	uint32_t space, uint32_t flags)
+	uint32_t space, DescriptorRangeFlag flags)
 {
 	auto& key = checkKeySpace(index);
 
@@ -47,37 +47,39 @@ void Util::PipelineLayout::SetRange(uint32_t index, DescriptorType type, uint32_
 void Util::PipelineLayout::SetConstants(uint32_t index, uint32_t num32BitValues,
 	uint32_t binding, uint32_t space, Shader::Stage stage)
 {
-	SetRange(index, DescriptorType::CONSTANT, num32BitValues, binding, space, 0);
+	SetRange(index, DescriptorType::CONSTANT, num32BitValues, binding, space, DescriptorRangeFlag::NONE);
 	SetShaderStage(index, stage);
 }
 
 void Util::PipelineLayout::SetRootSRV(uint32_t index, uint32_t binding, uint32_t space,
-	uint8_t flags, Shader::Stage stage)
+	DescriptorRangeFlag flags, Shader::Stage stage)
 {
 	SetRange(index, DescriptorType::ROOT_SRV, 1, binding, space, flags);
 	SetShaderStage(index, stage);
 }
 
 void Util::PipelineLayout::SetRootUAV(uint32_t index, uint32_t binding, uint32_t space,
-	uint8_t flags, Shader::Stage stage)
+	DescriptorRangeFlag flags, Shader::Stage stage)
 {
 	SetRange(index, DescriptorType::ROOT_UAV, 1, binding, space, flags);
 	SetShaderStage(index, stage);
 }
 
 void Util::PipelineLayout::SetRootCBV(uint32_t index, uint32_t binding, uint32_t space,
-	uint8_t flags, Shader::Stage stage)
+	DescriptorRangeFlag flags, Shader::Stage stage)
 {
 	SetRange(index, DescriptorType::ROOT_CBV, 1, binding, space, flags);
 	SetShaderStage(index, stage);
 }
 
-PipelineLayout Util::PipelineLayout::CreatePipelineLayout(PipelineLayoutCache& pipelineLayoutCache, uint8_t flags, const wchar_t* name)
+PipelineLayout Util::PipelineLayout::CreatePipelineLayout(PipelineLayoutCache& pipelineLayoutCache,
+	PipelineLayoutFlag flags, const wchar_t* name)
 {
 	return pipelineLayoutCache.CreatePipelineLayout(*this, flags, name);
 }
 
-PipelineLayout Util::PipelineLayout::GetPipelineLayout(PipelineLayoutCache& pipelineLayoutCache, uint8_t flags, const wchar_t* name)
+PipelineLayout Util::PipelineLayout::GetPipelineLayout(PipelineLayoutCache& pipelineLayoutCache,
+	PipelineLayoutFlag flags, const wchar_t* name)
 {
 	return pipelineLayoutCache.GetPipelineLayout(*this, flags, name);
 }
@@ -158,19 +160,20 @@ void PipelineLayoutCache::SetPipelineLayout(const string& key, const PipelineLay
 	m_pipelineLayouts[key] = pipelineLayout;
 }
 
-PipelineLayout PipelineLayoutCache::CreatePipelineLayout(Util::PipelineLayout& util, uint8_t flags, const wchar_t* name)
+PipelineLayout PipelineLayoutCache::CreatePipelineLayout(Util::PipelineLayout& util,
+	PipelineLayoutFlag flags, const wchar_t* name)
 {
 	auto& pipelineLayoutKey = util.GetPipelineLayoutKey(this);
-	pipelineLayoutKey[0] = flags;
+	pipelineLayoutKey[0] = static_cast<uint8_t>(flags);
 
 	return createPipelineLayout(pipelineLayoutKey, name);
 }
 
-PipelineLayout PipelineLayoutCache::GetPipelineLayout(Util::PipelineLayout& util, uint8_t flags,
-	const wchar_t* name, bool create)
+PipelineLayout PipelineLayoutCache::GetPipelineLayout(Util::PipelineLayout& util,
+	PipelineLayoutFlag flags, const wchar_t* name, bool create)
 {
 	auto& pipelineLayoutKey = util.GetPipelineLayoutKey(this);
-	pipelineLayoutKey[0] = flags;
+	pipelineLayoutKey[0] = static_cast<uint8_t>(flags);
 
 	return getPipelineLayout(pipelineLayoutKey, name, create);
 }

@@ -64,10 +64,10 @@ namespace XUSG
 				void* Rasterizer;
 				void* DepthStencil;
 				void* InputLayout;
-				uint8_t	PrimitiveTopologyType;
+				PrimitiveTopologyType PrimTopologyType;
 				uint8_t	NumRenderTargets;
-				uint8_t	RTVFormats[8];
-				uint8_t	DSVFormat;
+				Format RTVFormats[8];
+				Format	DSVFormat;
 				uint8_t	SampleCount;
 			};
 

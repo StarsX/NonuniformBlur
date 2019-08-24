@@ -25,7 +25,7 @@ void InputLayoutPool::SetLayout(uint32_t index, const InputElementTable& element
 	auto& layout = m_layouts[index];
 	layout = make_shared<InputLayout::element_type>();
 	layout->elements = elementTable;
-	layout->pInputElementDescs = layout->elements.data();
+	layout->pInputElementDescs = reinterpret_cast<decltype(layout->pInputElementDescs)>(layout->elements.data());
 	layout->NumElements = static_cast<uint32_t>(layout->elements.size());
 }
 

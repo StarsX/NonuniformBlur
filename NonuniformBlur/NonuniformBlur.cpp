@@ -122,7 +122,7 @@ void NonUniformBlur::LoadAssets()
 	DescriptorTable uavSrvTable;
 	shared_ptr<ResourceBase> source;
 	vector<Resource> uploaders(0);
-	if (!m_filter->Init(m_commandList, m_width, m_height, uavSrvTable, source, uploaders, DXGI_FORMAT_B8G8R8A8_UNORM))
+	if (!m_filter->Init(m_commandList, m_width, m_height, uavSrvTable, source, uploaders, Format::B8G8R8A8_UNORM))
 		ThrowIfFailed(E_FAIL);
 
 	// Close the command list and execute it to begin the initial GPU setup.
@@ -221,7 +221,7 @@ void NonUniformBlur::PopulateCommandList()
 	ThrowIfFailed(m_commandList.Reset(m_commandAllocators[m_frameIndex], nullptr));
 
 	// Record commands.
-	const auto dstState = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_COPY_SOURCE;
+	const auto dstState = ResourceState::NON_PIXEL_SHADER_RESOURCE | ResourceState::COPY_SOURCE;
 	m_filter->Process(m_commandList, m_focus, m_sigma, dstState);	// V-cycle
 	//m_filter->ProcessG(m_commandList, m_focus, m_sigma);			// Naive weighted averaging
 
@@ -230,14 +230,14 @@ void NonUniformBlur::PopulateCommandList()
 		const TextureCopyLocation src(m_filter->GetResult().GetResource().get(), 0);
 
 		ResourceBarrier barriers[2];
-		auto numBarriers = m_renderTargets[m_frameIndex].SetBarrier(barriers, D3D12_RESOURCE_STATE_COPY_DEST);
+		auto numBarriers = m_renderTargets[m_frameIndex].SetBarrier(barriers, ResourceState::COPY_DEST);
 		numBarriers = m_filter->GetResult().SetBarrier(barriers, dstState, numBarriers, 0);
 		m_commandList.Barrier(numBarriers, barriers);
 
 		m_commandList.CopyTextureRegion(dst, 0, 0, 0, src);
 
 		// Indicate that the back buffer will now be used to present.
-		numBarriers = m_renderTargets[m_frameIndex].SetBarrier(barriers, D3D12_RESOURCE_STATE_PRESENT);
+		numBarriers = m_renderTargets[m_frameIndex].SetBarrier(barriers, ResourceState::PRESENT);
 		m_commandList.Barrier(numBarriers, barriers);
 	}
 

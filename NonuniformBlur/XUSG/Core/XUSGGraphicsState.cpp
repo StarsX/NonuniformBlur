@@ -17,7 +17,7 @@ State::State()
 	m_key.resize(sizeof(Key));
 	m_pKey = reinterpret_cast<Key*>(&m_key[0]);
 	memset(m_pKey, 0, sizeof(Key));
-	m_pKey->PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	m_pKey->PrimTopologyType = PrimitiveTopologyType::TRIANGLE;
 	m_pKey->SampleCount = 1;
 }
 
@@ -72,7 +72,7 @@ void State::IASetInputLayout(const InputLayout& layout)
 
 void State::IASetPrimitiveTopologyType(PrimitiveTopologyType type)
 {
-	m_pKey->PrimitiveTopologyType = type;
+	m_pKey->PrimTopologyType = type;
 }
 
 void State::OMSetNumRenderTargets(uint8_t n)
@@ -247,12 +247,12 @@ Pipeline PipelineCache::createPipeline(const State::Key* pKey, const wchar_t* na
 	desc.DepthStencilState = *(depthStencil ? depthStencil : GetDepthStencil(DepthStencilPreset::DEFAULT_LESS).get());
 	if (pKey->InputLayout)
 		desc.InputLayout = *static_cast<decltype(desc.InputLayout)*>(pKey->InputLayout);
-	desc.PrimitiveTopologyType = static_cast<PrimitiveTopologyType>(pKey->PrimitiveTopologyType);
+	desc.PrimitiveTopologyType = static_cast<decltype(desc.PrimitiveTopologyType)>(pKey->PrimTopologyType);
 	desc.NumRenderTargets = pKey->NumRenderTargets;
 
 	for (auto i = 0; i < 8; ++i)
-		desc.RTVFormats[i] = static_cast<Format>(pKey->RTVFormats[i]);
-	desc.DSVFormat = static_cast<Format>(pKey->DSVFormat);
+		desc.RTVFormats[i] = static_cast<DXGI_FORMAT>(pKey->RTVFormats[i]);
+	desc.DSVFormat = static_cast<DXGI_FORMAT>(pKey->DSVFormat);
 	desc.SampleDesc.Count = pKey->SampleCount;
 
 	// Create pipeline

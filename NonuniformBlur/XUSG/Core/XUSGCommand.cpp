@@ -83,12 +83,13 @@ void CommandList::CopyTiles(const Resource& tiledResource, const TiledResourceCo
 void CommandList::ResolveSubresource(const Resource& dstResource, uint32_t dstSubresource,
 	const Resource& srcResource, uint32_t srcSubresource, Format format) const
 {
-	m_commandList->ResolveSubresource(dstResource.get(), dstSubresource, srcResource.get(), srcSubresource, format);
+	m_commandList->ResolveSubresource(dstResource.get(), dstSubresource, srcResource.get(),
+		srcSubresource, static_cast<DXGI_FORMAT>(format));
 }
 
 void CommandList::IASetPrimitiveTopology(PrimitiveTopology primitiveTopology) const
 {
-	m_commandList->IASetPrimitiveTopology(primitiveTopology);
+	m_commandList->IASetPrimitiveTopology(static_cast<D3D12_PRIMITIVE_TOPOLOGY>(primitiveTopology));
 }
 
 void CommandList::RSSetViewports(uint32_t numViewports, const Viewport* pViewports) const
@@ -235,10 +236,11 @@ void CommandList::OMSetRenderTargets(uint32_t numRenderTargetDescriptors, const 
 		rtsSingleHandleToDescriptorRange, pDepthStencilView);
 }
 
-void CommandList::ClearDepthStencilView(const Descriptor& depthStencilView, ClearFlags clearFlags, float depth,
+void CommandList::ClearDepthStencilView(const Descriptor& depthStencilView, ClearFlag clearFlags, float depth,
 	uint8_t stencil, uint32_t numRects, const RectRange* pRects) const
 {
-	m_commandList->ClearDepthStencilView(depthStencilView, clearFlags, depth, stencil, numRects, pRects);
+	m_commandList->ClearDepthStencilView(depthStencilView, static_cast<D3D12_CLEAR_FLAGS>(clearFlags),
+		depth, stencil, numRects, pRects);
 }
 
 void CommandList::ClearRenderTargetView(const Descriptor& renderTargetView, const float colorRGBA[4],

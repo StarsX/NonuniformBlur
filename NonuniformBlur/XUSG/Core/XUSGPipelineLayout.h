@@ -30,7 +30,7 @@ namespace XUSG
 		uint32_t NumDescriptors;
 		uint32_t BaseBinding;
 		uint32_t Space;
-		uint8_t Flags;
+		DescriptorRangeFlag Flags;
 	};
 
 	namespace Util
@@ -43,19 +43,19 @@ namespace XUSG
 
 			void SetShaderStage(uint32_t index, Shader::Stage stage);
 			void SetRange(uint32_t index, DescriptorType type, uint32_t num, uint32_t baseBinding,
-				uint32_t space = 0, uint32_t flags = 0);
+				uint32_t space = 0, DescriptorRangeFlag flags = DescriptorRangeFlag::NONE);
 			void SetConstants(uint32_t index, uint32_t num32BitValues, uint32_t binding,
 				uint32_t space = 0, Shader::Stage stage = Shader::Stage::ALL);
-			void SetRootSRV(uint32_t index, uint32_t binding,
-				uint32_t space = 0, uint8_t flags = 0x8, Shader::Stage stage = Shader::Stage::ALL);
-			void SetRootUAV(uint32_t index, uint32_t binding,
-				uint32_t space = 0, uint8_t flags = 0, Shader::Stage stage = Shader::Stage::ALL);
-			void SetRootCBV(uint32_t index, uint32_t binding,
-				uint32_t space = 0, uint8_t flags = 0, Shader::Stage stage = Shader::Stage::ALL);
+			void SetRootSRV(uint32_t index, uint32_t binding, uint32_t space = 0,
+				DescriptorRangeFlag flags = DescriptorRangeFlag::DATA_STATIC, Shader::Stage stage = Shader::Stage::ALL);
+			void SetRootUAV(uint32_t index, uint32_t binding, uint32_t space = 0,
+				DescriptorRangeFlag flags = DescriptorRangeFlag::NONE, Shader::Stage stage = Shader::Stage::ALL);
+			void SetRootCBV(uint32_t index, uint32_t binding, uint32_t space = 0,
+				DescriptorRangeFlag flags = DescriptorRangeFlag::NONE, Shader::Stage stage = Shader::Stage::ALL);
 
-			XUSG::PipelineLayout CreatePipelineLayout(PipelineLayoutCache& pipelineLayoutCache, uint8_t flags,
+			XUSG::PipelineLayout CreatePipelineLayout(PipelineLayoutCache& pipelineLayoutCache, PipelineLayoutFlag flags,
 				const wchar_t* name = nullptr);
-			XUSG::PipelineLayout GetPipelineLayout(PipelineLayoutCache& pipelineLayoutCache, uint8_t flags,
+			XUSG::PipelineLayout GetPipelineLayout(PipelineLayoutCache& pipelineLayoutCache, PipelineLayoutFlag flags,
 				const wchar_t* name = nullptr);
 
 			DescriptorTableLayout CreateDescriptorTableLayout(uint32_t index, PipelineLayoutCache& pipelineLayoutCache) const;
@@ -84,9 +84,9 @@ namespace XUSG
 		void SetDevice(const Device& device);
 		void SetPipelineLayout(const std::string& key, const PipelineLayout& pipelineLayout);
 
-		PipelineLayout CreatePipelineLayout(Util::PipelineLayout& util, uint8_t flags,
+		PipelineLayout CreatePipelineLayout(Util::PipelineLayout& util, PipelineLayoutFlag flags,
 			const wchar_t* name = nullptr);
-		PipelineLayout GetPipelineLayout(Util::PipelineLayout& util, uint8_t flags,
+		PipelineLayout GetPipelineLayout(Util::PipelineLayout& util, PipelineLayoutFlag flags,
 			const wchar_t* name = nullptr, bool create = true);
 
 		DescriptorTableLayout CreateDescriptorTableLayout(uint32_t index, const Util::PipelineLayout& util);

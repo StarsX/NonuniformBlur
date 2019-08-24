@@ -33,7 +33,7 @@ namespace XUSG
 				size_t maxsize, bool forceSRGB, std::shared_ptr<ResourceBase>& texture, Resource& uploader,
 				AlphaMode* alphaMode = nullptr);
 
-			static size_t BitsPerPixel(DXGI_FORMAT fmt);
+			static size_t BitsPerPixel(Format fmt);
 		};
 	}
 }

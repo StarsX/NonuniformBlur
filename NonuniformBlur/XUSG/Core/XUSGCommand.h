@@ -82,7 +82,7 @@ namespace XUSG
 			const Descriptor* pRenderTargetViews,
 			const Descriptor* pDepthStencilView = nullptr,
 			bool rtsSingleHandleToDescriptorRange = false) const;
-		virtual void ClearDepthStencilView(const Descriptor& depthStencilView, ClearFlags clearFlags,
+		virtual void ClearDepthStencilView(const Descriptor& depthStencilView, ClearFlag clearFlags,
 			float depth, uint8_t stencil = 0, uint32_t numRects = 0, const RectRange* pRects = nullptr) const;
 		virtual void ClearRenderTargetView(const Descriptor& renderTargetView, const float colorRGBA[4],
 			uint32_t numRects = 0, const RectRange* pRects = nullptr) const;
