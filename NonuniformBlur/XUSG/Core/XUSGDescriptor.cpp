@@ -130,9 +130,9 @@ void DescriptorTableCache::SetName(const wchar_t* name)
 	if (name) m_name = name;
 }
 
-void DescriptorTableCache::AllocateDescriptorPool(DescriptorPoolType type, uint32_t numDescriptors)
+bool DescriptorTableCache::AllocateDescriptorPool(DescriptorPoolType type, uint32_t numDescriptors)
 {
-	allocateDescriptorPool(type, numDescriptors);
+	return allocateDescriptorPool(type, numDescriptors);
 }
 
 DescriptorTable DescriptorTableCache::CreateCbvSrvUavTable(const Util::DescriptorTable& util)

@@ -77,7 +77,7 @@ namespace XUSG
 		void SetDevice(const Device& device);
 		void SetName(const wchar_t* name);
 
-		void AllocateDescriptorPool(DescriptorPoolType type, uint32_t numDescriptors);
+		bool AllocateDescriptorPool(DescriptorPoolType type, uint32_t numDescriptors);
 
 		DescriptorTable CreateCbvSrvUavTable(const Util::DescriptorTable& util);
 		DescriptorTable GetCbvSrvUavTable(const Util::DescriptorTable& util);
