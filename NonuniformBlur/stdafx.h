@@ -21,7 +21,6 @@
 
 #include <windows.h>
 
-#include <d3d12.h>
 #include <dxgi1_4.h>
 #include <D3Dcompiler.h>
 #include <DirectXMath.h>
@@ -29,15 +28,15 @@
 
 // C RunTime Header Files
 #include <iostream>
-#include <fstream>
 #include <sstream>
+#include <fstream>
 #include <iomanip>
 
 #include <algorithm>
 #include <string>
 #include <vector>
-#include <unordered_map>
 #include <map>
+#include <unordered_map>
 #include <functional>
 #include <wrl.h>
 #include <shellapi.h>

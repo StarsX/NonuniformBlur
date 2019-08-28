@@ -60,6 +60,7 @@ namespace XUSG
 	{
 		char s_str[64] = {};
 		sprintf_s(s_str, "HRESULT of 0x%08X", static_cast<uint32_t>(hr));
+
 		return std::string(s_str);
 	}
 
@@ -451,14 +452,14 @@ namespace XUSG
 		uint32_t InstanceDataStepRate;
 	};
 	using InputElementTable = std::vector<InputElementDesc>;
-	struct InputLayoutDesc : D3D12_INPUT_LAYOUT_DESC
+	struct InputLayoutDesc : public D3D12_INPUT_LAYOUT_DESC
 	{
 		InputElementTable elements;
 	};
 	using InputLayout = std::shared_ptr<InputLayoutDesc>;
 
 	// Pipeline layouts related
-	struct RootParameter : CD3DX12_ROOT_PARAMETER1
+	struct RootParameter : public CD3DX12_ROOT_PARAMETER1
 	{
 		DescriptorRangeList ranges;
 	};
@@ -467,7 +468,8 @@ namespace XUSG
 	using Pipeline = com_ptr<ID3D12PipelineState>;
 
 	// Device
-	struct InteralDevice : ID3D12Device
+	MIDL_INTERFACE("189819f1-1db6-4b57-be54-1821339b85f7")
+		DX12Device : public ID3D12Device
 	{
 		bool GetCommandQueue(CommandQueue& commandQueue, CommandListType type, CommandQueueFlags flags, int32_t priority = 0, uint32_t nodeMask = 0)
 		{
@@ -501,7 +503,7 @@ namespace XUSG
 			return true;
 		}
 	};
-	using Device = com_ptr<InteralDevice>;
+	using Device = com_ptr<DX12Device>;
 
 	// Shaders related
 	namespace Shader
