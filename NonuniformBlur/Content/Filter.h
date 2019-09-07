@@ -13,15 +13,15 @@ public:
 	Filter(const XUSG::Device& device);
 	virtual ~Filter();
 
-	bool Init(const XUSG::CommandList& commandList, uint32_t width, uint32_t height,
-		XUSG::DescriptorTable& uavSrvTable, std::shared_ptr<XUSG::ResourceBase>& source,
-		std::vector<XUSG::Resource>& uploaders, XUSG::Format rtFormat,
-		const wchar_t* fileName = L"Lenna.dds");
+	bool Init(const XUSG::CommandList& commandList, XUSG::DescriptorTable& uavSrvTable,
+		std::shared_ptr<XUSG::ResourceBase>& source, std::vector<XUSG::Resource>& uploaders,
+		XUSG::Format rtFormat, const wchar_t* fileName);
 
 	void Process(const XUSG::CommandList& commandList, DirectX::XMFLOAT2 focus, float sigma, XUSG::ResourceState dstState);
 	void ProcessG(const XUSG::CommandList& commandList, DirectX::XMFLOAT2 focus, float sigma);
 
 	XUSG::Texture2D& GetResult();
+	void GetImageSize(uint32_t& width, uint32_t& height) const;
 
 protected:
 	enum PipelineIndex : uint8_t
@@ -60,5 +60,6 @@ protected:
 
 	XUSG::Texture2D			m_filtered[NUM_UAV_SRV];
 
+	DirectX::XMUINT2		m_imageSize;
 	uint8_t					m_numMips;
 };

@@ -17,6 +17,7 @@ struct GaussianConstants
 
 Filter::Filter(const Device& device) :
 	m_device(device),
+	m_imageSize(1, 1),
 	m_numMips(11)
 {
 	m_computePipelineCache.SetDevice(device);
@@ -28,9 +29,9 @@ Filter::~Filter()
 {
 }
 
-bool Filter::Init(const CommandList& commandList, uint32_t width, uint32_t height,
-	DescriptorTable& uavSrvTable, shared_ptr<ResourceBase>& source,
-	vector<Resource>& uploaders, Format rtFormat, const wchar_t* fileName)
+bool Filter::Init(const CommandList& commandList, DescriptorTable& uavSrvTable,
+	shared_ptr<ResourceBase>& source, vector<Resource>& uploaders, Format rtFormat,
+	const wchar_t* fileName)
 {
 	// Load input image
 	{
@@ -43,10 +44,13 @@ bool Filter::Init(const CommandList& commandList, uint32_t width, uint32_t heigh
 	}
 
 	// Create resources and pipelines
-	m_numMips = (max)(Log2((max)(width, height)), 0ui8) + 1;
+	m_imageSize.x = static_cast<uint32_t>(source->GetResource()->GetDesc().Width);
+	m_imageSize.y = source->GetResource()->GetDesc().Height;
+	m_numMips = (max)(Log2((max)(m_imageSize.x, m_imageSize.y)), 0ui8) + 1;
 
 	for (auto& image : m_filtered)
-		image.Create(m_device, width, height, rtFormat, 1, ResourceFlag::ALLOW_UNORDERED_ACCESS, m_numMips);
+		image.Create(m_device, m_imageSize.x, m_imageSize.y, rtFormat, 1,
+			ResourceFlag::ALLOW_UNORDERED_ACCESS, m_numMips);
 
 	N_RETURN(createPipelineLayouts(), false);
 	N_RETURN(createPipelines(), false);
@@ -160,6 +164,12 @@ void Filter::ProcessG(const CommandList& commandList, XMFLOAT2 focus, float sigm
 Texture2D& Filter::GetResult()
 {
 	return m_filtered[TABLE_UP_SAMPLE];
+}
+
+void Filter::GetImageSize(uint32_t& width, uint32_t& height) const
+{
+	width = m_imageSize.x;
+	height = m_imageSize.y;
 }
 
 bool Filter::createPipelineLayouts()

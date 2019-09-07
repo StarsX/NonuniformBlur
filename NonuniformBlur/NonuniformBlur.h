@@ -34,6 +34,8 @@ public:
 
 	virtual void OnKeyUp(uint8_t /*key*/);
 
+	virtual void ParseCommandLineArgs(wchar_t* argv[], int argc);
+
 private:
 	static const uint32_t FrameCount = 3;
 
@@ -63,7 +65,12 @@ private:
 	bool		m_isPaused;
 	StepTimer	m_timer;
 
-	void LoadPipeline();
+	// User external settings
+	std::wstring m_fileName;
+
+	void LoadPipeline(XUSG::DescriptorTable& uavSrvTable,
+		std::shared_ptr<XUSG::ResourceBase>& source,
+		std::vector<XUSG::Resource>& uploaders);
 	void LoadAssets();
 
 	void PopulateCommandList();

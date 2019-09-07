@@ -19,18 +19,24 @@ NonUniformBlur::NonUniformBlur(uint32_t width, uint32_t height, std::wstring nam
 	m_focus(0.0, 0.0),
 	m_sigma(24.0),
 	m_frameIndex(0),
-	m_showFPS(true)
+	m_showFPS(true),
+	m_fileName(L"Lenna.dds")
 {
 }
 
 void NonUniformBlur::OnInit()
 {
-	LoadPipeline();
+	DescriptorTable uavSrvTable;
+	shared_ptr<ResourceBase> source;
+	vector<Resource> uploaders(0);
+
+	LoadPipeline(uavSrvTable, source, uploaders);
 	LoadAssets();
 }
 
 // Load the rendering pipeline dependencies.
-void NonUniformBlur::LoadPipeline()
+void NonUniformBlur::LoadPipeline(DescriptorTable& uavSrvTable, shared_ptr<ResourceBase>& source,
+	vector<Resource>& uploaders)
 {
 	auto dxgiFactoryFlags = 0u;
 
@@ -70,6 +76,37 @@ void NonUniformBlur::LoadPipeline()
 	// Create the command queue.
 	N_RETURN(m_device->GetCommandQueue(m_commandQueue, CommandListType::DIRECT, CommandQueueFlags::NONE), ThrowIfFailed(E_FAIL));
 
+	// This sample does not support fullscreen transitions.
+	ThrowIfFailed(factory->MakeWindowAssociation(Win32Application::GetHwnd(), DXGI_MWA_NO_ALT_ENTER));
+
+	// Create a command allocator for each frame.
+	for (auto n = 0u; n < FrameCount; n++)
+		N_RETURN(m_device->GetCommandAllocator(m_commandAllocators[n], CommandListType::DIRECT), ThrowIfFailed(E_FAIL));
+
+	// Create the command list.
+	N_RETURN(m_device->GetCommandList(m_commandList.GetCommandList(), 0, CommandListType::DIRECT,
+		m_commandAllocators[0], nullptr), ThrowIfFailed(E_FAIL));
+
+	m_filter = make_unique<Filter>(m_device);
+	if (!m_filter) ThrowIfFailed(E_FAIL);
+
+	if (!m_filter->Init(m_commandList, uavSrvTable, source, uploaders, Format::B8G8R8A8_UNORM, m_fileName.c_str()))
+		ThrowIfFailed(E_FAIL);
+	
+	m_filter->GetImageSize(m_width, m_height);
+
+	// Resize window
+	{
+		RECT windowRect;
+		GetWindowRect(Win32Application::GetHwnd(), &windowRect);
+		windowRect.right = windowRect.left + m_width;
+		windowRect.bottom = windowRect.top + m_height;
+
+		AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, FALSE);
+		SetWindowPos(Win32Application::GetHwnd(), HWND_TOP, windowRect.left, windowRect.top,
+			windowRect.right - windowRect.left, windowRect.bottom - windowRect.top, 0);
+	}
+
 	// Describe and create the swap chain.
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
 	swapChainDesc.BufferCount = FrameCount;
@@ -90,37 +127,18 @@ void NonUniformBlur::LoadPipeline()
 		&swapChain
 	));
 
-	// This sample does not support fullscreen transitions.
-	ThrowIfFailed(factory->MakeWindowAssociation(Win32Application::GetHwnd(), DXGI_MWA_NO_ALT_ENTER));
-
 	ThrowIfFailed(swapChain.As(&m_swapChain));
 	m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
 
 	// Create frame resources.
-	// Create a RTV and a command allocator for each frame.
+	// Create a RTV for each frame.
 	for (auto n = 0u; n < FrameCount; n++)
-	{
 		N_RETURN(m_renderTargets[n].CreateFromSwapChain(m_device, m_swapChain, n), ThrowIfFailed(E_FAIL));
-		N_RETURN(m_device->GetCommandAllocator(m_commandAllocators[n], CommandListType::DIRECT), ThrowIfFailed(E_FAIL));
-	}
 }
 
 // Load the sample assets.
 void NonUniformBlur::LoadAssets()
 {
-	// Create the command list.
-	N_RETURN(m_device->GetCommandList(m_commandList.GetCommandList(), 0, CommandListType::DIRECT,
-		m_commandAllocators[m_frameIndex], nullptr), ThrowIfFailed(E_FAIL));
-
-	m_filter = make_unique<Filter>(m_device);
-	if (!m_filter) ThrowIfFailed(E_FAIL);
-
-	DescriptorTable uavSrvTable;
-	shared_ptr<ResourceBase> source;
-	vector<Resource> uploaders(0);
-	if (!m_filter->Init(m_commandList, m_width, m_height, uavSrvTable, source, uploaders, Format::B8G8R8A8_UNORM))
-		ThrowIfFailed(E_FAIL);
-
 	// Close the command list and execute it to begin the initial GPU setup.
 	ThrowIfFailed(m_commandList.Close());
 	BaseCommandList* const ppCommandLists[] = { m_commandList.GetCommandList().get() };
@@ -201,6 +219,20 @@ void NonUniformBlur::OnKeyUp(uint8_t key)
 	case 0x70:	//case VK_F1:
 		m_showFPS = !m_showFPS;
 		break;
+	}
+}
+
+void NonUniformBlur::ParseCommandLineArgs(wchar_t* argv[], int argc)
+{
+	DXFramework::ParseCommandLineArgs(argv, argc);
+
+	for (auto i = 1; i < argc; ++i)
+	{
+		if (_wcsnicmp(argv[i], L"-image", wcslen(argv[i])) == 0 ||
+			_wcsnicmp(argv[i], L"/image", wcslen(argv[i])) == 0)
+		{
+			if (i + 1 < argc) m_fileName = argv[i + 1];
+		}
 	}
 }
 
