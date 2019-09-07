@@ -3,6 +3,10 @@ A very fast approximation to large-kernel Gaussian blur with nonuniform blur rad
 
 ![Nonuniform blur result](https://github.com/StarsX/NonuniformBlur/blob/master/Doc/Images/NonuniformBlur.jpg "Nonuniform blur result")
 
+![Nonuniform blur result PR](https://github.com/StarsX/NonuniformBlur/blob/master/Doc/Images/RenderingX12.png "Nonuniform blur result on my RenderingX12 screenshot")
+
+![Nonuniform blur result NPR](https://github.com/StarsX/NonuniformBlur/blob/master/Doc/Images/RenderingX12.png "Nonuniform blur result on my BrushShadeX screenshot")
+
 Hot keys:
 
 [F1] show/hide FPS
