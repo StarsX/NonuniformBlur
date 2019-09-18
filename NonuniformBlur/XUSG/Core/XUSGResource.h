@@ -64,6 +64,9 @@ namespace XUSG
 			BarrierFlag flag = BarrierFlag::NONE);
 		ResourceState	GetResourceState(uint32_t i = 0) const;
 
+		Format GetFormat() const;
+		uint32_t GetWidth() const;
+
 		//static void CreateReadBuffer(const Device& device,
 			//CPDXBuffer& pDstBuffer, const CPDXBuffer& pSrcBuffer);
 	protected:
@@ -132,6 +135,8 @@ namespace XUSG
 
 		Descriptor GetUAV(uint8_t i = 0) const;
 		Descriptor GetSRVLevel(uint8_t i) const;
+
+		uint32_t GetHeight() const;
 
 	protected:
 		std::vector<Descriptor>	m_uavs;
@@ -251,6 +256,8 @@ namespace XUSG
 
 		Descriptor GetUAV(uint8_t i = 0) const;
 		Descriptor GetSRVLevel(uint8_t i) const;
+
+		uint32_t GetDepth() const;
 
 	protected:
 		std::vector<Descriptor>	m_uavs;

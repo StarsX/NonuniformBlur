@@ -75,6 +75,12 @@ int Win32Application::Run(DXFramework *pFramework, HINSTANCE hInstance, int nCmd
 // Main message handler for the sample.
 LRESULT CALLBACK Win32Application::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	static bool s_in_sizemove = false;
+	static bool s_in_suspend = false;
+	static bool s_minimized = false;
+	static bool s_fullscreen = false;
+	// Set s_fullscreen to true if defaulting to fullscreen.
+
 	const auto pFramework = reinterpret_cast<DXFramework*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 
 	switch (message)
@@ -84,6 +90,45 @@ LRESULT CALLBACK Win32Application::WindowProc(HWND hWnd, UINT message, WPARAM wP
 			// Save the DXSample* passed in to CreateWindow.
 			LPCREATESTRUCT pCreateStruct = reinterpret_cast<LPCREATESTRUCT>(lParam);
 			SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pCreateStruct->lpCreateParams));
+		}
+		return 0;
+
+	case WM_SIZE:
+		if (wParam == SIZE_MINIMIZED)
+		{
+			if (!s_minimized)
+			{
+				s_minimized = true;
+				if (!s_in_suspend && pFramework)
+					pFramework->OnSuspending();
+				s_in_suspend = true;
+			}
+		}
+		else if (s_minimized)
+		{
+			s_minimized = false;
+			if (s_in_suspend && pFramework)
+				pFramework->OnResuming();
+			s_in_suspend = false;
+		}
+		else if (!s_in_sizemove && pFramework)
+		{
+			pFramework->OnWindowSizeChanged(LOWORD(lParam), HIWORD(lParam));
+		}
+		return 0;
+
+	case WM_ENTERSIZEMOVE:
+		s_in_sizemove = true;
+		return 0;
+
+	case WM_EXITSIZEMOVE:
+		s_in_sizemove = false;
+		if (pFramework)
+		{
+			RECT rc;
+			GetClientRect(hWnd, &rc);
+
+			pFramework->OnWindowSizeChanged(rc.right - rc.left, rc.bottom - rc.top);
 		}
 		return 0;
 

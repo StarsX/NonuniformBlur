@@ -25,6 +25,10 @@ public:
 	virtual void OnRender() = 0;
 	virtual void OnDestroy() = 0;
 
+	virtual void OnSuspending() {}
+	virtual void OnResuming() {}
+	virtual void OnWindowSizeChanged(int width, int height) {}
+
 	// Samples override the event handlers to handle specific messages.
 	virtual void OnKeyDown(uint8_t /*key*/)   {}
 	virtual void OnKeyUp(uint8_t /*key*/)     {}

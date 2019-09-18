@@ -47,9 +47,10 @@ namespace XUSG
 			DescriptorTable();
 			virtual ~DescriptorTable();
 
-			void SetDescriptors(uint32_t start, uint32_t num, const Descriptor* srcDescriptors);
+			void SetDescriptors(uint32_t start, uint32_t num, const Descriptor* srcDescriptors,
+				uint8_t descriptorPoolIndex = 0);
 			void SetSamplers(uint32_t start, uint32_t num, const SamplerPreset* presets,
-				DescriptorTableCache& descriptorTableCache);
+				DescriptorTableCache& descriptorTableCache, uint8_t descriptorPoolIndex = 0);
 
 			XUSG::DescriptorTable CreateCbvSrvUavTable(DescriptorTableCache& descriptorTableCache);
 			XUSG::DescriptorTable GetCbvSrvUavTable(DescriptorTableCache& descriptorTableCache);
@@ -76,8 +77,9 @@ namespace XUSG
 
 		void SetDevice(const Device& device);
 		void SetName(const wchar_t* name);
+		void ResetDescriptorPool(DescriptorPoolType type, uint8_t index);
 
-		bool AllocateDescriptorPool(DescriptorPoolType type, uint32_t numDescriptors);
+		bool AllocateDescriptorPool(DescriptorPoolType type, uint32_t numDescriptors, uint8_t index = 0);
 
 		DescriptorTable CreateCbvSrvUavTable(const Util::DescriptorTable& util);
 		DescriptorTable GetCbvSrvUavTable(const Util::DescriptorTable& util);
@@ -88,7 +90,7 @@ namespace XUSG
 		RenderTargetTable CreateRtvTable(const Util::DescriptorTable& util);
 		RenderTargetTable GetRtvTable(const Util::DescriptorTable& util);
 
-		const DescriptorPool& GetDescriptorPool(DescriptorPoolType type) const;
+		const DescriptorPool& GetDescriptorPool(DescriptorPoolType type, uint8_t index = 0) const;
 
 		const std::shared_ptr<Sampler>& GetSampler(SamplerPreset preset);
 
@@ -97,7 +99,9 @@ namespace XUSG
 	protected:
 		friend class Util::DescriptorTable;
 
-		bool allocateDescriptorPool(DescriptorPoolType type, uint32_t numDescriptors);
+		void checkDescriptorPoolTypeStorage(DescriptorPoolType type, uint8_t index);
+
+		bool allocateDescriptorPool(DescriptorPoolType type, uint32_t numDescriptors, uint8_t index);
 		bool reallocateCbvSrvUavPool(const std::string& key);
 		bool reallocateSamplerPool(const std::string& key);
 		bool reallocateRtvPool(const std::string& key);
@@ -117,11 +121,11 @@ namespace XUSG
 		std::unordered_map<std::string, DescriptorTable> m_samplerTables;
 		std::unordered_map<std::string, RenderTargetTable> m_rtvTables;
 
-		std::vector<const std::string*> m_descriptorKeyPtrs[NUM_DESCRIPTOR_POOL];
+		std::vector<std::vector<const std::string*>> m_descriptorKeyPtrs[NUM_DESCRIPTOR_POOL];
 
-		DescriptorPool	m_descriptorPools[NUM_DESCRIPTOR_POOL];
-		uint32_t		m_descriptorStrides[NUM_DESCRIPTOR_POOL];
-		uint32_t		m_descriptorCounts[NUM_DESCRIPTOR_POOL];
+		std::vector<DescriptorPool>	m_descriptorPools[NUM_DESCRIPTOR_POOL];
+		std::vector<uint32_t>		m_descriptorCounts[NUM_DESCRIPTOR_POOL];
+		uint32_t m_descriptorStrides[NUM_DESCRIPTOR_POOL];
 
 		std::shared_ptr<Sampler> m_samplerPresets[NUM_SAMPLER_PRESET];
 		std::function<Sampler()> m_pfnSamplers[NUM_SAMPLER_PRESET];

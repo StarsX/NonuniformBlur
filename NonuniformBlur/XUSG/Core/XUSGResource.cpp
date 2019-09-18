@@ -73,6 +73,7 @@ bool ConstantBuffer::Create(const Device& device, uint64_t byteWidth, uint32_t n
 {
 	M_RETURN(!device, cerr, "The device is NULL.", false);
 	m_device = device;
+	m_cbvPools.clear();
 
 	// Instanced CBVs
 	vector<uint32_t> offsetList;
@@ -273,9 +274,20 @@ ResourceState ResourceBase::GetResourceState(uint32_t i) const
 	return m_states[i];
 }
 
+Format ResourceBase::GetFormat() const
+{
+	return static_cast<Format>(m_resource->GetDesc().Format);
+}
+
+uint32_t ResourceBase::GetWidth() const
+{
+	return static_cast<uint32_t>(m_resource->GetDesc().Width);
+}
+
 void ResourceBase::setDevice(const Device& device)
 {
 	m_device = device;
+	m_srvUavPools.clear();
 }
 
 Descriptor ResourceBase::allocateSrvUavPool()
@@ -568,7 +580,7 @@ uint32_t Texture2D::SetBarrier(ResourceBarrier* pBarriers, ResourceState dstStat
 uint32_t Texture2D::SetBarrier(ResourceBarrier* pBarriers, uint8_t mipLevel, ResourceState dstState,
 	uint32_t numBarriers, uint32_t slice, BarrierFlag flags)
 {
-	const auto& desc = m_resource->GetDesc();
+	const auto desc = m_resource->GetDesc();
 	const auto subresource = D3D12CalcSubresource(mipLevel, slice, 0, desc.MipLevels, desc.DepthOrArraySize);
 
 	return SetBarrier(pBarriers, dstState, numBarriers, subresource, flags);
@@ -588,7 +600,7 @@ void Texture2D::Blit(const CommandList& commandList, uint32_t groupSizeX, uint32
 	if (pipeline) commandList.SetPipelineState(pipeline);
 
 	// Dispatch
-	const auto& desc = m_resource->GetDesc();
+	const auto desc = m_resource->GetDesc();
 	const auto width = (max)(static_cast<uint32_t>(desc.Width >> mipLevel), 1u);
 	const auto height = (max)(desc.Height >> mipLevel, 1u);
 	commandList.Dispatch(DIV_UP(width, groupSizeX), DIV_UP(height, groupSizeY),
@@ -602,7 +614,7 @@ uint32_t Texture2D::Blit(const CommandList& commandList, ResourceBarrier* pBarri
 	uint32_t srvSlot, uint32_t baseSlice, uint32_t numSlices)
 {
 	const auto prevBarriers = numBarriers;
-	const auto& desc = m_resource->GetDesc();
+	const auto desc = m_resource->GetDesc();
 	if (!numSlices) numSlices = desc.DepthOrArraySize - baseSlice;
 
 	if (!mipLevel && srcMipLevel <= mipLevel)
@@ -644,7 +656,7 @@ uint32_t Texture2D::GenerateMips(const CommandList& commandList, ResourceBarrier
 	if (!(numMips || baseMip || numSlices || baseSlice))
 		numBarriers = SetBarrier(pBarriers, ResourceState::UNORDERED_ACCESS, numBarriers);
 
-	const auto& desc = m_resource->GetDesc();
+	const auto desc = m_resource->GetDesc();
 	if (!numSlices) numSlices = desc.DepthOrArraySize - baseSlice;
 	if (!numMips) numMips = desc.MipLevels - baseMip;
 
@@ -688,6 +700,11 @@ Descriptor Texture2D::GetUAV(uint8_t i) const
 Descriptor Texture2D::GetSRVLevel(uint8_t i) const
 {
 	return m_srvLevels.size() > i ? m_srvLevels[i] : Descriptor(D3D12_DEFAULT);
+}
+
+uint32_t Texture2D::GetHeight() const
+{
+	return m_resource->GetDesc().Height;
 }
 
 //--------------------------------------------------------------------------------------
@@ -807,6 +824,7 @@ bool RenderTarget::CreateFromSwapChain(const Device& device, const SwapChain& sw
 {
 	M_RETURN(!device, cerr, "The device is NULL.", false);
 	setDevice(device);
+	m_rtvPools.clear();
 
 	m_name = L"SwapChain[" + to_wstring(bufferIdx) + L"]";
 
@@ -832,7 +850,7 @@ void RenderTarget::Blit(const CommandList& commandList, const DescriptorTable& s
 	const DescriptorTable& samplerTable, uint32_t samplerSlot, const Pipeline& pipeline)
 {
 	// Set render target
-	const auto& desc = m_resource->GetDesc();
+	const auto desc = m_resource->GetDesc();
 	if (numSlices == 0) numSlices = desc.DepthOrArraySize - baseSlice;
 	vector<Descriptor> rtvs(numSlices);
 	for (auto i = 0u; i < numSlices; ++i) rtvs[i] = GetRTV(baseSlice + i, mipLevel);
@@ -950,6 +968,7 @@ bool RenderTarget::create(const Device& device, uint32_t width, uint32_t height,
 {
 	M_RETURN(!device, cerr, "The device is NULL.", false);
 	setDevice(device);
+	m_rtvPools.clear();
 
 	if (name) m_name = name;
 
@@ -1218,6 +1237,7 @@ bool DepthStencil::create(const Device& device, uint32_t width, uint32_t height,
 {
 	M_RETURN(!device, cerr, "The device is NULL.", false);
 	setDevice(device);
+	m_dsvPools.clear();
 
 	if (name) m_name = name;
 
@@ -1512,6 +1532,11 @@ Descriptor Texture3D::GetUAV(uint8_t i) const
 Descriptor Texture3D::GetSRVLevel(uint8_t i) const
 {
 	return m_srvLevels.size() > i ? m_srvLevels[i] : Descriptor(D3D12_DEFAULT);
+}
+
+uint32_t Texture3D::GetDepth() const
+{
+	return m_resource->GetDesc().DepthOrArraySize;
 }
 
 //--------------------------------------------------------------------------------------
@@ -1817,9 +1842,6 @@ bool TypedBuffer::Create(const Device& device, uint32_t numElements, uint32_t st
 	uint32_t numUAVs, const uint32_t* firstUAVElements,
 	const wchar_t* name)
 {
-	M_RETURN(!device, cerr, "The device is NULL.", false);
-	setDevice(device);
-
 	const auto isPacked = (resourceFlags & ResourceFlag::BIND_PACKED_UAV) == ResourceFlag::BIND_PACKED_UAV;
 	resourceFlags &= REMOVE_PACKED_UAV;
 
@@ -2008,8 +2030,6 @@ bool IndexBuffer::Create(const Device& device, uint64_t byteWidth, Format format
 	uint32_t numUAVs, const uint32_t* firstUAVElements,
 	const wchar_t* name)
 {
-	setDevice(device);
-
 	const auto hasSRV = (resourceFlags & ResourceFlag::DENY_SHADER_RESOURCE) == ResourceFlag::NONE;
 	const bool hasUAV = (resourceFlags & ResourceFlag::ALLOW_UNORDERED_ACCESS) == ResourceFlag::ALLOW_UNORDERED_ACCESS;
 
