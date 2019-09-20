@@ -27,6 +27,7 @@ public:
 
 	virtual void OnSuspending() {}
 	virtual void OnResuming() {}
+	virtual void OnWindowMoved() {}
 	virtual void OnWindowSizeChanged(int width, int height) {}
 
 	// Samples override the event handlers to handle specific messages.

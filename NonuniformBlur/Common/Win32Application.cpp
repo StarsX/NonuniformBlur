@@ -29,7 +29,7 @@ int Win32Application::Run(DXFramework *pFramework, HINSTANCE hInstance, int nCmd
 	windowClass.lpfnWndProc = WindowProc;
 	windowClass.hInstance = hInstance;
 	windowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
-	windowClass.lpszClassName = L"DXSampleClass";
+	windowClass.lpszClassName = L"DXFrameworkClass";
 	RegisterClassEx(&windowClass);
 
 	RECT windowRect = { 0, 0, static_cast<long>(pFramework->GetWidth()), static_cast<long>(pFramework->GetHeight()) };
@@ -81,6 +81,9 @@ LRESULT CALLBACK Win32Application::WindowProc(HWND hWnd, UINT message, WPARAM wP
 	static bool s_fullscreen = false;
 	// Set s_fullscreen to true if defaulting to fullscreen.
 
+	static uint32_t s_width = 0;
+	static uint32_t s_height = 0;
+
 	const auto pFramework = reinterpret_cast<DXFramework*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 
 	switch (message)
@@ -91,6 +94,11 @@ LRESULT CALLBACK Win32Application::WindowProc(HWND hWnd, UINT message, WPARAM wP
 			LPCREATESTRUCT pCreateStruct = reinterpret_cast<LPCREATESTRUCT>(lParam);
 			SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pCreateStruct->lpCreateParams));
 		}
+		return 0;
+
+	case WM_MOVE:
+		if (pFramework)
+			pFramework->OnWindowMoved();
 		return 0;
 
 	case WM_SIZE:
@@ -113,7 +121,9 @@ LRESULT CALLBACK Win32Application::WindowProc(HWND hWnd, UINT message, WPARAM wP
 		}
 		else if (!s_in_sizemove && pFramework)
 		{
-			pFramework->OnWindowSizeChanged(LOWORD(lParam), HIWORD(lParam));
+			s_width = LOWORD(lParam);
+			s_height = HIWORD(lParam);
+			pFramework->OnWindowSizeChanged(s_width, s_height);
 		}
 		return 0;
 
@@ -128,7 +138,15 @@ LRESULT CALLBACK Win32Application::WindowProc(HWND hWnd, UINT message, WPARAM wP
 			RECT rc;
 			GetClientRect(hWnd, &rc);
 
-			pFramework->OnWindowSizeChanged(rc.right - rc.left, rc.bottom - rc.top);
+			const auto w = rc.right - rc.left;
+			const auto h = rc.bottom - rc.top;
+
+			if (s_width != w || s_height != h)
+			{
+				pFramework->OnWindowSizeChanged(w, h);
+				s_width = w;
+				s_height = h;
+			}
 		}
 		return 0;
 
