@@ -264,7 +264,7 @@ bool DescriptorTableCache::reallocateCbvSrvUavPool(const string& key)
 
 	// Allocate a new pool if neccessary
 	const auto& descriptorPool = m_descriptorPools[CBV_SRV_UAV_POOL][index];
-	const auto descriptorCount = m_descriptorCounts[CBV_SRV_UAV_POOL][index] + numDescriptors;
+	const auto descriptorCount = calculateGrowth(numDescriptors, CBV_SRV_UAV_POOL, index);
 	if (!descriptorPool || descriptorPool->GetDesc().NumDescriptors < descriptorCount)
 	{
 		N_RETURN(allocateDescriptorPool(CBV_SRV_UAV_POOL, descriptorCount, index), false);
@@ -290,7 +290,7 @@ bool DescriptorTableCache::reallocateSamplerPool(const string& key)
 
 	// Allocate a new pool if neccessary
 	const auto& descriptorPool = m_descriptorPools[SAMPLER_POOL][index];
-	const auto descriptorCount = m_descriptorCounts[SAMPLER_POOL][index] + numDescriptors;
+	const auto descriptorCount = calculateGrowth(numDescriptors, SAMPLER_POOL, index);
 	if (!descriptorPool || descriptorPool->GetDesc().NumDescriptors < descriptorCount)
 	{
 		N_RETURN(allocateDescriptorPool(SAMPLER_POOL, descriptorCount, index), false);
@@ -316,7 +316,7 @@ bool DescriptorTableCache::reallocateRtvPool(const string& key)
 
 	// Allocate a new pool if neccessary
 	const auto& descriptorPool = m_descriptorPools[RTV_POOL][index];
-	const auto descriptorCount = m_descriptorCounts[RTV_POOL][index] + numDescriptors;
+	const auto descriptorCount = calculateGrowth(numDescriptors, RTV_POOL, index);
 	if (!descriptorPool || descriptorPool->GetDesc().NumDescriptors < descriptorCount)
 	{
 		N_RETURN(allocateDescriptorPool(RTV_POOL, descriptorCount, index), false);
@@ -375,7 +375,7 @@ DescriptorTable DescriptorTableCache::getCbvSrvUavTable(const string& key)
 			const uint8_t index = key[0];
 			const auto table = createCbvSrvUavTable(key);
 			m_cbvSrvUavTables[key] = table;
-			m_descriptorKeyPtrs[CBV_SRV_UAV_POOL][index].push_back(&m_cbvSrvUavTables.find(key)->first);
+			m_descriptorKeyPtrs[CBV_SRV_UAV_POOL][index].emplace_back(&m_cbvSrvUavTables.find(key)->first);
 
 			return table;
 		}
@@ -429,7 +429,7 @@ DescriptorTable DescriptorTableCache::getSamplerTable(const string& key)
 			const uint8_t index = key[0];
 			const auto table = createSamplerTable(key);
 			m_samplerTables[key] = table;
-			m_descriptorKeyPtrs[SAMPLER_POOL][index].push_back(&m_samplerTables.find(key)->first);
+			m_descriptorKeyPtrs[SAMPLER_POOL][index].emplace_back(&m_samplerTables.find(key)->first);
 
 			return table;
 		}
@@ -483,7 +483,7 @@ RenderTargetTable DescriptorTableCache::getRtvTable(const string& key)
 			const uint8_t index = key[0];
 			const auto table = createRtvTable(key);
 			m_rtvTables[key] = table;
-			m_descriptorKeyPtrs[RTV_POOL][index].push_back(&m_rtvTables.find(key)->first);
+			m_descriptorKeyPtrs[RTV_POOL][index].emplace_back(&m_rtvTables.find(key)->first);
 
 			return table;
 		}
@@ -492,4 +492,23 @@ RenderTargetTable DescriptorTableCache::getRtvTable(const string& key)
 	}
 
 	return nullptr;
+}
+
+uint32_t DescriptorTableCache::calculateGrowth(uint32_t numDescriptors,
+	DescriptorPoolType type, uint8_t index) const
+{
+	const auto& oldCapacity = m_descriptorCounts[type][index];
+	const auto halfOldCapacity = oldCapacity >> 1;
+	const auto newSize = oldCapacity + numDescriptors;
+
+	const auto maxSize = type == SAMPLER_POOL ?
+		D3D12_MAX_SHADER_VISIBLE_SAMPLER_HEAP_SIZE :
+		D3D12_MAX_SHADER_VISIBLE_DESCRIPTOR_HEAP_SIZE_TIER_1;
+
+	// geometric growth would overflow
+	if (oldCapacity > maxSize - halfOldCapacity) return newSize;
+
+	const auto geometric = oldCapacity + halfOldCapacity;
+
+	return (max)(geometric, newSize); // geometric growth might be insufficient
 }

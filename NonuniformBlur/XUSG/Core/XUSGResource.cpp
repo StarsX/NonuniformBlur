@@ -199,7 +199,7 @@ Descriptor ConstantBuffer::GetCBV(uint32_t i) const
 
 Descriptor ConstantBuffer::allocateCbvPool(const wchar_t* name)
 {
-	m_cbvPools.push_back(DescriptorPool());
+	m_cbvPools.emplace_back();
 	auto& cbvPool = m_cbvPools.back();
 
 	D3D12_DESCRIPTOR_HEAP_DESC desc = { D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1 };
@@ -292,7 +292,7 @@ void ResourceBase::setDevice(const Device& device)
 
 Descriptor ResourceBase::allocateSrvUavPool()
 {
-	m_srvUavPools.push_back(DescriptorPool());
+	m_srvUavPools.emplace_back();
 	auto& srvUavPool = m_srvUavPools.back();
 
 	D3D12_DESCRIPTOR_HEAP_DESC desc = { D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1 };
@@ -1017,7 +1017,7 @@ bool RenderTarget::create(const Device& device, uint32_t width, uint32_t height,
 
 Descriptor RenderTarget::allocateRtvPool()
 {
-	m_rtvPools.push_back(DescriptorPool());
+	m_rtvPools.emplace_back();
 	auto& rtvPool = m_rtvPools.back();
 
 	D3D12_DESCRIPTOR_HEAP_DESC desc = { D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 1 };
@@ -1367,7 +1367,7 @@ bool DepthStencil::create(const Device& device, uint32_t width, uint32_t height,
 
 Descriptor DepthStencil::allocateDsvPool()
 {
-	m_dsvPools.push_back(DescriptorPool());
+	m_dsvPools.emplace_back();
 	auto& dsvPool = m_dsvPools.back();
 
 	D3D12_DESCRIPTOR_HEAP_DESC desc = { D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1 };
