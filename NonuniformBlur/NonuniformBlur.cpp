@@ -22,6 +22,20 @@ NonUniformBlur::NonUniformBlur(uint32_t width, uint32_t height, std::wstring nam
 	m_showFPS(true),
 	m_fileName(L"Lenna.dds")
 {
+#if defined (_DEBUG)
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+	AllocConsole();
+	FILE* stream;
+	freopen_s(&stream, "CONOUT$", "w+t", stdout);
+	freopen_s(&stream, "CONIN$", "r+t", stdin);
+#endif
+}
+
+NonUniformBlur::~NonUniformBlur()
+{
+#if defined (_DEBUG)
+	FreeConsole();
+#endif
 }
 
 void NonUniformBlur::OnInit()

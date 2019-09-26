@@ -26,6 +26,7 @@ class NonUniformBlur : public DXFramework
 {
 public:
 	NonUniformBlur(uint32_t width, uint32_t height, std::wstring name);
+	virtual ~NonUniformBlur();
 
 	virtual void OnInit();
 	virtual void OnUpdate();
