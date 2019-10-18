@@ -52,6 +52,8 @@ private:
 	std::unique_ptr<Filter> m_filter;
 
 	// Animation
+	bool		m_isAutoFocus;
+	bool		m_isAutoSigma;
 	XMFLOAT2	m_focus;
 	float		m_sigma;
 

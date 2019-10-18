@@ -16,11 +16,13 @@ using namespace XUSG;
 
 NonUniformBlur::NonUniformBlur(uint32_t width, uint32_t height, std::wstring name) :
 	DXFramework(width, height, name),
+	m_isAutoFocus(true),
+	m_isAutoSigma(true),
 	m_focus(0.0, 0.0),
 	m_sigma(24.0),
 	m_frameIndex(0),
 	m_showFPS(true),
-	m_fileName(L"Lenna.dds")
+	m_fileName(L"Sashimi.dds")
 {
 #if defined (_DEBUG)
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -190,11 +192,14 @@ void NonUniformBlur::OnUpdate()
 	time = totalTime - pauseTime;
 
 	const auto t = 1.6 * time;
-	const float r = static_cast<float>(sin(XM_PIDIV2 * t)) * 0.25f + 0.25f;
-	m_focus.x = r * static_cast<float>(cos(XM_PI * t));
-	m_focus.y = r * static_cast<float>(sin(XM_PI * t));
+	if (m_isAutoFocus)
+	{
+		const float r = static_cast<float>(sin(XM_PIDIV2 * t)) * 0.25f + 0.25f;
+		m_focus.x = r * static_cast<float>(cos(XM_PI * t));
+		m_focus.y = r * static_cast<float>(sin(XM_PI * t));
+	}
 
-	m_sigma = 32.0f * (-static_cast<float>(cos(t)) * 0.5f + 0.5f);
+	if (m_isAutoSigma) m_sigma = 32.0f * (-static_cast<float>(cos(t)) * 0.5f + 0.5f);
 }
 
 // Render the scene.
@@ -246,6 +251,25 @@ void NonUniformBlur::ParseCommandLineArgs(wchar_t* argv[], int argc)
 			_wcsnicmp(argv[i], L"/image", wcslen(argv[i])) == 0)
 		{
 			if (i + 1 < argc) m_fileName = argv[i + 1];
+		}
+		else if (_wcsnicmp(argv[i], L"-sigma", wcslen(argv[i])) == 0 ||
+			_wcsnicmp(argv[i], L"/sigma", wcslen(argv[i])) == 0)
+		{
+			if (i + 1 < argc) m_sigma = stof(argv[i + 1]);
+			m_isAutoSigma = false;
+		}
+		else if (_wcsnicmp(argv[i], L"-focus", wcslen(argv[i])) == 0 ||
+				_wcsnicmp(argv[i], L"/focus", wcslen(argv[i])) == 0)
+		{
+			if (i + 1 < argc) m_focus.x = stof(argv[i + 1]);
+			if (i + 2 < argc) m_focus.y = stof(argv[i + 2]);
+			m_isAutoFocus = false;
+		}
+		else if (_wcsnicmp(argv[i], L"-uniform", wcslen(argv[i])) == 0 ||
+			_wcsnicmp(argv[i], L"/uniform", wcslen(argv[i])) == 0)
+		{
+			reinterpret_cast<uint32_t&>(m_focus.x) = UINT32_MAX;
+			m_isAutoFocus = false;
 		}
 	}
 }
