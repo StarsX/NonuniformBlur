@@ -5,27 +5,27 @@
 #include "UpSample.hlsli"
 
 //--------------------------------------------------------------------------------------
+// Structure
+//--------------------------------------------------------------------------------------
+struct PSIn
+{
+	float4 Pos : SV_POSITION;
+	float2 Tex : TEXCOORD;
+};
+
+//--------------------------------------------------------------------------------------
 // Textures
 //--------------------------------------------------------------------------------------
-Texture2D<float3>	g_txSource;
 Texture2D<float3>	g_txCoarser;
-RWTexture2D<float3>	g_txDest;
 
 //--------------------------------------------------------------------------------------
 // Compute shader
 //--------------------------------------------------------------------------------------
-[numthreads(8, 8, 1)]
-void main(uint2 DTid : SV_DispatchThreadID)
+float4 main(PSIn input) : SV_TARGET
 {
-	float2 dim;
-	g_txDest.GetDimensions(dim.x, dim.y);
+	// Fetch the color of the resolved color at the coarser level
+	const float3 coarser = g_txCoarser.SampleLevel(g_smpLinear, input.Tex, 0.0);
+	const float4 result = UpSample(input.Tex, coarser);
 
-	// Fetch the color of the current level and the resolved color at the coarser level
-	const float2 tex = (DTid + 0.5) / dim;
-	const float3 src = g_txSource.SampleLevel(g_smpLinear, tex, 0.0);
-	const float3 coarser = g_txCoarser.SampleLevel(g_smpLinear, tex, 0.0);
-
-	const float4 result = UpSample(tex, coarser);
-
-	g_txDest[DTid] = lerp(result.xyz, src, result.w);
+	return float4(result.xyz, 1.0 - result.w);
 }

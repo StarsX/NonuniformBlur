@@ -181,7 +181,10 @@
     <None Include="XUSG\Core\XUSGSampler.inl">
       <Filter>XUSG\Core\Source Files\Inc</Filter>
     </None>
-    <None Include="Content\Shaders\CSMipGaussian.hlsli">
+    <None Include="Content\Shaders\MipGaussian.hlsli">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Content\Shaders\UpSample.hlsli">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
@@ -192,7 +195,10 @@
     <FxCompile Include="Content\Shaders\CSUpSample.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Content\Shaders\CSMipGaussian.hlsl">
+    <FxCompile Include="Content\Shaders\PSUpSample.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\VSScreenQuad.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
