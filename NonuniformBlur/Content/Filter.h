@@ -13,11 +13,10 @@ public:
 	Filter(const XUSG::Device& device);
 	virtual ~Filter();
 
-	bool Init(const XUSG::CommandList& commandList, XUSG::DescriptorTable& uavSrvTable,
-		std::vector<XUSG::Resource>& uploaders, XUSG::Format rtFormat, const wchar_t* fileName);
+	bool Init(const XUSG::CommandList& commandList, std::vector<XUSG::Resource>& uploaders, XUSG::Format rtFormat, const wchar_t* fileName);
 
 	void Process(const XUSG::CommandList& commandList, DirectX::XMFLOAT2 focus, float sigma, XUSG::ResourceState dstState);
-	void Process(const XUSG::CommandList& commandList, DirectX::XMFLOAT2 focus, float sigma);
+	void ProcessG(const XUSG::CommandList& commandList, DirectX::XMFLOAT2 focus, float sigma, XUSG::ResourceState dstState);
 
 	XUSG::Texture2D& GetResult();
 	XUSG::Texture2D& GetResultG();
@@ -35,10 +34,10 @@ protected:
 
 	enum UavSrvTableIndex : uint8_t
 	{
-		TABLE_COPY,
 		TABLE_DOWN_SAMPLE,
 		TABLE_UP_SAMPLE,
 		TABLE_RESAMPLE,
+		TABLE_COPY,
 
 		NUM_UAV_SRV
 	};

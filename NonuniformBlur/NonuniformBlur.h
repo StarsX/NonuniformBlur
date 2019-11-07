@@ -71,9 +71,7 @@ private:
 	// User external settings
 	std::wstring m_fileName;
 
-	void LoadPipeline(XUSG::DescriptorTable& uavSrvTable,
-		std::shared_ptr<XUSG::ResourceBase>& source,
-		std::vector<XUSG::Resource>& uploaders);
+	void LoadPipeline(std::vector<XUSG::Resource>& uploaders);
 	void LoadAssets();
 
 	void PopulateCommandList();

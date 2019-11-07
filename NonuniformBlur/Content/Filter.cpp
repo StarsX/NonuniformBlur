@@ -30,8 +30,7 @@ Filter::~Filter()
 {
 }
 
-bool Filter::Init(const CommandList& commandList, DescriptorTable& uavSrvTable,
-	vector<Resource>& uploaders, Format rtFormat, const wchar_t* fileName)
+bool Filter::Init(const CommandList& commandList,  vector<Resource>& uploaders, Format rtFormat, const wchar_t* fileName)
 {
 	// Load input image
 	{
@@ -48,9 +47,10 @@ bool Filter::Init(const CommandList& commandList, DescriptorTable& uavSrvTable,
 	m_imageSize.y = m_source->GetResource()->GetDesc().Height;
 	m_numMips = (max)(Log2((max)(m_imageSize.x, m_imageSize.y)), 0ui8) + 1;
 
-	for (auto& image : m_filtered)
-		image.Create(m_device, m_imageSize.x, m_imageSize.y, rtFormat, 1,
-			ResourceFlag::ALLOW_UNORDERED_ACCESS, m_numMips);
+	m_filtered[TABLE_DOWN_SAMPLE].Create(m_device, m_imageSize.x, m_imageSize.y, rtFormat, 1,
+		ResourceFlag::ALLOW_UNORDERED_ACCESS, m_numMips - 1);
+	m_filtered[TABLE_UP_SAMPLE].Create(m_device, m_imageSize.x, m_imageSize.y, rtFormat, 1,
+		ResourceFlag::ALLOW_UNORDERED_ACCESS, m_numMips);
 
 	m_pyramid.Create(m_device, m_imageSize.x, m_imageSize.y, rtFormat, 1,
 		ResourceFlag::ALLOW_UNORDERED_ACCESS, m_numMips, 1, ResourceState::UNORDERED_ACCESS);
@@ -76,7 +76,7 @@ void Filter::Process(const CommandList& commandList, XMFLOAT2 focus, float sigma
 
 	// Copy source
 	ResourceBarrier barriers[2];
-	auto numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, ResourceState::UNORDERED_ACCESS, 0, 0);
+	auto numBarriers = m_filtered[TABLE_DOWN_SAMPLE].SetBarrier(barriers, ResourceState::UNORDERED_ACCESS);
 	{
 		commandList.SetComputePipelineLayout(m_pipelineLayouts[RESAMPLE]);
 		commandList.SetPipelineState(m_pipelines[RESAMPLE]);
@@ -115,7 +115,7 @@ void Filter::Process(const CommandList& commandList, XMFLOAT2 focus, float sigma
 	}
 }
 
-void Filter::Process(const CommandList& commandList, XMFLOAT2 focus, float sigma)
+void Filter::ProcessG(const CommandList& commandList, XMFLOAT2 focus, float sigma, ResourceState dstState)
 {
 	const uint8_t numPasses = m_numMips - 1;
 
@@ -129,7 +129,7 @@ void Filter::Process(const CommandList& commandList, XMFLOAT2 focus, float sigma
 
 	// Copy source
 	ResourceBarrier barriers[2];
-	auto numBarriers = m_pyramid.SetBarrier(barriers, ResourceState::UNORDERED_ACCESS, 0, 0);
+	auto numBarriers = m_pyramid.SetBarrier(barriers, ResourceState::UNORDERED_ACCESS);
 	{
 		commandList.SetComputePipelineLayout(m_pipelineLayouts[RESAMPLE]);
 		commandList.SetPipelineState(m_pipelines[RESAMPLE]);
@@ -159,7 +159,7 @@ void Filter::Process(const CommandList& commandList, XMFLOAT2 focus, float sigma
 		const auto c = numPasses - i;
 		cb.Level = c - 1;
 		commandList.SetGraphics32BitConstants(2, SizeOfInUint32(GaussianConstants), &cb);
-		numBarriers = m_pyramid.Blit(commandList, barriers, cb.Level, c, ResourceState::PIXEL_SHADER_RESOURCE,
+		numBarriers = m_pyramid.Blit(commandList, barriers, cb.Level, c, dstState,
 			m_uavSrvTables[TABLE_RESAMPLE][c], 1, numBarriers);
 	}
 }
@@ -288,10 +288,13 @@ bool Filter::createDescriptorTables()
 	}
 
 	const uint8_t numPasses = m_numMips > 0 ? m_numMips - 1 : 0;
+
+	//---------------
+	// Double-buffers
+	//---------------
 	m_uavSrvTables[TABLE_DOWN_SAMPLE].resize(m_numMips);
-	m_uavSrvTables[TABLE_UP_SAMPLE].resize(m_numMips);
-	m_uavSrvTables[TABLE_RESAMPLE].resize(m_numMips);
-	for (auto i = 0ui8; i < numPasses; ++i)
+	m_uavSrvTables[TABLE_UP_SAMPLE].resize(numPasses);
+	for (auto i = 0ui8; i + 1 < numPasses; ++i)
 	{
 		// Get UAV and SRVs
 		{
@@ -304,32 +307,22 @@ bool Filter::createDescriptorTables()
 			utilUavSrvTable.SetDescriptors(0, static_cast<uint32_t>(size(descriptors)), descriptors);
 			X_RETURN(m_uavSrvTables[TABLE_DOWN_SAMPLE][i], utilUavSrvTable.GetCbvSrvUavTable(m_descriptorTableCache), false);
 		}
+	}
 
-		{
-			const auto coarser = numPasses - i;
-			const auto current = coarser - 1;
-			const Descriptor descriptors[] =
-			{
-				m_filtered[TABLE_DOWN_SAMPLE].GetSRVLevel(current),
-				m_filtered[TABLE_UP_SAMPLE].GetSRVLevel(coarser),
-				m_filtered[TABLE_UP_SAMPLE].GetUAV(current)
-			};
-			Util::DescriptorTable utilUavSrvTable;
-			utilUavSrvTable.SetDescriptors(0, static_cast<uint32_t>(size(descriptors)), descriptors);
-			X_RETURN(m_uavSrvTables[TABLE_UP_SAMPLE][i], utilUavSrvTable.GetCbvSrvUavTable(m_descriptorTableCache), false);
-		}
-
+	for (auto i = 0ui8; i < numPasses; ++i)
+	{
 		// Get UAV and SRVs
+		const auto coarser = numPasses - i;
+		const auto current = coarser - 1;
+		const Descriptor descriptors[] =
 		{
-			const Descriptor descriptors[] =
-			{
-				m_pyramid.GetSRVLevel(i),
-				m_pyramid.GetUAV(i + 1)
-			};
-			Util::DescriptorTable utilUavSrvTable;
-			utilUavSrvTable.SetDescriptors(0, static_cast<uint32_t>(size(descriptors)), descriptors);
-			X_RETURN(m_uavSrvTables[TABLE_RESAMPLE][i], utilUavSrvTable.GetCbvSrvUavTable(m_descriptorTableCache), false);
-		}
+			m_filtered[TABLE_DOWN_SAMPLE].GetSRVLevel(current),
+			m_filtered[TABLE_UP_SAMPLE].GetSRVLevel(coarser),
+			m_filtered[TABLE_UP_SAMPLE].GetUAV(current)
+		};
+		Util::DescriptorTable utilUavSrvTable;
+		utilUavSrvTable.SetDescriptors(0, static_cast<uint32_t>(size(descriptors)), descriptors);
+		X_RETURN(m_uavSrvTables[TABLE_UP_SAMPLE][i], utilUavSrvTable.GetCbvSrvUavTable(m_descriptorTableCache), false);
 	}
 
 	// Get UAV and SRVs for the final-time down sampling
@@ -344,22 +337,28 @@ bool Filter::createDescriptorTables()
 		X_RETURN(m_uavSrvTables[TABLE_DOWN_SAMPLE][numPasses], utilUavSrvTable.GetCbvSrvUavTable(m_descriptorTableCache), false);
 	}
 
+	//--------------
+	// Single-buffer
+	//--------------
+	m_uavSrvTables[TABLE_RESAMPLE].resize(m_numMips);
+	for (auto i = 0ui8; i < numPasses; ++i)
+	{
+		// Get UAV and SRVs
+		const Descriptor descriptors[] =
+		{
+			m_pyramid.GetSRVLevel(i),
+			m_pyramid.GetUAV(i + 1)
+		};
+		Util::DescriptorTable utilUavSrvTable;
+		utilUavSrvTable.SetDescriptors(0, static_cast<uint32_t>(size(descriptors)), descriptors);
+		X_RETURN(m_uavSrvTables[TABLE_RESAMPLE][i], utilUavSrvTable.GetCbvSrvUavTable(m_descriptorTableCache), false);
+	}
+
+	// Get UAV and SRVs for graphics up-sampling
 	{
 		Util::DescriptorTable utilUavSrvTable;
 		utilUavSrvTable.SetDescriptors(0, 1, &m_pyramid.GetSRVLevel(numPasses));
 		X_RETURN(m_uavSrvTables[TABLE_RESAMPLE][numPasses], utilUavSrvTable.GetCbvSrvUavTable(m_descriptorTableCache), false);
-	}
-
-	// Get UAV and SRVs for direct Gaussian
-	{
-		const Descriptor descriptors[] =
-		{
-			m_filtered[TABLE_DOWN_SAMPLE].GetSRV(),
-			m_filtered[TABLE_UP_SAMPLE].GetUAV()
-		};
-		Util::DescriptorTable utilUavSrvTable;
-		utilUavSrvTable.SetDescriptors(0, static_cast<uint32_t>(size(descriptors)), descriptors);
-		X_RETURN(m_uavSrvTables[TABLE_UP_SAMPLE][numPasses], utilUavSrvTable.GetCbvSrvUavTable(m_descriptorTableCache), false);
 	}
 
 	// Create the sampler table
