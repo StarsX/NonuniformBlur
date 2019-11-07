@@ -51,6 +51,8 @@ private:
 	// App resources.
 	std::unique_ptr<Filter> m_filter;
 
+	bool		m_typedUAV;
+
 	// Animation
 	bool		m_isAutoFocus;
 	bool		m_isAutoSigma;
@@ -64,6 +66,7 @@ private:
 	uint64_t	m_fenceValues[FrameCount];
 
 	// Application state
+	Filter::PipelineType m_pipelineType;
 	bool		m_showFPS;
 	bool		m_isPaused;
 	StepTimer	m_timer;

@@ -2,14 +2,13 @@
 // By Stars XU Tianchen
 //--------------------------------------------------------------------------------------
 
-#include "UpSample.hlsli"
+#include "MipGaussian.hlsli"
 
 //--------------------------------------------------------------------------------------
 // Textures
 //--------------------------------------------------------------------------------------
-Texture2D<float3>	g_txSource;
-Texture2D<float3>	g_txCoarser;
-RWTexture2D<float3>	g_txDest;
+Texture2D			g_txCoarser;
+RWTexture2D<float4>	g_txDest;
 
 //--------------------------------------------------------------------------------------
 // Compute shader
@@ -22,10 +21,10 @@ void main(uint2 DTid : SV_DispatchThreadID)
 
 	// Fetch the color of the current level and the resolved color at the coarser level
 	const float2 tex = (DTid + 0.5) / dim;
-	const float3 src = g_txSource.SampleLevel(g_smpLinear, tex, 0.0);
-	const float3 coarser = g_txCoarser.SampleLevel(g_smpLinear, tex, 0.0);
+	const float4 src = g_txDest[DTid];
+	const float4 coarser = g_txCoarser.SampleLevel(g_smpLinear, tex, 0.0);
 
-	const float4 result = UpSample(tex, coarser);
+	const float weight = MipGaussianBlendWeight(tex);
 
-	g_txDest[DTid] = lerp(result.xyz, src, result.w);
+	g_txDest[DTid] = lerp(coarser, src, weight);
 }

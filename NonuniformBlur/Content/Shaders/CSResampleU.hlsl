@@ -3,11 +3,12 @@
 //--------------------------------------------------------------------------------------
 
 #include "CSResample.hlsli"
+#include "D3DX_DXGIFormatConvert.inl"
 
 //--------------------------------------------------------------------------------------
 // Textures
 //--------------------------------------------------------------------------------------
-RWTexture2D<float4>	g_txDest;
+RWTexture2D<uint>	g_txDest;
 
 //--------------------------------------------------------------------------------------
 // Compute shader
@@ -20,5 +21,5 @@ void main(uint2 DTid : SV_DispatchThreadID)
 
 	const float2 tex = (DTid + 0.5) / dim;
 
-	g_txDest[DTid] = Resample(tex);
+	g_txDest[DTid] = D3DX_FLOAT4_to_B8G8R8A8_UNORM(Resample(tex));
 }

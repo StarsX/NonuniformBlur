@@ -184,7 +184,10 @@
     <None Include="Content\Shaders\MipGaussian.hlsli">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Content\Shaders\UpSample.hlsli">
+    <None Include="Content\Shaders\D3DX_DXGIFormatConvert.inl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Content\Shaders\CSResample.hlsli">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
@@ -192,13 +195,19 @@
     <FxCompile Include="Content\Shaders\CSResample.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Content\Shaders\CSUpSample.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="Content\Shaders\PSUpSample.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\Shaders\VSScreenQuad.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\CSUpSample.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\CSResampleU.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\CSUpSampleU.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

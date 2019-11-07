@@ -10,23 +10,31 @@
 class Filter
 {
 public:
+	enum PipelineType
+	{
+		HYBRID,
+		COMPUTE,
+
+		NUM_PIPE_TYPE
+	};
+
 	Filter(const XUSG::Device& device);
 	virtual ~Filter();
 
-	bool Init(const XUSG::CommandList& commandList, std::vector<XUSG::Resource>& uploaders, XUSG::Format rtFormat, const wchar_t* fileName);
+	bool Init(const XUSG::CommandList& commandList, std::vector<XUSG::Resource>& uploaders,
+		XUSG::Format rtFormat, const wchar_t* fileName, bool typedUAV);
 
-	void Process(const XUSG::CommandList& commandList, DirectX::XMFLOAT2 focus, float sigma, XUSG::ResourceState dstState);
-	void ProcessG(const XUSG::CommandList& commandList, DirectX::XMFLOAT2 focus, float sigma, XUSG::ResourceState dstState);
+	void Process(const XUSG::CommandList& commandList, DirectX::XMFLOAT2 focus,
+		float sigma, XUSG::ResourceState dstState, PipelineType pipelineType);
 
-	XUSG::Texture2D& GetResult();
-	XUSG::Texture2D& GetResultG();
+	XUSG::ResourceBase& GetResult();
 	void GetImageSize(uint32_t& width, uint32_t& height) const;
 
 protected:
 	enum PipelineIndex : uint8_t
 	{
 		RESAMPLE,
-		UP_SAMPLE,
+		UP_SAMPLE_C,
 		UP_SAMPLE_G,
 
 		NUM_PIPELINE
@@ -34,17 +42,21 @@ protected:
 
 	enum UavSrvTableIndex : uint8_t
 	{
-		TABLE_DOWN_SAMPLE,
-		TABLE_UP_SAMPLE,
-		TABLE_RESAMPLE,
 		TABLE_COPY,
-
+		TABLE_RESAMPLE,
+		TABLE_UP_SAMPLE,
+		
 		NUM_UAV_SRV
 	};
 
 	bool createPipelineLayouts();
-	bool createPipelines(XUSG::Format rtFormat);
+	bool createPipelines(XUSG::Format rtFormat, bool typedUAV);
 	bool createDescriptorTables();
+
+	void updateImage(const XUSG::CommandList& commandList);
+	void generateMips(const XUSG::CommandList& commandList);
+	void upSampleHybrid(const XUSG::CommandList& commandList, DirectX::XMFLOAT2 focus, float sigma, XUSG::ResourceState dstState);
+	void upSampleCompute(const XUSG::CommandList& commandList, DirectX::XMFLOAT2 focus, float sigma, XUSG::ResourceState dstState);
 
 	XUSG::Device m_device;
 
@@ -61,8 +73,7 @@ protected:
 	XUSG::DescriptorTable	m_samplerTable;
 
 	std::shared_ptr<XUSG::ResourceBase> m_source;
-	XUSG::Texture2D			m_filtered[NUM_UAV_SRV];
-	XUSG::RenderTarget		m_pyramid;
+	XUSG::RenderTarget		m_filtered;
 
 	DirectX::XMUINT2		m_imageSize;
 	uint8_t					m_numMips;
