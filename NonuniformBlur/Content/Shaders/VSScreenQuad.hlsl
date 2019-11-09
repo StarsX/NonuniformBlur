@@ -14,7 +14,7 @@ struct VSOut
 //--------------------------------------------------------------------------------------
 // Vertex shader used for screen-space post-processing
 //--------------------------------------------------------------------------------------
-VSOut main(uint vid : SV_VERTEXID)
+VSOut main(uint vid : SV_VertexID)
 {
 	VSOut output;
 

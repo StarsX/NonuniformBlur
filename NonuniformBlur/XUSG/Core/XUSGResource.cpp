@@ -847,14 +847,12 @@ bool RenderTarget::CreateFromSwapChain(const Device& device, const SwapChain& sw
 
 void RenderTarget::Blit(const CommandList& commandList, const DescriptorTable& srcSrvTable,
 	uint32_t srcSlot, uint8_t mipLevel, uint32_t baseSlice, uint32_t numSlices,
-	const DescriptorTable& samplerTable, uint32_t samplerSlot, const Pipeline& pipeline)
+	const DescriptorTable& samplerTable, uint32_t samplerSlot, const Pipeline& pipeline,
+	uint32_t offsetForSliceId, uint32_t cbSlot)
 {
 	// Set render target
 	const auto desc = m_resource->GetDesc();
 	if (numSlices == 0) numSlices = desc.DepthOrArraySize - baseSlice;
-	vector<Descriptor> rtvs(numSlices);
-	for (auto i = 0u; i < numSlices; ++i) rtvs[i] = GetRTV(baseSlice + i, mipLevel);
-	commandList.OMSetRenderTargets(numSlices, rtvs.data());
 
 	// Set pipeline layout and descriptor tables
 	if (srcSrvTable) commandList.SetGraphicsDescriptorTable(srcSlot, srcSrvTable);
@@ -871,14 +869,21 @@ void RenderTarget::Blit(const CommandList& commandList, const DescriptorTable& s
 	commandList.RSSetViewports(1, &viewport);
 	commandList.RSSetScissorRects(1, &rect);
 
-	// Draw quad
+	// Draw quads
 	commandList.IASetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
-	commandList.Draw(3, 1, 0, 0);
+	for (auto i = 0u; i < numSlices; ++i)
+	{
+		if (offsetForSliceId != UINT32_MAX)
+			commandList.SetGraphics32BitConstant(cbSlot, i, offsetForSliceId);
+		commandList.OMSetRenderTargets(1, &GetRTV(baseSlice + i, mipLevel));
+		commandList.Draw(3, 1, 0, 0);
+	}
 }
 
 uint32_t RenderTarget::Blit(const CommandList& commandList, ResourceBarrier* pBarriers, uint8_t mipLevel,
 	int8_t srcMipLevel, ResourceState srcState, const DescriptorTable& srcSrvTable, uint32_t srcSlot,
-	uint32_t numBarriers, uint32_t baseSlice, uint32_t numSlices)
+	uint32_t numBarriers, uint32_t baseSlice, uint32_t numSlices,
+	uint32_t offsetForSliceId, uint32_t cbSlot)
 {
 	const auto prevBarriers = numBarriers;
 	if (!numSlices) numSlices = m_resource->GetDesc().DepthOrArraySize - baseSlice;
@@ -898,7 +903,8 @@ uint32_t RenderTarget::Blit(const CommandList& commandList, ResourceBarrier* pBa
 		numBarriers = 0;
 	}
 
-	Blit(commandList, srcSrvTable, srcSlot, mipLevel, baseSlice, numSlices);
+	Blit(commandList, srcSrvTable, srcSlot, mipLevel, baseSlice,
+		numSlices, nullptr, 1, nullptr, offsetForSliceId, cbSlot);
 
 	return numBarriers;
 }
@@ -907,11 +913,11 @@ uint32_t RenderTarget::GenerateMips(const CommandList& commandList, ResourceBarr
 	ResourceState dstState, const PipelineLayout& pipelineLayout, const Pipeline& pipeline,
 	const DescriptorTable* pSrcSrvTables, uint32_t srcSlot, const DescriptorTable& samplerTable,
 	uint32_t samplerSlot, uint32_t numBarriers, uint8_t baseMip, uint8_t numMips,
-	uint32_t baseSlice, uint32_t numSlices)
+	uint32_t baseSlice, uint32_t numSlices, uint32_t offsetForSliceId, uint32_t cbSlot)
 {
-	commandList.SetGraphicsPipelineLayout(pipelineLayout);
-	commandList.SetGraphicsDescriptorTable(samplerSlot, samplerTable);
-	commandList.SetPipelineState(pipeline);
+	if (pipelineLayout) commandList.SetGraphicsPipelineLayout(pipelineLayout);
+	if (samplerTable) commandList.SetGraphicsDescriptorTable(samplerSlot, samplerTable);
+	if (pipeline) commandList.SetPipelineState(pipeline);
 
 	if (!(numMips || baseMip || numSlices || baseSlice))
 		numBarriers = SetBarrier(pBarriers, ResourceState::RENDER_TARGET, numBarriers);
@@ -935,7 +941,8 @@ uint32_t RenderTarget::GenerateMips(const CommandList& commandList, ResourceBarr
 		commandList.Barrier(numBarriers, pBarriers);
 		numBarriers = 0;
 
-		Blit(commandList, pSrcSrvTables[i], srcSlot, j, baseSlice, numSlices);
+		Blit(commandList, pSrcSrvTables[i], srcSlot, j, baseSlice, numSlices,
+			nullptr, samplerSlot, nullptr, offsetForSliceId, cbSlot);
 	}
 
 	const auto m = baseMip + numMips - 1;

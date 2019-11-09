@@ -10,9 +10,12 @@ using namespace XUSG;
 
 struct GaussianConstants
 {
-	XMFLOAT2	Focus;
-	float		Sigma;
-	uint32_t	Level;
+	struct Immutable
+	{
+		XMFLOAT2	Focus;
+		float		Sigma;
+	} Imm;
+	uint32_t Level;
 };
 
 Filter::Filter(const Device& device) :
@@ -274,14 +277,15 @@ void Filter::upSampleHybrid(const CommandList& commandList, XMFLOAT2 focus, floa
 	commandList.SetGraphicsDescriptorTable(0, m_samplerTable);
 
 	const uint8_t numPasses = m_numMips - 1;
-	GaussianConstants cb = { focus, sigma };
+	GaussianConstants::Immutable cb = { focus, sigma };
+	commandList.SetGraphics32BitConstants(2, SizeOfInUint32(cb), &cb);
 
 	for (auto i = 0ui8; i < numPasses; ++i)
 	{
 		const auto c = numPasses - i;
-		cb.Level = c - 1;
-		commandList.SetGraphics32BitConstants(2, SizeOfInUint32(GaussianConstants), &cb);
-		numBarriers = m_filtered.Blit(commandList, barriers, cb.Level, c, dstState,
+		const auto level = c - 1;
+		commandList.SetGraphics32BitConstant(2, level, SizeOfInUint32(cb));
+		numBarriers = m_filtered.Blit(commandList, barriers, level, c, dstState,
 			m_uavSrvTables[TABLE_RESAMPLE][c], 1, numBarriers);
 	}
 }
@@ -296,14 +300,15 @@ void Filter::upSampleCompute(const CommandList& commandList, XMFLOAT2 focus, flo
 	commandList.SetComputeDescriptorTable(0, m_samplerTable);
 
 	const uint8_t numPasses = m_numMips - 1;
-	GaussianConstants cb = { focus, sigma };
+	GaussianConstants::Immutable cb = { focus, sigma };
+	commandList.SetCompute32BitConstants(2, SizeOfInUint32(cb), &cb);
 
 	for (auto i = 0ui8; i < numPasses; ++i)
 	{
 		const auto c = numPasses - i;
-		cb.Level = c - 1;
-		commandList.SetCompute32BitConstants(2, SizeOfInUint32(GaussianConstants), &cb);
-		numBarriers = m_filtered.Texture2D::Blit(commandList, barriers, 8, 8, 1, cb.Level,
+		const auto level = c - 1;
+		commandList.SetCompute32BitConstant(2, level, SizeOfInUint32(cb));
+		numBarriers = m_filtered.Texture2D::Blit(commandList, barriers, 8, 8, 1, level,
 			c, dstState, m_uavSrvTables[TABLE_UP_SAMPLE][i], 1, numBarriers);
 	}
 }

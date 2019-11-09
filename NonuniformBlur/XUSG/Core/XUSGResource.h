@@ -167,16 +167,18 @@ namespace XUSG
 		void Blit(const CommandList& commandList, const DescriptorTable& srcSrvTable,
 			uint32_t srcSlot = 0, uint8_t mipLevel = 0, uint32_t baseSlice = 0,
 			uint32_t numSlices = 0, const DescriptorTable& samplerTable = nullptr,
-			uint32_t samplerSlot = 1, const Pipeline& pipeline = nullptr);
+			uint32_t samplerSlot = 1, const Pipeline& pipeline = nullptr,
+			uint32_t offsetForSliceId = UINT32_MAX, uint32_t cbSlot = 2);
 
 		uint32_t Blit(const CommandList& commandList, ResourceBarrier* pBarriers, uint8_t mipLevel,
 			int8_t srcMipLevel, ResourceState srcState, const DescriptorTable& srcSrvTable,
-			uint32_t srcSlot = 0, uint32_t numBarriers = 0, uint32_t baseSlice = 0, uint32_t numSlices = 0);
+			uint32_t srcSlot = 0, uint32_t numBarriers = 0, uint32_t baseSlice = 0, uint32_t numSlices = 0,
+			uint32_t offsetForSliceId = UINT32_MAX, uint32_t cbSlot = 2);
 		uint32_t GenerateMips(const CommandList& commandList, ResourceBarrier* pBarriers, ResourceState dstState,
 			const PipelineLayout& pipelineLayout, const Pipeline& pipeline, const DescriptorTable* pSrcSrvTables,
 			uint32_t srcSlot = 0, const DescriptorTable& samplerTable = nullptr, uint32_t samplerSlot = 1,
 			uint32_t numBarriers = 0, uint8_t baseMip = 1, uint8_t numMips = 0, uint32_t baseSlice = 0,
-			uint32_t numSlices = 0);
+			uint32_t numSlices = 0, uint32_t offsetForSliceId = UINT32_MAX, uint32_t cbSlot = 2);
 
 		Descriptor	GetRTV(uint32_t slice = 0, uint8_t mipLevel = 0) const;
 		uint32_t	GetArraySize() const;
