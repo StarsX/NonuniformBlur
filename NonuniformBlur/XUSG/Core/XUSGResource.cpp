@@ -194,7 +194,7 @@ const Resource& ConstantBuffer::GetResource() const
 
 Descriptor ConstantBuffer::GetCBV(uint32_t i) const
 {
-	return m_cbvs.size() > i ? m_cbvs[i] : Descriptor(D3D12_DEFAULT);
+	return m_cbvs.size() > i ? m_cbvs[i] : D3D12_DEFAULT;
 }
 
 Descriptor ConstantBuffer::allocateCbvPool(const wchar_t* name)
@@ -203,7 +203,7 @@ Descriptor ConstantBuffer::allocateCbvPool(const wchar_t* name)
 	auto& cbvPool = m_cbvPools.back();
 
 	D3D12_DESCRIPTOR_HEAP_DESC desc = { D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1 };
-	V_RETURN(m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&cbvPool)), cerr, Descriptor(D3D12_DEFAULT));
+	V_RETURN(m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&cbvPool)), cerr, D3D12_DEFAULT);
 	if (name) cbvPool->SetName((wstring(name) + L".CbvPool").c_str());
 
 	return Descriptor(cbvPool->GetCPUDescriptorHandleForHeapStart());
@@ -243,7 +243,7 @@ const Resource& ResourceBase::GetResource() const
 
 Descriptor ResourceBase::GetSRV(uint32_t i) const
 {
-	return m_srvs.size() > i ? m_srvs[i] : Descriptor(D3D12_DEFAULT);
+	return m_srvs.size() > i ? m_srvs[i] : D3D12_DEFAULT;
 }
 
 ResourceBarrier ResourceBase::Transition(ResourceState dstState,
@@ -296,7 +296,7 @@ Descriptor ResourceBase::allocateSrvUavPool()
 	auto& srvUavPool = m_srvUavPools.back();
 
 	D3D12_DESCRIPTOR_HEAP_DESC desc = { D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1 };
-	V_RETURN(m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&srvUavPool)), cerr, Descriptor(D3D12_DEFAULT));
+	V_RETURN(m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&srvUavPool)), cerr, D3D12_DEFAULT);
 	if (!m_name.empty()) srvUavPool->SetName((m_name + L".SrvUavPool").c_str());
 
 	return Descriptor(srvUavPool->GetCPUDescriptorHandleForHeapStart());
@@ -694,12 +694,12 @@ uint32_t Texture2D::GenerateMips(const CommandList& commandList, ResourceBarrier
 
 Descriptor Texture2D::GetUAV(uint8_t i) const
 {
-	return m_uavs.size() > i ? m_uavs[i] : Descriptor(D3D12_DEFAULT);
+	return m_uavs.size() > i ? m_uavs[i] : D3D12_DEFAULT;
 }
 
 Descriptor Texture2D::GetSRVLevel(uint8_t i) const
 {
-	return m_srvLevels.size() > i ? m_srvLevels[i] : Descriptor(D3D12_DEFAULT);
+	return m_srvLevels.size() > i ? m_srvLevels[i] : D3D12_DEFAULT;
 }
 
 uint32_t Texture2D::GetHeight() const
@@ -948,7 +948,7 @@ uint32_t RenderTarget::GenerateMips(const CommandList& commandList, ResourceBarr
 Descriptor RenderTarget::GetRTV(uint32_t slice, uint8_t mipLevel) const
 {
 	return m_rtvs.size() > slice && m_rtvs[slice].size() > mipLevel ?
-		m_rtvs[slice][mipLevel] : Descriptor(D3D12_DEFAULT);
+		m_rtvs[slice][mipLevel] : D3D12_DEFAULT;
 }
 
 uint32_t RenderTarget::GetArraySize() const
@@ -1021,7 +1021,7 @@ Descriptor RenderTarget::allocateRtvPool()
 	auto& rtvPool = m_rtvPools.back();
 
 	D3D12_DESCRIPTOR_HEAP_DESC desc = { D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 1 };
-	V_RETURN(m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&rtvPool)), cerr, Descriptor(D3D12_DEFAULT));
+	V_RETURN(m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&rtvPool)), cerr, D3D12_DEFAULT);
 	if (!m_name.empty()) rtvPool->SetName((m_name + L".RtvPool").c_str());
 
 	return Descriptor(rtvPool->GetCPUDescriptorHandleForHeapStart());
@@ -1201,13 +1201,13 @@ bool DepthStencil::CreateArray(const Device& device, uint32_t width, uint32_t he
 Descriptor DepthStencil::GetDSV(uint32_t slice, uint8_t mipLevel) const
 {
 	return m_dsvs.size() > slice && m_dsvs[slice].size() > mipLevel ?
-		m_dsvs[slice][mipLevel] : Descriptor(D3D12_DEFAULT);
+		m_dsvs[slice][mipLevel] : D3D12_DEFAULT;
 }
 
 Descriptor DepthStencil::GetReadOnlyDSV(uint32_t slice, uint8_t mipLevel) const
 {
 	return m_readOnlyDsvs.size() > slice && m_readOnlyDsvs[slice].size() > mipLevel ?
-		m_readOnlyDsvs[slice][mipLevel] : Descriptor(D3D12_DEFAULT);
+		m_readOnlyDsvs[slice][mipLevel] : D3D12_DEFAULT;
 }
 
 const Descriptor& DepthStencil::GetStencilSRV() const
@@ -1371,7 +1371,7 @@ Descriptor DepthStencil::allocateDsvPool()
 	auto& dsvPool = m_dsvPools.back();
 
 	D3D12_DESCRIPTOR_HEAP_DESC desc = { D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1 };
-	V_RETURN(m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&dsvPool)), cerr, Descriptor(D3D12_DEFAULT));
+	V_RETURN(m_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&dsvPool)), cerr, D3D12_DEFAULT);
 	if (!m_name.empty()) dsvPool->SetName((m_name + L".DsvPool").c_str());
 
 	return Descriptor(dsvPool->GetCPUDescriptorHandleForHeapStart());
@@ -1526,12 +1526,12 @@ bool Texture3D::CreateUAVs(Format format, uint8_t numMips)
 
 Descriptor Texture3D::GetUAV(uint8_t i) const
 {
-	return m_uavs.size() > i ? m_uavs[i] : Descriptor(D3D12_DEFAULT);
+	return m_uavs.size() > i ? m_uavs[i] : D3D12_DEFAULT;
 }
 
 Descriptor Texture3D::GetSRVLevel(uint8_t i) const
 {
-	return m_srvLevels.size() > i ? m_srvLevels[i] : Descriptor(D3D12_DEFAULT);
+	return m_srvLevels.size() > i ? m_srvLevels[i] : D3D12_DEFAULT;
 }
 
 uint32_t Texture3D::GetDepth() const
@@ -1677,7 +1677,7 @@ bool RawBuffer::CreateUAVs(uint64_t byteWidth, const uint32_t* firstElements,
 
 Descriptor RawBuffer::GetUAV(uint32_t i) const
 {
-	return m_uavs.size() > i ? m_uavs[i] : Descriptor(D3D12_DEFAULT);
+	return m_uavs.size() > i ? m_uavs[i] : D3D12_DEFAULT;
 }
 
 void* RawBuffer::Map(uint32_t i)

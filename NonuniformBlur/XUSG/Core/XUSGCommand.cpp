@@ -222,10 +222,10 @@ void CommandList::SOSetTargets(uint32_t startSlot, uint32_t numViews, const Stre
 	m_commandList->SOSetTargets(startSlot, numViews, pViews);
 }
 
-void CommandList::OMSetRenderTargets(uint32_t numRenderTargetDescriptors, const RenderTargetTable& renderTargetTable,
-	const Descriptor* pDepthStencilView) const
+void CommandList::OMSetFramebuffer(const Framebuffer& framebuffer) const
 {
-	OMSetRenderTargets(numRenderTargetDescriptors, renderTargetTable.get(), pDepthStencilView, true);
+	m_commandList->OMSetRenderTargets(framebuffer.NumRenderTargetDescriptors, framebuffer.RenderTargetViews.get(),
+		true, framebuffer.DepthStencilView.ptr ? &framebuffer.DepthStencilView : nullptr);
 }
 
 void CommandList::OMSetRenderTargets(uint32_t numRenderTargetDescriptors, const Descriptor* pRenderTargetViews,
@@ -233,6 +233,12 @@ void CommandList::OMSetRenderTargets(uint32_t numRenderTargetDescriptors, const 
 {
 	m_commandList->OMSetRenderTargets(numRenderTargetDescriptors, pRenderTargetViews,
 		rtsSingleHandleToDescriptorRange, pDepthStencilView);
+}
+
+void CommandList::ClearDepthStencilView(const Framebuffer& framebuffer, ClearFlag clearFlags, float depth,
+	uint8_t stencil, uint32_t numRects, const RectRange* pRects) const
+{
+	ClearDepthStencilView(framebuffer.DepthStencilView, clearFlags, depth, stencil, numRects, pRects);
 }
 
 void CommandList::ClearDepthStencilView(const Descriptor& depthStencilView, ClearFlag clearFlags, float depth,
@@ -248,16 +254,16 @@ void CommandList::ClearRenderTargetView(const Descriptor& renderTargetView, cons
 	m_commandList->ClearRenderTargetView(renderTargetView, colorRGBA, numRects, pRects);
 }
 
-void CommandList::ClearUnorderedAccessViewUint(const DescriptorView& descriptorView, const Descriptor& descriptor,
+void CommandList::ClearUnorderedAccessViewUint(const DescriptorTable& descriptorTable, const Descriptor& descriptor,
 	const Resource& resource, const uint32_t values[4], uint32_t numRects, const RectRange* pRects) const
 {
-	m_commandList->ClearUnorderedAccessViewUint(descriptorView, descriptor, resource.get(), values, numRects, pRects);
+	m_commandList->ClearUnorderedAccessViewUint(*descriptorTable, descriptor, resource.get(), values, numRects, pRects);
 }
 
-void CommandList::ClearUnorderedAccessViewFloat(const DescriptorView& descriptorView, const Descriptor& descriptor,
+void CommandList::ClearUnorderedAccessViewFloat(const DescriptorTable& descriptorTable, const Descriptor& descriptor,
 	const Resource& resource, const float values[4], uint32_t numRects, const RectRange* pRects) const
 {
-	m_commandList->ClearUnorderedAccessViewFloat(descriptorView, descriptor, resource.get(), values, numRects, pRects);
+	m_commandList->ClearUnorderedAccessViewFloat(*descriptorTable, descriptor, resource.get(), values, numRects, pRects);
 }
 
 void CommandList::SetMarker(uint32_t metaData, const void* pData, uint32_t size) const

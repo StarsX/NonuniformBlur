@@ -73,23 +73,22 @@ namespace XUSG
 		virtual void IASetIndexBuffer(const IndexBufferView& view) const;
 		virtual void IASetVertexBuffers(uint32_t startSlot, uint32_t numViews, const VertexBufferView* pViews) const;
 		virtual void SOSetTargets(uint32_t startSlot, uint32_t numViews, const StreamOutBufferView* pViews) const;
-		virtual void OMSetRenderTargets(
-			uint32_t numRenderTargetDescriptors,
-			const RenderTargetTable& renderTargetTable,
-			const Descriptor* pDepthStencilView = nullptr) const;
+		virtual void OMSetFramebuffer(const Framebuffer& framebuffer) const;
 		virtual void OMSetRenderTargets(
 			uint32_t numRenderTargetDescriptors,
 			const Descriptor* pRenderTargetViews,
 			const Descriptor* pDepthStencilView = nullptr,
 			bool rtsSingleHandleToDescriptorRange = false) const;
+		virtual void ClearDepthStencilView(const Framebuffer& framebuffer, ClearFlag clearFlags,
+			float depth, uint8_t stencil = 0, uint32_t numRects = 0, const RectRange * pRects = nullptr) const;
 		virtual void ClearDepthStencilView(const Descriptor& depthStencilView, ClearFlag clearFlags,
 			float depth, uint8_t stencil = 0, uint32_t numRects = 0, const RectRange* pRects = nullptr) const;
 		virtual void ClearRenderTargetView(const Descriptor& renderTargetView, const float colorRGBA[4],
 			uint32_t numRects = 0, const RectRange* pRects = nullptr) const;
-		virtual void ClearUnorderedAccessViewUint(const DescriptorView& descriptorView,
+		virtual void ClearUnorderedAccessViewUint(const DescriptorTable& descriptorTable,
 			const Descriptor& descriptor, const Resource& resource, const uint32_t values[4],
 			uint32_t numRects = 0, const RectRange* pRects = nullptr) const;
-		virtual void ClearUnorderedAccessViewFloat(const DescriptorView& descriptorView,
+		virtual void ClearUnorderedAccessViewFloat(const DescriptorTable& descriptorTable,
 			const Descriptor& descriptor, const Resource& resource, const float values[4],
 			uint32_t numRects = 0, const RectRange* pRects = nullptr) const;
 		//virtual void DiscardResource(const Resource &resource, const D3D12_DISCARD_REGION* pRegion) const;

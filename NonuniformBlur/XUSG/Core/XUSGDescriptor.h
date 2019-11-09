@@ -52,14 +52,20 @@ namespace XUSG
 			void SetSamplers(uint32_t start, uint32_t num, const SamplerPreset* presets,
 				DescriptorTableCache& descriptorTableCache, uint8_t descriptorPoolIndex = 0);
 
-			XUSG::DescriptorTable CreateCbvSrvUavTable(DescriptorTableCache& descriptorTableCache);
-			XUSG::DescriptorTable GetCbvSrvUavTable(DescriptorTableCache& descriptorTableCache);
+			XUSG::DescriptorTable CreateCbvSrvUavTable(DescriptorTableCache& descriptorTableCache,
+				const XUSG::DescriptorTable& table = nullptr);
+			XUSG::DescriptorTable GetCbvSrvUavTable(DescriptorTableCache& descriptorTableCache,
+				const XUSG::DescriptorTable& table = nullptr);
 
-			XUSG::DescriptorTable CreateSamplerTable(DescriptorTableCache& descriptorTableCache);
-			XUSG::DescriptorTable GetSamplerTable(DescriptorTableCache& descriptorTableCache);
+			XUSG::DescriptorTable CreateSamplerTable(DescriptorTableCache& descriptorTableCache,
+				const XUSG::DescriptorTable& table = nullptr);
+			XUSG::DescriptorTable GetSamplerTable(DescriptorTableCache& descriptorTableCache,
+				const XUSG::DescriptorTable& table = nullptr);
 
-			RenderTargetTable CreateRtvTable(DescriptorTableCache& descriptorTableCache);
-			RenderTargetTable GetRtvTable(DescriptorTableCache& descriptorTableCache);
+			Framebuffer CreateFramebuffer(DescriptorTableCache& descriptorTableCache,
+				const Descriptor* pDsv = nullptr, const Framebuffer* pFramebuffer = nullptr);
+			Framebuffer GetFramebuffer(DescriptorTableCache& descriptorTableCache,
+				const Descriptor* pDsv = nullptr, const Framebuffer* pFramebuffer = nullptr);
 
 			const std::string& GetKey() const;
 
@@ -81,14 +87,16 @@ namespace XUSG
 
 		bool AllocateDescriptorPool(DescriptorPoolType type, uint32_t numDescriptors, uint8_t index = 0);
 
-		DescriptorTable CreateCbvSrvUavTable(const Util::DescriptorTable& util);
-		DescriptorTable GetCbvSrvUavTable(const Util::DescriptorTable& util);
+		DescriptorTable CreateCbvSrvUavTable(const Util::DescriptorTable& util, const DescriptorTable& table = nullptr);
+		DescriptorTable GetCbvSrvUavTable(const Util::DescriptorTable& util, const DescriptorTable& table = nullptr);
 
-		DescriptorTable CreateSamplerTable(const Util::DescriptorTable& util);
-		DescriptorTable GetSamplerTable(const Util::DescriptorTable& util);
+		DescriptorTable CreateSamplerTable(const Util::DescriptorTable& util, const DescriptorTable& table = nullptr);
+		DescriptorTable GetSamplerTable(const Util::DescriptorTable& util, const DescriptorTable& table = nullptr);
 
-		RenderTargetTable CreateRtvTable(const Util::DescriptorTable& util);
-		RenderTargetTable GetRtvTable(const Util::DescriptorTable& util);
+		Framebuffer CreateFramebuffer(const Util::DescriptorTable& util,
+			const Descriptor* pDsv = nullptr, const Framebuffer* pFramebuffer = nullptr);
+		Framebuffer GetFramebuffer(const Util::DescriptorTable& util,
+			const Descriptor* pDsv = nullptr, const Framebuffer* pFramebuffer = nullptr);
 
 		const DescriptorPool& GetDescriptorPool(DescriptorPoolType type, uint8_t index = 0) const;
 
@@ -106,14 +114,14 @@ namespace XUSG
 		bool reallocateSamplerPool(const std::string& key);
 		bool reallocateRtvPool(const std::string& key);
 
-		DescriptorTable createCbvSrvUavTable(const std::string& key);
-		DescriptorTable getCbvSrvUavTable(const std::string& key);
+		DescriptorTable createCbvSrvUavTable(const std::string& key, DescriptorTable table);
+		DescriptorTable getCbvSrvUavTable(const std::string& key, DescriptorTable table);
 
-		DescriptorTable createSamplerTable(const std::string& key);
-		DescriptorTable getSamplerTable(const std::string& key);
+		DescriptorTable createSamplerTable(const std::string& key, DescriptorTable table);
+		DescriptorTable getSamplerTable(const std::string& key, DescriptorTable table);
 
-		RenderTargetTable createRtvTable(const std::string& key);
-		RenderTargetTable getRtvTable(const std::string& key);
+		Framebuffer createFramebuffer(const std::string& key, const Descriptor *pDsv, const Framebuffer* pFramebuffer);
+		Framebuffer getFramebuffer(const std::string& key, const Descriptor* pDsv, const Framebuffer* pFramebuffer);
 
 		uint32_t calculateGrowth(uint32_t numDescriptors, DescriptorPoolType type, uint8_t index) const;
 
@@ -121,7 +129,7 @@ namespace XUSG
 
 		std::unordered_map<std::string, DescriptorTable> m_cbvSrvUavTables;
 		std::unordered_map<std::string, DescriptorTable> m_samplerTables;
-		std::unordered_map<std::string, RenderTargetTable> m_rtvTables;
+		std::unordered_map<std::string, std::shared_ptr<Descriptor>> m_rtvTables;
 
 		std::vector<std::vector<const std::string*>> m_descriptorKeyPtrs[NUM_DESCRIPTOR_POOL];
 

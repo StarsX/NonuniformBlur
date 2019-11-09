@@ -432,9 +432,13 @@ namespace XUSG
 	// Descriptors related
 	using DescriptorPool = com_ptr<ID3D12DescriptorHeap>;
 	using Descriptor = CD3DX12_CPU_DESCRIPTOR_HANDLE;
-	using DescriptorView = CD3DX12_GPU_DESCRIPTOR_HANDLE;
-	using DescriptorTable = std::shared_ptr<DescriptorView>;
-	using RenderTargetTable = std::shared_ptr<Descriptor>;
+	using DescriptorTable = std::shared_ptr<CD3DX12_GPU_DESCRIPTOR_HANDLE>;
+	struct Framebuffer
+	{
+		uint32_t NumRenderTargetDescriptors;
+		std::shared_ptr<Descriptor> RenderTargetViews;
+		Descriptor DepthStencilView;
+	};
 
 	// Pipeline layouts related
 	using PipelineLayout = com_ptr<ID3D12RootSignature>;
