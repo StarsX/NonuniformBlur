@@ -2,7 +2,7 @@
 // By Stars XU Tianchen
 //--------------------------------------------------------------------------------------
 
-#include "CSResample.hlsli"
+#include "Resample.hlsli"
 #include "D3DX_DXGIFormatConvert.inl"
 
 //--------------------------------------------------------------------------------------

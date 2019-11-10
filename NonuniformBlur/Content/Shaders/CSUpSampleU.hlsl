@@ -25,6 +25,7 @@ void main(uint2 DTid : SV_DispatchThreadID)
 	const float4 src = D3DX_B8G8R8A8_UNORM_to_FLOAT4(g_txDest[DTid]);
 	const float4 coarser = g_txCoarser.SampleLevel(g_smpLinear, tex, 0.0);
 
+	// Gaussian-approximating Haar coefficients (weights of box filters)
 	const float weight = MipGaussianBlendWeight(tex);
 
 	g_txDest[DTid] = D3DX_FLOAT4_to_B8G8R8A8_UNORM(lerp(coarser, src, weight));

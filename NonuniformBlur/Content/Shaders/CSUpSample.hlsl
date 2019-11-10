@@ -24,6 +24,7 @@ void main(uint2 DTid : SV_DispatchThreadID)
 	const float4 src = g_txDest[DTid];
 	const float4 coarser = g_txCoarser.SampleLevel(g_smpLinear, tex, 0.0);
 
+	// Gaussian-approximating Haar coefficients (weights of box filters)
 	const float weight = MipGaussianBlendWeight(tex);
 
 	g_txDest[DTid] = lerp(coarser, src, weight);

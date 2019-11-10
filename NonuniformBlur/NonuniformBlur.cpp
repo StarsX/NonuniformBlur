@@ -389,6 +389,9 @@ double NonUniformBlur::CalculateFrameStats(float* pTimeStep)
 		windowText << L"    [P] ";
 		switch (m_pipelineType)
 		{
+		case Filter::GRAPHICS:
+			windowText << L"Pure graphics pipelines";
+			break;
 		case Filter::COMPUTE:
 			windowText << L"Pure compute pipelines";
 			break;

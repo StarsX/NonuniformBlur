@@ -13,6 +13,7 @@ public:
 	enum PipelineType
 	{
 		HYBRID,
+		GRAPHICS,
 		COMPUTE,
 
 		NUM_PIPE_TYPE
@@ -33,9 +34,10 @@ public:
 protected:
 	enum PipelineIndex : uint8_t
 	{
-		RESAMPLE,
-		UP_SAMPLE_C,
+		RESAMPLE_G,
+		RESAMPLE_C,
 		UP_SAMPLE_G,
+		UP_SAMPLE_C,
 
 		NUM_PIPELINE
 	};
@@ -53,10 +55,12 @@ protected:
 	bool createPipelines(XUSG::Format rtFormat, bool typedUAV);
 	bool createDescriptorTables();
 
-	void updateImage(const XUSG::CommandList& commandList);
-	void generateMips(const XUSG::CommandList& commandList);
-	void upSampleHybrid(const XUSG::CommandList& commandList, DirectX::XMFLOAT2 focus, float sigma, XUSG::ResourceState dstState);
-	void upSampleCompute(const XUSG::CommandList& commandList, DirectX::XMFLOAT2 focus, float sigma, XUSG::ResourceState dstState);
+	void updateImageGraphics(const XUSG::CommandList& commandList);
+	void updateImageCompute(const XUSG::CommandList& commandList);
+	void generateMipsGraphics(const XUSG::CommandList& commandList);
+	void generateMipsCompute(const XUSG::CommandList& commandList);
+	void upsampleGraphics(const XUSG::CommandList& commandList, DirectX::XMFLOAT2 focus, float sigma, XUSG::ResourceState dstState);
+	void upsampleCompute(const XUSG::CommandList& commandList, DirectX::XMFLOAT2 focus, float sigma, XUSG::ResourceState dstState);
 
 	XUSG::Device m_device;
 

@@ -871,11 +871,15 @@ void RenderTarget::Blit(const CommandList& commandList, const DescriptorTable& s
 
 	// Draw quads
 	commandList.IASetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
-	for (auto i = 0u; i < numSlices; ++i)
+	if (numSlices == 1)
 	{
-		if (offsetForSliceId != UINT32_MAX)
-			commandList.SetGraphics32BitConstant(cbSlot, i, offsetForSliceId);
+		commandList.OMSetRenderTargets(1, &GetRTV(baseSlice, mipLevel));
+		commandList.Draw(3, 1, 0, 0);
+	}
+	else for (auto i = 0u; i < numSlices; ++i)
+	{
 		commandList.OMSetRenderTargets(1, &GetRTV(baseSlice + i, mipLevel));
+		commandList.SetGraphics32BitConstant(cbSlot, i, offsetForSliceId);
 		commandList.Draw(3, 1, 0, 0);
 	}
 }

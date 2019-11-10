@@ -187,7 +187,7 @@
     <None Include="Content\Shaders\D3DX_DXGIFormatConvert.inl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Content\Shaders\CSResample.hlsli">
+    <None Include="Content\Shaders\Resample.hlsli">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
@@ -208,6 +208,9 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\Shaders\CSUpSampleU.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\PSResample.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
