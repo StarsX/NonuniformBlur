@@ -668,14 +668,17 @@ uint32_t Texture2D::GenerateMips(const CommandList& commandList, ResourceBarrier
 		if (j > 0) for (auto k = 0u; k < numSlices; ++k)
 		{
 			const auto n = baseSlice + k;
-			const auto subresource = D3D12CalcSubresource(j, n, 0, desc.MipLevels, desc.DepthOrArraySize);
+			auto subresource = D3D12CalcSubresource(j, n, 0, desc.MipLevels, desc.DepthOrArraySize);
 			if (m_states[subresource] != ResourceState::UNORDERED_ACCESS)
 			{
 				const auto& srcState = static_cast<D3D12_RESOURCE_STATES>(m_states[subresource]);
 				pBarriers[numBarriers++] = ResourceBarrier::Transition(m_resource.get(), srcState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, subresource);
 				m_states[subresource] = ResourceState::UNORDERED_ACCESS;
 			}
-			numBarriers = SetBarrier(pBarriers, j - 1, dstState, numBarriers, n);
+
+			subresource = D3D12CalcSubresource(j - 1, n, 0, desc.MipLevels, desc.DepthOrArraySize);
+			if ((m_states[subresource] & dstState) != dstState)
+				numBarriers = SetBarrier(pBarriers, dstState, numBarriers, subresource);
 		}
 
 		commandList.Barrier(numBarriers, pBarriers);
@@ -939,7 +942,10 @@ uint32_t RenderTarget::GenerateMips(const CommandList& commandList, ResourceBarr
 		{
 			const auto n = baseSlice + k;
 			numBarriers = SetBarrier(pBarriers, j, ResourceState::RENDER_TARGET, numBarriers, n);
-			numBarriers = SetBarrier(pBarriers, j - 1, dstState, numBarriers, n);
+
+			const auto subresource = D3D12CalcSubresource(j - 1, n, 0, desc.MipLevels, desc.DepthOrArraySize);
+			if ((m_states[subresource] & dstState) != dstState)
+				numBarriers = SetBarrier(pBarriers, dstState, numBarriers, subresource);
 		}
 
 		commandList.Barrier(numBarriers, pBarriers);

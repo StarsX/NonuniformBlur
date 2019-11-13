@@ -306,7 +306,7 @@ void NonUniformBlur::PopulateCommandList()
 	// Record commands.
 	const auto dstState = ResourceState::PIXEL_SHADER_RESOURCE |
 		ResourceState::NON_PIXEL_SHADER_RESOURCE | ResourceState::COPY_SOURCE;
-	m_filter->Process(m_commandList, m_focus, m_sigma, dstState, m_pipelineType);	// V-cycle
+	m_filter->Process(m_commandList, m_focus, m_sigma, m_pipelineType);	// V-cycle
 
 	{
 		auto& result = m_filter->GetResult();
