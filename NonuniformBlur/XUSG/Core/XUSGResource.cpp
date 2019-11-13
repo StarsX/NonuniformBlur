@@ -856,6 +856,7 @@ void RenderTarget::Blit(const CommandList& commandList, const DescriptorTable& s
 	// Set render target
 	const auto desc = m_resource->GetDesc();
 	if (numSlices == 0) numSlices = desc.DepthOrArraySize - baseSlice;
+	commandList.OMSetRenderTargets(1, &GetRTV(baseSlice, mipLevel));
 
 	// Set pipeline layout and descriptor tables
 	if (srcSrvTable) commandList.SetGraphicsDescriptorTable(srcSlot, srcSrvTable);
@@ -874,12 +875,8 @@ void RenderTarget::Blit(const CommandList& commandList, const DescriptorTable& s
 
 	// Draw quads
 	commandList.IASetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
-	if (numSlices == 1)
-	{
-		commandList.OMSetRenderTargets(1, &GetRTV(baseSlice, mipLevel));
-		commandList.Draw(3, 1, 0, 0);
-	}
-	else for (auto i = 0u; i < numSlices; ++i)
+	commandList.Draw(3, 1, 0, 0);
+	for (auto i = 1u; i < numSlices; ++i)
 	{
 		commandList.OMSetRenderTargets(1, &GetRTV(baseSlice + i, mipLevel));
 		commandList.SetGraphics32BitConstant(cbSlot, i, offsetForSliceId);
@@ -951,6 +948,7 @@ uint32_t RenderTarget::GenerateMips(const CommandList& commandList, ResourceBarr
 		commandList.Barrier(numBarriers, pBarriers);
 		numBarriers = 0;
 
+		commandList.SetGraphics32BitConstant(cbSlot, 0, offsetForSliceId);
 		Blit(commandList, pSrcSrvTables[i], srcSlot, j, baseSlice, numSlices,
 			nullptr, samplerSlot, nullptr, offsetForSliceId, cbSlot);
 	}

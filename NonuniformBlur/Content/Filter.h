@@ -50,6 +50,7 @@ protected:
 
 	uint32_t generateMipsGraphics(const XUSG::CommandList& commandList, XUSG::ResourceBarrier* pBarriers);
 	uint32_t generateMipsCompute(const XUSG::CommandList& commandList, XUSG::ResourceBarrier* pBarriers);
+
 	void upsampleGraphics(const XUSG::CommandList& commandList, XUSG::ResourceBarrier* pBarriers,
 		uint32_t numBarriers, DirectX::XMFLOAT2 focus, float sigma);
 	void upsampleCompute(const XUSG::CommandList& commandList, XUSG::ResourceBarrier* pBarriers,

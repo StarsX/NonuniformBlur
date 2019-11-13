@@ -88,7 +88,7 @@ void Filter::Process(const CommandList& commandList, XMFLOAT2 focus, float sigma
 		break;
 	default:
 		numBarriers = generateMipsCompute(commandList, barriers);
-		m_filtered.SetBarrier(barriers, ResourceState::UNORDERED_ACCESS, --numBarriers, m_numMips - 1);
+		m_filtered.SetBarrier(barriers, m_numMips - 1, ResourceState::UNORDERED_ACCESS, --numBarriers);
 		upsampleGraphics(commandList, barriers, numBarriers, focus, sigma);
 	}
 }
@@ -300,27 +300,21 @@ bool Filter::createDescriptorTables()
 uint32_t Filter::generateMipsGraphics(const CommandList& commandList, ResourceBarrier* pBarriers)
 {
 	// Generate mipmaps
-	auto numBarriers = 0u;
 	return m_filtered.GenerateMips(commandList, pBarriers, ResourceState::PIXEL_SHADER_RESOURCE,
-		m_pipelineLayouts[RESAMPLE_G], m_pipelines[RESAMPLE_G], m_srvTables.data(),
-		1, m_samplerTable, 0, numBarriers);
+		m_pipelineLayouts[RESAMPLE_G], m_pipelines[RESAMPLE_G], m_srvTables.data(), 1, m_samplerTable, 0);
 }
 
 uint32_t Filter::generateMipsCompute(const CommandList& commandList, ResourceBarrier* pBarriers)
 {
 	// Generate mipmaps
-	auto numBarriers = 0u;
 	return m_filtered.Texture2D::GenerateMips(commandList, pBarriers, 8, 8, 1,
 		ResourceState::NON_PIXEL_SHADER_RESOURCE, m_pipelineLayouts[RESAMPLE_C],
-		m_pipelines[RESAMPLE_C], &m_uavTables[1], 1, m_samplerTable, 0,
-		numBarriers, &m_srvTables[0], 2);
+		m_pipelines[RESAMPLE_C], &m_uavTables[1], 1, m_samplerTable, 0, 0, &m_srvTables[0], 2);
 }
 
 void Filter::upsampleGraphics(const CommandList& commandList, ResourceBarrier* pBarriers,
 	uint32_t numBarriers, XMFLOAT2 focus, float sigma)
 {
-	const auto dstState = ResourceState::PIXEL_SHADER_RESOURCE;
-
 	// Up sampling
 	commandList.SetGraphicsPipelineLayout(m_pipelineLayouts[UP_SAMPLE_G]);
 	commandList.SetPipelineState(m_pipelines[UP_SAMPLE_G]);
@@ -336,7 +330,7 @@ void Filter::upsampleGraphics(const CommandList& commandList, ResourceBarrier* p
 		const auto level = c - 1;
 		commandList.SetGraphics32BitConstant(2, level, SizeOfInUint32(cb.Imm));
 		numBarriers = m_filtered.Blit(commandList, pBarriers, level, c,
-			dstState, m_srvTables[c], 1, numBarriers);
+			ResourceState::PIXEL_SHADER_RESOURCE, m_srvTables[c], 1, numBarriers);
 	}
 
 	// Final pass
@@ -345,7 +339,7 @@ void Filter::upsampleGraphics(const CommandList& commandList, ResourceBarrier* p
 	commandList.SetGraphicsDescriptorTable(0, m_samplerTable);
 	commandList.SetGraphics32BitConstants(2, SizeOfInUint32(cb), &cb);
 	numBarriers = m_filtered.Blit(commandList, pBarriers, 0, 1,
-		dstState, m_srvTables[0], 1, numBarriers);
+		ResourceState::PIXEL_SHADER_RESOURCE, m_srvTables[0], 1, numBarriers);
 }
 
 void Filter::upsampleCompute(const CommandList& commandList, ResourceBarrier* pBarriers,
