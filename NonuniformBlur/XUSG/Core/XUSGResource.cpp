@@ -948,7 +948,7 @@ uint32_t RenderTarget::GenerateMips(const CommandList& commandList, ResourceBarr
 		commandList.Barrier(numBarriers, pBarriers);
 		numBarriers = 0;
 
-		commandList.SetGraphics32BitConstant(cbSlot, 0, offsetForSliceId);
+		if(numSlices > 1) commandList.SetGraphics32BitConstant(cbSlot, 0, offsetForSliceId);
 		Blit(commandList, pSrcSrvTables[i], srcSlot, j, baseSlice, numSlices,
 			nullptr, samplerSlot, nullptr, offsetForSliceId, cbSlot);
 	}
