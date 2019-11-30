@@ -204,12 +204,6 @@
     <FxCompile Include="Content\Shaders\CSUpSample.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Content\Shaders\CSResampleU.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Content\Shaders\CSUpSampleU.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="Content\Shaders\PSResample.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
@@ -219,7 +213,7 @@
     <FxCompile Include="Content\Shaders\CSFinal.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Content\Shaders\CSFinalU.hlsl">
+    <FxCompile Include="Content\Shaders\CSUpSampleU.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

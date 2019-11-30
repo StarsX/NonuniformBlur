@@ -360,7 +360,11 @@ bool Texture2D::Create(const Device& device, uint32_t width, uint32_t height, Fo
 	if (hasSRV) N_RETURN(CreateSRVs(arraySize, format, numMips, sampleCount, isCubeMap), false);
 
 	// Create UAVs
-	if (hasUAV) N_RETURN(CreateUAVs(arraySize, formatUAV, numMips), false);
+	if (hasUAV)
+	{
+		N_RETURN(CreateUAVs(arraySize, format, numMips), false);
+		if (isPacked) N_RETURN(CreateUAVs(arraySize, formatUAV, numMips, &m_packedUavs), false);
+	}
 
 	// Create SRV for each level
 	if (hasSRV && hasUAV) N_RETURN(CreateSRVLevels(arraySize, numMips, format, sampleCount, isCubeMap), false);
@@ -538,16 +542,17 @@ bool Texture2D::CreateSRVLevels(uint32_t arraySize, uint8_t numMips, Format form
 	return true;
 }
 
-bool Texture2D::CreateUAVs(uint32_t arraySize, Format format, uint8_t numMips)
+bool Texture2D::CreateUAVs(uint32_t arraySize, Format format, uint8_t numMips, vector<Descriptor>* pUavs)
 {
 	// Setup the description of the unordered access view.
 	D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {};
 	desc.Format = format != Format::UNKNOWN ? static_cast<decltype(desc.Format)>(format) : m_resource->GetDesc().Format;
 
 	auto mipLevel = 0ui8;
-	m_uavs.resize((max)(numMips, 1ui8));
+	pUavs = pUavs ? pUavs : &m_uavs;
+	pUavs->resize((max)(numMips, 1ui8));
 
-	for (auto& descriptor : m_uavs)
+	for (auto& descriptor : *pUavs)
 	{
 		// Setup the description of the unordered access view.
 		if (arraySize > 1)
@@ -698,6 +703,11 @@ uint32_t Texture2D::GenerateMips(const CommandList& commandList, ResourceBarrier
 Descriptor Texture2D::GetUAV(uint8_t i) const
 {
 	return m_uavs.size() > i ? m_uavs[i] : D3D12_DEFAULT;
+}
+
+Descriptor Texture2D::GetPackedUAV(uint8_t i) const
+{
+	return m_packedUavs.size() > i ? m_packedUavs[i] : D3D12_DEFAULT;
 }
 
 Descriptor Texture2D::GetSRVLevel(uint8_t i) const
@@ -1025,7 +1035,11 @@ bool RenderTarget::create(const Device& device, uint32_t width, uint32_t height,
 	}
 
 	// Create UAV
-	if (hasUAV) N_RETURN(CreateUAVs(arraySize, formatUAV, numMips), false);
+	if (hasUAV)
+	{
+		N_RETURN(CreateUAVs(arraySize, format, numMips), false);
+		if (isPacked) N_RETURN(CreateUAVs(arraySize, formatUAV, numMips, &m_packedUavs), false);
+	}
 
 	return true;
 }
@@ -1450,7 +1464,11 @@ bool Texture3D::Create(const Device& device, uint32_t width, uint32_t height,
 	if (hasSRV) N_RETURN(CreateSRVs(format, numMips), false);
 
 	// Create UAV
-	if (hasUAV) N_RETURN(CreateUAVs(formatUAV, numMips), false);
+	if (hasUAV)
+	{
+		N_RETURN(CreateUAVs(format, numMips), false);
+		if (isPacked) N_RETURN(CreateUAVs(formatUAV, numMips, &m_packedUavs), false);
+	}
 
 	// Create SRV for each level
 	if (hasSRV && hasUAV) N_RETURN(CreateSRVLevels(numMips, format), false);
@@ -1512,7 +1530,7 @@ bool Texture3D::CreateSRVLevels(uint8_t numMips, Format format)
 	return true;
 }
 
-bool Texture3D::CreateUAVs(Format format, uint8_t numMips)
+bool Texture3D::CreateUAVs(Format format, uint8_t numMips, vector<Descriptor>* pUavs)
 {
 	const auto txDesc = m_resource->GetDesc();
 
@@ -1522,9 +1540,10 @@ bool Texture3D::CreateUAVs(Format format, uint8_t numMips)
 	desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
 
 	auto mipLevel = 0ui8;
-	m_uavs.resize(numMips);
+	pUavs = pUavs ? pUavs : &m_uavs;
+	pUavs->resize(numMips);
 
-	for (auto& descriptor : m_uavs)
+	for (auto& descriptor : *pUavs)
 	{
 		// Setup the description of the unordered access view.
 		desc.Texture3D.WSize = txDesc.DepthOrArraySize >> mipLevel;
@@ -1542,6 +1561,11 @@ bool Texture3D::CreateUAVs(Format format, uint8_t numMips)
 Descriptor Texture3D::GetUAV(uint8_t i) const
 {
 	return m_uavs.size() > i ? m_uavs[i] : D3D12_DEFAULT;
+}
+
+Descriptor Texture3D::GetPackedUAV(uint8_t i) const
+{
+	return m_packedUavs.size() > i ? m_packedUavs[i] : D3D12_DEFAULT;
 }
 
 Descriptor Texture3D::GetSRVLevel(uint8_t i) const
@@ -1878,7 +1902,11 @@ bool TypedBuffer::Create(const Device& device, uint32_t numElements, uint32_t st
 	if (numSRVs > 0) N_RETURN(CreateSRVs(numElements, format, stride, firstSRVElements, numSRVs), false);
 
 	// Create UAV
-	if (numUAVs > 0) N_RETURN(CreateUAVs(numElements, formatUAV, stride, firstUAVElements, numUAVs), false);
+	if (numUAVs > 0)
+	{
+		N_RETURN(CreateUAVs(numElements, format, stride, firstUAVElements, numUAVs), false);
+		if (isPacked) N_RETURN(CreateUAVs(numElements, formatUAV, stride, firstUAVElements, numUAVs, &m_packedUavs), false);
+	}
 
 	return true;
 }
@@ -1912,13 +1940,14 @@ bool TypedBuffer::CreateSRVs(uint32_t numElements, Format format, uint32_t strid
 }
 
 bool TypedBuffer::CreateUAVs(uint32_t numElements, Format format, uint32_t stride,
-	const uint32_t* firstElements, uint32_t numDescriptors)
+	const uint32_t* firstElements, uint32_t numDescriptors, vector<Descriptor>* pUavs)
 {
 	D3D12_UNORDERED_ACCESS_VIEW_DESC desc = {};
 	desc.Format = format != Format::UNKNOWN ? static_cast<decltype(desc.Format)>(format) : m_resource->GetDesc().Format;
 	desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 
-	m_uavs.resize(numDescriptors);
+	pUavs = pUavs ? pUavs : &m_uavs;
+	pUavs->resize(numDescriptors);
 	for (auto i = 0u; i < numDescriptors; ++i)
 	{
 		const auto firstElement = firstElements ? firstElements[i] : 0;
@@ -1927,12 +1956,17 @@ bool TypedBuffer::CreateUAVs(uint32_t numElements, Format format, uint32_t strid
 			numElements : firstElements[i + 1]) - firstElement;
 
 		// Create an unordered access view
-		m_uavs[i] = allocateSrvUavPool();
-		N_RETURN(m_uavs[i].ptr, false);
-		m_device->CreateUnorderedAccessView(m_resource.get(), m_counter.get(), &desc, m_uavs[i]);
+		pUavs->at(i) = allocateSrvUavPool();
+		N_RETURN(pUavs->at(i).ptr, false);
+		m_device->CreateUnorderedAccessView(m_resource.get(), m_counter.get(), &desc, pUavs->at(i));
 	}
 
 	return true;
+}
+
+Descriptor TypedBuffer::GetPackedUAV(uint32_t i) const
+{
+	return m_packedUavs.size() > i ? m_packedUavs[i] : D3D12_DEFAULT;
 }
 
 //--------------------------------------------------------------------------------------

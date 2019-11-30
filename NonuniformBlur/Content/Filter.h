@@ -44,8 +44,16 @@ protected:
 		NUM_PIPELINE
 	};
 
+	enum UavTableType : uint8_t
+	{
+		UAV_TABLE_TYPED,
+		UAV_TABLE_PACKED,
+
+		NUM_UAV_TABLE_TYPE
+	};
+
 	bool createPipelineLayouts();
-	bool createPipelines(XUSG::Format rtFormat, bool typedUAV);
+	bool createPipelines(XUSG::Format rtFormat);
 	bool createDescriptorTables();
 
 	uint32_t generateMipsGraphics(const XUSG::CommandList& commandList, XUSG::ResourceBarrier* pBarriers);
@@ -67,7 +75,7 @@ protected:
 	XUSG::PipelineLayout	m_pipelineLayouts[NUM_PIPELINE];
 	XUSG::Pipeline			m_pipelines[NUM_PIPELINE];
 
-	std::vector<XUSG::DescriptorTable> m_uavTables;
+	std::vector<XUSG::DescriptorTable> m_uavTables[NUM_UAV_TABLE_TYPE];
 	std::vector<XUSG::DescriptorTable> m_srvTables;
 	XUSG::DescriptorTable	m_samplerTable;
 
@@ -76,4 +84,6 @@ protected:
 
 	DirectX::XMUINT2		m_imageSize;
 	uint8_t					m_numMips;
+
+	bool					m_typedUAV;
 };

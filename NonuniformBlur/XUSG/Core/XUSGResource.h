@@ -6,8 +6,6 @@
 
 #include "XUSGCommand.h"
 
-#define BARRIER_ALL_SUBRESOURCES	D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES
-
 namespace XUSG
 {
 	//--------------------------------------------------------------------------------------
@@ -107,7 +105,8 @@ namespace XUSG
 			uint8_t sampleCount = 1, bool isCubeMap = false);
 		bool CreateSRVLevels(uint32_t arraySize, uint8_t numMips, Format format = Format::UNKNOWN,
 			uint8_t sampleCount = 1, bool isCubeMap = false);
-		bool CreateUAVs(uint32_t arraySize, Format format = Format::UNKNOWN, uint8_t numMips = 1);
+		bool CreateUAVs(uint32_t arraySize, Format format = Format::UNKNOWN, uint8_t numMips = 1,
+			std::vector<Descriptor>* pUavs = nullptr);
 
 		uint32_t SetBarrier(ResourceBarrier* pBarriers, ResourceState dstState,
 			uint32_t numBarriers = 0, uint32_t subresource = BARRIER_ALL_SUBRESOURCES,
@@ -134,12 +133,14 @@ namespace XUSG
 			uint8_t numMips = 0, uint32_t baseSlice = 0, uint32_t numSlices = 0);
 
 		Descriptor GetUAV(uint8_t i = 0) const;
+		Descriptor GetPackedUAV(uint8_t i = 0) const;
 		Descriptor GetSRVLevel(uint8_t i) const;
 
 		uint32_t GetHeight() const;
 
 	protected:
 		std::vector<Descriptor>	m_uavs;
+		std::vector<Descriptor>	m_packedUavs;
 		std::vector<Descriptor>	m_srvLevels;
 		Resource m_counter;
 	};
@@ -254,15 +255,18 @@ namespace XUSG
 			const wchar_t* name = nullptr);
 		bool CreateSRVs(Format format = Format::UNKNOWN, uint8_t numMips = 1);
 		bool CreateSRVLevels(uint8_t numMips, Format format = Format::UNKNOWN);
-		bool CreateUAVs(Format format = Format::UNKNOWN, uint8_t numMips = 1);
+		bool CreateUAVs(Format format = Format::UNKNOWN, uint8_t numMips = 1,
+			std::vector<Descriptor>* pUavs = nullptr);
 
 		Descriptor GetUAV(uint8_t i = 0) const;
+		Descriptor GetPackedUAV(uint8_t i = 0) const;
 		Descriptor GetSRVLevel(uint8_t i) const;
 
 		uint32_t GetDepth() const;
 
 	protected:
 		std::vector<Descriptor>	m_uavs;
+		std::vector<Descriptor>	m_packedUavs;
 		std::vector<Descriptor>	m_srvLevels;
 		Resource m_counter;
 	};
@@ -349,7 +353,13 @@ namespace XUSG
 		bool CreateSRVs(uint32_t numElements, Format format, uint32_t stride,
 			const uint32_t* firstElements = nullptr, uint32_t numDescriptors = 1);
 		bool CreateUAVs(uint32_t numElements, Format format, uint32_t stride,
-			const uint32_t* firstElements = nullptr, uint32_t numDescriptors = 1);
+			const uint32_t* firstElements = nullptr, uint32_t numDescriptors = 1,
+			std::vector<Descriptor>* pUavs = nullptr);
+
+		Descriptor GetPackedUAV(uint32_t i = 0) const;
+
+	protected:
+		std::vector<Descriptor>	m_packedUavs;
 	};
 
 	//--------------------------------------------------------------------------------------

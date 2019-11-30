@@ -39,6 +39,8 @@ Filter::~Filter()
 bool Filter::Init(const CommandList& commandList,  vector<Resource>& uploaders,
 	Format rtFormat, const wchar_t* fileName, bool typedUAV)
 {
+	m_typedUAV = typedUAV;
+
 	// Load input image
 	{
 		DDS::Loader textureLoader;
@@ -59,7 +61,7 @@ bool Filter::Init(const CommandList& commandList,  vector<Resource>& uploaders,
 		m_numMips, 1, ResourceState::COMMON, nullptr, false, L"FilteredImage");
 
 	N_RETURN(createPipelineLayouts(), false);
-	N_RETURN(createPipelines(rtFormat, typedUAV), false);
+	N_RETURN(createPipelines(rtFormat), false);
 	N_RETURN(createDescriptorTables(), false);
 
 	return true;
@@ -184,7 +186,7 @@ bool Filter::createPipelineLayouts()
 	return true;
 }
 
-bool Filter::createPipelines(Format rtFormat, bool typedUAV)
+bool Filter::createPipelines(Format rtFormat)
 {
 	auto vsIndex = 0u;
 	auto psIndex = 0u;
@@ -208,7 +210,7 @@ bool Filter::createPipelines(Format rtFormat, bool typedUAV)
 
 	// Resampling compute
 	{
-		N_RETURN(m_shaderPool.CreateShader(Shader::Stage::CS, csIndex, typedUAV ? L"CSResample.cso" : L"CSResampleU.cso"), false);
+		N_RETURN(m_shaderPool.CreateShader(Shader::Stage::CS, csIndex, L"CSResample.cso"), false);
 
 		Compute::State state;
 		state.SetPipelineLayout(m_pipelineLayouts[RESAMPLE_C]);
@@ -234,7 +236,7 @@ bool Filter::createPipelines(Format rtFormat, bool typedUAV)
 
 	// Up sampling compute
 	{
-		N_RETURN(m_shaderPool.CreateShader(Shader::Stage::CS, csIndex, typedUAV ? L"CSUpSample.cso" : L"CSUpSampleU.cso"), false);
+		N_RETURN(m_shaderPool.CreateShader(Shader::Stage::CS, csIndex, m_typedUAV ? L"CSUpSample.cso" : L"CSUpSampleU.cso"), false);
 
 		Compute::State state;
 		state.SetPipelineLayout(m_pipelineLayouts[UP_SAMPLE_C]);
@@ -259,7 +261,7 @@ bool Filter::createPipelines(Format rtFormat, bool typedUAV)
 
 	// Final pass compute
 	{
-		N_RETURN(m_shaderPool.CreateShader(Shader::Stage::CS, csIndex, typedUAV ? L"CSFinal.cso" : L"CSFinalU.cso"), false);
+		N_RETURN(m_shaderPool.CreateShader(Shader::Stage::CS, csIndex, L"CSFinal.cso"), false);
 
 		Compute::State state;
 		state.SetPipelineLayout(m_pipelineLayouts[FINAL_C]);
@@ -273,13 +275,25 @@ bool Filter::createPipelines(Format rtFormat, bool typedUAV)
 bool Filter::createDescriptorTables()
 {
 	// Get UAVs for resampling
-	m_uavTables.resize(m_numMips);
+	m_uavTables[UAV_TABLE_TYPED].resize(m_numMips);
 	for (auto i = 0ui8; i < m_numMips; ++i)
 	{
 		// Get UAV
 		Util::DescriptorTable utilUavTable;
 		utilUavTable.SetDescriptors(0, 1, &m_filtered.GetUAV(i));
-		X_RETURN(m_uavTables[i], utilUavTable.GetCbvSrvUavTable(m_descriptorTableCache), false);
+		X_RETURN(m_uavTables[UAV_TABLE_TYPED][i], utilUavTable.GetCbvSrvUavTable(m_descriptorTableCache), false);
+	}
+
+	if (!m_typedUAV)
+	{
+		m_uavTables[UAV_TABLE_PACKED].resize(m_numMips);
+		for (auto i = 0ui8; i < m_numMips; ++i)
+		{
+			// Get UAV
+			Util::DescriptorTable utilUavTable;
+			utilUavTable.SetDescriptors(0, 1, &m_filtered.GetPackedUAV(i));
+			X_RETURN(m_uavTables[UAV_TABLE_PACKED][i], utilUavTable.GetCbvSrvUavTable(m_descriptorTableCache), false);
+		}
 	}
 
 	// Get SRVs for resampling
@@ -312,7 +326,7 @@ uint32_t Filter::generateMipsCompute(const CommandList& commandList, ResourceBar
 	// Generate mipmaps
 	return m_filtered.Texture2D::GenerateMips(commandList, pBarriers, 8, 8, 1,
 		ResourceState::NON_PIXEL_SHADER_RESOURCE, m_pipelineLayouts[RESAMPLE_C],
-		m_pipelines[RESAMPLE_C], &m_uavTables[1], 1, m_samplerTable, 0, 0, &m_srvTables[0], 2);
+		m_pipelines[RESAMPLE_C], &m_uavTables[UAV_TABLE_TYPED][1], 1, m_samplerTable, 0, 0, &m_srvTables[0], 2);
 }
 
 void Filter::upsampleGraphics(const CommandList& commandList, ResourceBarrier* pBarriers,
@@ -364,7 +378,8 @@ void Filter::upsampleCompute(const CommandList& commandList, ResourceBarrier* pB
 		commandList.SetCompute32BitConstant(3, level, SizeOfInUint32(cb.Imm));
 		numBarriers = m_filtered.Texture2D::Blit(commandList, pBarriers,
 			8, 8, 1, level, c, ResourceState::NON_PIXEL_SHADER_RESOURCE,
-			m_uavTables[level], 1, numBarriers, m_srvTables[c], 2);
+			m_uavTables[m_typedUAV ? UAV_TABLE_TYPED : UAV_TABLE_PACKED][level],
+			1, numBarriers, m_srvTables[c], 2);
 	}
 
 	// Final pass
@@ -374,5 +389,5 @@ void Filter::upsampleCompute(const CommandList& commandList, ResourceBarrier* pB
 	commandList.SetCompute32BitConstants(3, SizeOfInUint32(cb), &cb);
 	numBarriers = m_filtered.Texture2D::Blit(commandList, pBarriers,
 		8, 8, 1, 0, 1, ResourceState::NON_PIXEL_SHADER_RESOURCE,
-		m_uavTables[0], 1, numBarriers, m_srvTables[0], 2);
+		m_uavTables[UAV_TABLE_TYPED][0], 1, numBarriers, m_srvTables[0], 2);
 }
