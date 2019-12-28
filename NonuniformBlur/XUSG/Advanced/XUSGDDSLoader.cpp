@@ -557,15 +557,17 @@ static bool CreateTexture(const Device& device, const CommandList& commandList,
 			{
 				const auto fmt = forceSRGB ? MakeSRGB(format) : format;
 				success = texture2D->Create(device, twidth, theight, fmt, arraySize, ResourceFlag::NONE,
-					mipCount - skipMip, 1, MemoryType::DEFAULT, ResourceState::COPY_DEST, isCubeMap, name);
-				if (success) success = texture2D->Upload(commandList, uploader, initData.get(), subresourceCount,
-					ResourceState::NON_PIXEL_SHADER_RESOURCE | ResourceState::PIXEL_SHADER_RESOURCE);
+					mipCount - skipMip, 1, MemoryType::DEFAULT, isCubeMap, name);
+				if (success) success = texture2D->Upload(commandList, uploader,
+					ResourceState::NON_PIXEL_SHADER_RESOURCE |
+					ResourceState::PIXEL_SHADER_RESOURCE,
+					initData.get(), subresourceCount);
 			}
 			else if (texture3D)
 			{
 				const auto fmt = forceSRGB ? MakeSRGB(format) : format;
 				success = texture3D->Create(device, twidth, theight, tdepth, fmt, ResourceFlag::NONE,
-					mipCount - skipMip, MemoryType::DEFAULT, ResourceState::COPY_DEST, name);
+					mipCount - skipMip, MemoryType::DEFAULT, name);
 			}
 			else V_RETURN(ERROR_NOT_SUPPORTED, cerr, false);
 
@@ -583,17 +585,19 @@ static bool CreateTexture(const Device& device, const CommandList& commandList,
 					{
 						const auto fmt = forceSRGB ? MakeSRGB(format) : format;
 						texture = make_shared<Texture2D>();
-						success = texture2D->Create(device, width, height, fmt, arraySize, ResourceFlag::NONE, mipCount,
-							1, MemoryType::DEFAULT, ResourceState::COPY_DEST, isCubeMap, name);
-						if (success) success = texture2D->Upload(commandList, uploader, initData.get(), subresourceCount,
-							ResourceState::NON_PIXEL_SHADER_RESOURCE | ResourceState::PIXEL_SHADER_RESOURCE);
+						success = texture2D->Create(device, width, height, fmt, arraySize, ResourceFlag::NONE,
+							mipCount, 1, MemoryType::DEFAULT, isCubeMap, name);
+						if (success) success = texture2D->Upload(commandList, uploader,
+							ResourceState::NON_PIXEL_SHADER_RESOURCE |
+							ResourceState::PIXEL_SHADER_RESOURCE,
+							initData.get(), subresourceCount);
 					}
 					else if (texture3D)
 					{
 						const auto fmt = forceSRGB ? MakeSRGB(format) : format;
 						texture = make_shared<Texture3D>();
 						success = texture3D->Create(device, width, height, depth, fmt, ResourceFlag::NONE,
-							mipCount, MemoryType::DEFAULT, ResourceState::COPY_DEST, name);
+							mipCount, MemoryType::DEFAULT, name);
 					}
 					else V_RETURN(ERROR_NOT_SUPPORTED, cerr, false);
 				}
