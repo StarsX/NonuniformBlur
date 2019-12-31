@@ -27,11 +27,11 @@ namespace XUSG
 
 			bool CreateTextureFromMemory(const Device& device, const CommandList& commandList, const uint8_t* ddsData,
 				size_t ddsDataSize, size_t maxsize, bool forceSRGB, std::shared_ptr<ResourceBase>& texture,
-				Resource& uploader, AlphaMode* alphaMode = nullptr);
+				Resource& uploader, AlphaMode* alphaMode = nullptr, ResourceState state = ResourceState::COMMON);
 
 			bool CreateTextureFromFile(const Device& device, const CommandList& commandList, const wchar_t* fileName,
 				size_t maxsize, bool forceSRGB, std::shared_ptr<ResourceBase>& texture, Resource& uploader,
-				AlphaMode* alphaMode = nullptr);
+				AlphaMode* alphaMode = nullptr, ResourceState state = ResourceState::COMMON);
 
 			static size_t BitsPerPixel(Format fmt);
 		};

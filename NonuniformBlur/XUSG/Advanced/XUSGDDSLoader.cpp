@@ -406,7 +406,7 @@ static bool FillInitData(uint32_t width, uint32_t height, uint32_t depth,
 static bool CreateTexture(const Device& device, const CommandList& commandList,
 	const DDS_HEADER* header, const uint8_t* bitData, size_t bitSize, size_t maxsize,
 	bool forceSRGB, shared_ptr<ResourceBase>& texture, Resource& uploader,
-	const wchar_t* name)
+	ResourceState state, const wchar_t* name)
 {
 	const auto width = header->width;
 	auto height = header->height;
@@ -558,10 +558,8 @@ static bool CreateTexture(const Device& device, const CommandList& commandList,
 				const auto fmt = forceSRGB ? MakeSRGB(format) : format;
 				success = texture2D->Create(device, twidth, theight, fmt, arraySize, ResourceFlag::NONE,
 					mipCount - skipMip, 1, MemoryType::DEFAULT, isCubeMap, name);
-				if (success) success = texture2D->Upload(commandList, uploader,
-					ResourceState::NON_PIXEL_SHADER_RESOURCE |
-					ResourceState::PIXEL_SHADER_RESOURCE,
-					initData.get(), subresourceCount);
+				if (success) success = texture2D->Upload(commandList, uploader, initData.get(),
+					subresourceCount, state);
 			}
 			else if (texture3D)
 			{
@@ -587,10 +585,8 @@ static bool CreateTexture(const Device& device, const CommandList& commandList,
 						texture = make_shared<Texture2D>();
 						success = texture2D->Create(device, width, height, fmt, arraySize, ResourceFlag::NONE,
 							mipCount, 1, MemoryType::DEFAULT, isCubeMap, name);
-						if (success) success = texture2D->Upload(commandList, uploader,
-							ResourceState::NON_PIXEL_SHADER_RESOURCE |
-							ResourceState::PIXEL_SHADER_RESOURCE,
-							initData.get(), subresourceCount);
+						if (success) success = texture2D->Upload(commandList, uploader, initData.get(),
+							subresourceCount, state);
 					}
 					else if (texture3D)
 					{
@@ -648,7 +644,8 @@ Loader::~Loader()
 
 bool Loader::CreateTextureFromMemory(const Device& device, const CommandList& commandList,
 	const uint8_t* ddsData, size_t ddsDataSize, size_t maxsize, bool forceSRGB,
-	std::shared_ptr<ResourceBase>& texture, Resource& uploader, AlphaMode* alphaMode)
+	std::shared_ptr<ResourceBase>& texture, Resource& uploader,
+	AlphaMode* alphaMode, ResourceState state)
 {
 	if (alphaMode)* alphaMode = ALPHA_MODE_UNKNOWN;
 	F_RETURN(!device || !ddsData, cerr, E_INVALIDARG, false);
@@ -675,7 +672,7 @@ bool Loader::CreateTextureFromMemory(const Device& device, const CommandList& co
 	C_RETURN(ddsDataSize < offset, false);
 
 	N_RETURN(CreateTexture(device, commandList, header, ddsData + offset, ddsDataSize - offset,
-		maxsize, forceSRGB, texture, uploader, L"DDSTextureLoader"), false);
+		maxsize, forceSRGB, texture, uploader, state, L"DDSTextureLoader"), false);
 
 	if (alphaMode)* alphaMode = GetAlphaMode(header);
 
@@ -684,7 +681,7 @@ bool Loader::CreateTextureFromMemory(const Device& device, const CommandList& co
 
 bool Loader::CreateTextureFromFile(const Device& device, const CommandList& commandList,
 	const wchar_t* fileName, size_t maxsize, bool forceSRGB, shared_ptr<ResourceBase>& texture,
-	Resource& uploader, AlphaMode* alphaMode)
+	Resource& uploader, AlphaMode* alphaMode, ResourceState state)
 {
 	if (alphaMode)* alphaMode = ALPHA_MODE_UNKNOWN;
 	F_RETURN(!device || !fileName, cerr, E_INVALIDARG, false);
@@ -697,7 +694,7 @@ bool Loader::CreateTextureFromFile(const Device& device, const CommandList& comm
 	N_RETURN(LoadTextureDataFromFile(fileName, ddsData, &header, &bitData, &bitSize), false);
 
 	N_RETURN(CreateTexture(device, commandList, header, bitData, bitSize,
-		maxsize, forceSRGB, texture, uploader, fileName), false);
+		maxsize, forceSRGB, texture, uploader, state, fileName), false);
 
 	if (alphaMode)* alphaMode = GetAlphaMode(header);
 
