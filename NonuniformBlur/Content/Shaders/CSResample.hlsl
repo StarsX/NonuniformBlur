@@ -15,10 +15,10 @@ RWTexture2D<float4>	g_txDest;
 [numthreads(8, 8, 1)]
 void main(uint2 DTid : SV_DispatchThreadID)
 {
-	float2 dim;
-	g_txDest.GetDimensions(dim.x, dim.y);
+	float2 imageSize;
+	g_txDest.GetDimensions(imageSize.x, imageSize.y);
 
-	const float2 tex = (DTid + 0.5) / dim;
+	const float2 tex = (DTid + 0.5) / imageSize;
 
 	g_txDest[DTid] = Resample(tex);
 }
