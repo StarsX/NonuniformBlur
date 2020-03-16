@@ -57,7 +57,7 @@ bool Filter::Init(const CommandList& commandList,  vector<Resource>& uploaders,
 	m_numMips = (max)(Log2((max)(m_imageSize.x, m_imageSize.y)), 0ui8) + 1;
 
 	m_filtered.Create(m_device, m_imageSize.x, m_imageSize.y, rtFormat, 1, typedUAV ?
-		ResourceFlag::ALLOW_UNORDERED_ACCESS : ResourceFlag::BIND_PACKED_UAV,
+		ResourceFlag::ALLOW_UNORDERED_ACCESS : ResourceFlag::NEED_PACKED_UAV,
 		m_numMips, 1, nullptr, false, L"FilteredImage");
 
 	N_RETURN(createPipelineLayouts(), false);
