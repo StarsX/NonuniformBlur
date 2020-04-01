@@ -566,6 +566,8 @@ static bool CreateTexture(const Device& device, const CommandList& commandList,
 				const auto fmt = forceSRGB ? MakeSRGB(format) : format;
 				success = texture3D->Create(device, twidth, theight, tdepth, fmt, ResourceFlag::NONE,
 					mipCount - skipMip, MemoryType::DEFAULT, name);
+				if (success) success = texture3D->Upload(commandList, uploader, initData.get(),
+					subresourceCount, state);
 			}
 			else V_RETURN(ERROR_NOT_SUPPORTED, cerr, false);
 
@@ -594,6 +596,8 @@ static bool CreateTexture(const Device& device, const CommandList& commandList,
 						texture = make_shared<Texture3D>();
 						success = texture3D->Create(device, width, height, depth, fmt, ResourceFlag::NONE,
 							mipCount, MemoryType::DEFAULT, name);
+						if (success) success = texture3D->Upload(commandList, uploader, initData.get(),
+							subresourceCount, state);
 					}
 					else V_RETURN(ERROR_NOT_SUPPORTED, cerr, false);
 				}
