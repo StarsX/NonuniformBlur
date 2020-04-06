@@ -504,7 +504,7 @@ static bool CreateTexture(const Device& device, CommandList* pCommandList,
 	case ResourceDimension::TEXTURE1D:
 		F_RETURN(arraySize > REQ_TEXTURE1D_ARRAY_AXIS_DIMENSION ||
 			width > REQ_TEXTURE1D_U_DIMENSION, cerr, ERROR_NOT_SUPPORTED, false);
-		texture = Texture2D::MakeUnique(API_DIRECTX_12);
+		texture = Texture2D::MakeUnique();
 		break;
 
 	case ResourceDimension::TEXTURE2D:
@@ -520,7 +520,7 @@ static bool CreateTexture(const Device& device, CommandList* pCommandList,
 			width > REQ_TEXTURE2D_U_OR_V_DIMENSION ||
 			height > REQ_TEXTURE2D_U_OR_V_DIMENSION,
 			cerr, ERROR_NOT_SUPPORTED, false);
-		texture = Texture2D::MakeUnique(API_DIRECTX_12);
+		texture = Texture2D::MakeUnique();
 		break;
 
 	case ResourceDimension::TEXTURE3D:
@@ -529,7 +529,7 @@ static bool CreateTexture(const Device& device, CommandList* pCommandList,
 			height > REQ_TEXTURE3D_U_V_OR_W_DIMENSION ||
 			depth > REQ_TEXTURE3D_U_V_OR_W_DIMENSION,
 			cerr, ERROR_NOT_SUPPORTED, false);
-		texture = Texture3D::MakeUnique(API_DIRECTX_12);
+		texture = Texture3D::MakeUnique();
 		break;
 
 	default:
@@ -584,7 +584,7 @@ static bool CreateTexture(const Device& device, CommandList* pCommandList,
 					if (texture2D)
 					{
 						const auto fmt = forceSRGB ? MakeSRGB(format) : format;
-						texture = Texture2D::MakeUnique(API_DIRECTX_12);
+						texture = Texture2D::MakeUnique();
 						success = texture2D->Create(device, width, height, fmt, arraySize, ResourceFlag::NONE,
 							mipCount, 1, MemoryType::DEFAULT, isCubeMap, name);
 						if (success) success = texture2D->Upload(pCommandList, uploader, initData.get(),
@@ -593,7 +593,7 @@ static bool CreateTexture(const Device& device, CommandList* pCommandList,
 					else if (texture3D)
 					{
 						const auto fmt = forceSRGB ? MakeSRGB(format) : format;
-						texture = Texture3D::MakeUnique(API_DIRECTX_12);
+						texture = Texture3D::MakeUnique();
 						success = texture3D->Create(device, width, height, depth, fmt, ResourceFlag::NONE,
 							mipCount, MemoryType::DEFAULT, name);
 						if (success) success = texture3D->Upload(pCommandList, uploader, initData.get(),
@@ -648,8 +648,8 @@ Loader::~Loader()
 
 bool Loader::CreateTextureFromMemory(const Device& device, CommandList* pCommandList,
 	const uint8_t* ddsData, size_t ddsDataSize, size_t maxsize, bool forceSRGB,
-	std::shared_ptr<ResourceBase>& texture, Resource& uploader,
-	AlphaMode* alphaMode, ResourceState state)
+	ResourceBase::sptr& texture, Resource& uploader, AlphaMode* alphaMode,
+	ResourceState state)
 {
 	if (alphaMode)* alphaMode = ALPHA_MODE_UNKNOWN;
 	F_RETURN(!device || !ddsData, cerr, E_INVALIDARG, false);
@@ -684,7 +684,7 @@ bool Loader::CreateTextureFromMemory(const Device& device, CommandList* pCommand
 }
 
 bool Loader::CreateTextureFromFile(const Device& device, CommandList* pCommandList,
-	const wchar_t* fileName, size_t maxsize, bool forceSRGB, shared_ptr<ResourceBase>& texture,
+	const wchar_t* fileName, size_t maxsize, bool forceSRGB, ResourceBase::sptr& texture,
 	Resource& uploader, AlphaMode* alphaMode, ResourceState state)
 {
 	if (alphaMode)* alphaMode = ALPHA_MODE_UNKNOWN;
