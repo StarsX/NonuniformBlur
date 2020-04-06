@@ -19,7 +19,7 @@ namespace XUSG
 			ALPHA_MODE_CUSTOM
 		};
 
-		class Loader
+		class DLL_EXPORT Loader
 		{
 		public:
 			Loader();
