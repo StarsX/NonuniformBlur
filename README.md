@@ -16,3 +16,5 @@ Hot keys:
 [Space] pause/play animation
 
 [P] pipeline type switch
+
+Prerequisite: https://github.com/StarsX/XUSGCore
