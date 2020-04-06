@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "Core/XUSGResource.h"
+#include "Core/XUSG.h"
 
 namespace XUSG
 {
@@ -25,11 +25,11 @@ namespace XUSG
 			Loader();
 			virtual ~Loader();
 
-			bool CreateTextureFromMemory(const Device& device, const CommandList& commandList, const uint8_t* ddsData,
+			bool CreateTextureFromMemory(const Device& device, CommandList* pCommandList, const uint8_t* ddsData,
 				size_t ddsDataSize, size_t maxsize, bool forceSRGB, std::shared_ptr<ResourceBase>& texture,
 				Resource& uploader, AlphaMode* alphaMode = nullptr, ResourceState state = ResourceState::COMMON);
 
-			bool CreateTextureFromFile(const Device& device, const CommandList& commandList, const wchar_t* fileName,
+			bool CreateTextureFromFile(const Device& device, CommandList* pCommandList, const wchar_t* fileName,
 				size_t maxsize, bool forceSRGB, std::shared_ptr<ResourceBase>& texture, Resource& uploader,
 				AlphaMode* alphaMode = nullptr, ResourceState state = ResourceState::COMMON);
 

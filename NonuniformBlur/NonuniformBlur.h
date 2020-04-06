@@ -40,13 +40,13 @@ public:
 private:
 	static const uint32_t FrameCount = 3;
 
-	XUSG::SwapChain			m_swapChain;
-	XUSG::CommandAllocator	m_commandAllocators[FrameCount];
-	XUSG::CommandQueue		m_commandQueue;
+	XUSG::SwapChain				m_swapChain;
+	XUSG::CommandAllocator		m_commandAllocators[FrameCount];
+	XUSG::CommandQueue			m_commandQueue;
 
-	XUSG::Device			m_device;
-	XUSG::RenderTarget		m_renderTargets[FrameCount];
-	XUSG::CommandList		m_commandList;
+	XUSG::Device				m_device;
+	XUSG::RenderTarget::uptr	m_renderTargets[FrameCount];
+	XUSG::CommandList::uptr		m_commandList;
 
 	// App resources.
 	std::unique_ptr<Filter> m_filter;
