@@ -1,9 +1,11 @@
 //--------------------------------------------------------------------------------------
-// By XU, Tianchen
+// Copyright (c) XU, Tianchen. All rights reserved.
 //--------------------------------------------------------------------------------------
 
 #include "Filter.h"
+#define _INDEPENDENT_DDS_LOADER_
 #include "Advanced/XUSGDDSLoader.h"
+#undef _INDEPENDENT_DDS_LOADER_
 
 #define SizeOfInUint32(obj)	DIV_UP(sizeof(obj), sizeof(uint32_t))
 

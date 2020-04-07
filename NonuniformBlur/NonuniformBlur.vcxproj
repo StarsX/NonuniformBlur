@@ -211,14 +211,6 @@ COPY /Y "$(ProjectDir)XUSG\x64\Release\*.dll" "$(ProjectDir)..\Bin\"</Command>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="XUSG\Advanced\XUSGDDSLoader.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stdafx.h</ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x64'">stdafx.h</ForcedIncludeFiles>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Content\Shaders\Resample.hlsli" />

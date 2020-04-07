@@ -4,8 +4,7 @@
 
 #pragma once
 
-#include "Core/XUSG.h"
-
+#ifdef _INDEPENDENT_DDS_LOADER_
 namespace XUSG
 {
 	namespace DDS
@@ -37,3 +36,6 @@ namespace XUSG
 		};
 	}
 }
+#else
+#include "XUSGAdvanced.h"
+#endif

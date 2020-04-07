@@ -86,9 +86,6 @@
     <ClCompile Include="Content\Filter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="XUSG\Advanced\XUSGDDSLoader.cpp">
-      <Filter>XUSG\Advanced</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Content\Shaders\MipGaussian.hlsli">
