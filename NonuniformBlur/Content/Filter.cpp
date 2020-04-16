@@ -283,9 +283,9 @@ bool Filter::createDescriptorTables()
 	for (auto i = 0ui8; i < m_numMips; ++i)
 	{
 		// Get UAV
-		const auto utilUavTable = Util::DescriptorTable::MakeUnique();
-		utilUavTable->SetDescriptors(0, 1, &m_filtered->GetUAV(i));
-		X_RETURN(m_uavTables[UAV_TABLE_TYPED][i], utilUavTable->GetCbvSrvUavTable(*m_descriptorTableCache), false);
+		const auto descriptorTable = Util::DescriptorTable::MakeUnique();
+		descriptorTable->SetDescriptors(0, 1, &m_filtered->GetUAV(i));
+		X_RETURN(m_uavTables[UAV_TABLE_TYPED][i], descriptorTable->GetCbvSrvUavTable(*m_descriptorTableCache), false);
 	}
 
 	if (!m_typedUAV)
@@ -294,9 +294,9 @@ bool Filter::createDescriptorTables()
 		for (auto i = 0ui8; i < m_numMips; ++i)
 		{
 			// Get UAV
-			const auto utilUavTable = Util::DescriptorTable::MakeUnique();
-			utilUavTable->SetDescriptors(0, 1, &m_filtered->GetPackedUAV(i));
-			X_RETURN(m_uavTables[UAV_TABLE_PACKED][i], utilUavTable->GetCbvSrvUavTable(*m_descriptorTableCache), false);
+			const auto descriptorTable = Util::DescriptorTable::MakeUnique();
+			descriptorTable->SetDescriptors(0, 1, &m_filtered->GetPackedUAV(i));
+			X_RETURN(m_uavTables[UAV_TABLE_PACKED][i], descriptorTable->GetCbvSrvUavTable(*m_descriptorTableCache), false);
 		}
 	}
 
@@ -304,16 +304,16 @@ bool Filter::createDescriptorTables()
 	m_srvTables.resize(m_numMips);
 	for (auto i = 0ui8; i < m_numMips; ++i)
 	{
-		const auto utilSrvTable = Util::DescriptorTable::MakeUnique();
-		utilSrvTable->SetDescriptors(0, 1, i ? &m_filtered->GetSRVLevel(i) : &m_source->GetSRV());
-		X_RETURN(m_srvTables[i], utilSrvTable->GetCbvSrvUavTable(*m_descriptorTableCache), false);
+		const auto descriptorTable = Util::DescriptorTable::MakeUnique();
+		descriptorTable->SetDescriptors(0, 1, i ? &m_filtered->GetSRVLevel(i) : &m_source->GetSRV());
+		X_RETURN(m_srvTables[i], descriptorTable->GetCbvSrvUavTable(*m_descriptorTableCache), false);
 	}
 
 	// Create the sampler table
-	const auto samplerTable = Util::DescriptorTable::MakeUnique();
+	const auto descriptorTable = Util::DescriptorTable::MakeUnique();
 	const auto sampler = LINEAR_CLAMP;
-	samplerTable->SetSamplers(0, 1, &sampler, *m_descriptorTableCache);
-	X_RETURN(m_samplerTable, samplerTable->GetSamplerTable(*m_descriptorTableCache), false);
+	descriptorTable->SetSamplers(0, 1, &sampler, *m_descriptorTableCache);
+	X_RETURN(m_samplerTable, descriptorTable->GetSamplerTable(*m_descriptorTableCache), false);
 
 	return true;
 }
