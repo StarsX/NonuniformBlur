@@ -14,7 +14,7 @@
 using namespace std;
 using namespace XUSG;
 
-NonUniformBlur::NonUniformBlur(uint32_t width, uint32_t height, std::wstring name) :
+NonUniformBlur::NonUniformBlur(uint32_t width, uint32_t height, wstring name) :
 	DXFramework(width, height, name),
 	m_typedUAV(false),
 	m_isAutoFocus(true),
@@ -116,13 +116,14 @@ void NonUniformBlur::LoadPipeline(vector<Resource>& uploaders)
 
 	// Create the command list.
 	m_commandList = CommandList::MakeUnique();
-	N_RETURN(m_device->GetCommandList(m_commandList->GetCommandList(), 0, CommandListType::DIRECT,
+	const auto pCommandList = m_commandList.get();
+	N_RETURN(m_device->GetCommandList(pCommandList, 0, CommandListType::DIRECT,
 		m_commandAllocators[0], nullptr), ThrowIfFailed(E_FAIL));
 
 	m_filter = make_unique<Filter>(m_device);
 	if (!m_filter) ThrowIfFailed(E_FAIL);
 
-	if (!m_filter->Init(m_commandList.get(), uploaders, Format::B8G8R8A8_UNORM, m_fileName.c_str(), m_typedUAV))
+	if (!m_filter->Init(pCommandList, uploaders, Format::B8G8R8A8_UNORM, m_fileName.c_str(), m_typedUAV))
 		ThrowIfFailed(E_FAIL);
 	
 	m_filter->GetImageSize(m_width, m_height);
@@ -176,8 +177,7 @@ void NonUniformBlur::LoadAssets()
 {
 	// Close the command list and execute it to begin the initial GPU setup.
 	ThrowIfFailed(m_commandList->Close());
-	BaseCommandList* const ppCommandLists[] = { m_commandList->GetCommandList().get() };
-	m_commandQueue->ExecuteCommandLists(static_cast<uint32_t>(size(ppCommandLists)), ppCommandLists);
+	m_commandQueue->SubmitCommandList(m_commandList.get());
 
 	// Create synchronization objects and wait until assets have been uploaded to the GPU.
 	{
@@ -228,8 +228,7 @@ void NonUniformBlur::OnRender()
 	PopulateCommandList();
 
 	// Execute the command list.
-	BaseCommandList* const ppCommandLists[] = { m_commandList->GetCommandList().get() };
-	m_commandQueue->ExecuteCommandLists(static_cast<uint32_t>(size(ppCommandLists)), ppCommandLists);
+	m_commandQueue->SubmitCommandList(m_commandList.get());
 
 	// Present the frame.
 	ThrowIfFailed(m_swapChain->Present(0, 0));
@@ -306,12 +305,13 @@ void NonUniformBlur::PopulateCommandList()
 	// However, when ExecuteCommandList() is called on a particular command 
 	// list, that command list can then be reset at any time and must be before 
 	// re-recording.
-	ThrowIfFailed(m_commandList->Reset(m_commandAllocators[m_frameIndex], nullptr));
+	const auto pCommandList = m_commandList.get();
+	ThrowIfFailed(pCommandList->Reset(m_commandAllocators[m_frameIndex], nullptr));
 
 	// Record commands.
 	const auto dstState = ResourceState::PIXEL_SHADER_RESOURCE |
 		ResourceState::NON_PIXEL_SHADER_RESOURCE | ResourceState::COPY_SOURCE;
-	m_filter->Process(m_commandList.get(), m_focus, m_sigma, m_pipelineType);	// V-cycle
+	m_filter->Process(pCommandList, m_focus, m_sigma, m_pipelineType);	// V-cycle
 
 	{
 		auto& result = m_filter->GetResult();
@@ -321,16 +321,16 @@ void NonUniformBlur::PopulateCommandList()
 		ResourceBarrier barriers[2];
 		auto numBarriers = m_renderTargets[m_frameIndex]->SetBarrier(barriers, ResourceState::COPY_DEST);
 		numBarriers = result.SetBarrier(barriers, dstState, numBarriers, 0);
-		m_commandList->Barrier(numBarriers, barriers);
+		pCommandList->Barrier(numBarriers, barriers);
 
-		m_commandList->CopyTextureRegion(dst, 0, 0, 0, src);
+		pCommandList->CopyTextureRegion(dst, 0, 0, 0, src);
 
 		// Indicate that the back buffer will now be used to present.
 		numBarriers = m_renderTargets[m_frameIndex]->SetBarrier(barriers, ResourceState::PRESENT);
-		m_commandList->Barrier(numBarriers, barriers);
+		pCommandList->Barrier(numBarriers, barriers);
 	}
 
-	ThrowIfFailed(m_commandList->Close());
+	ThrowIfFailed(pCommandList->Close());
 }
 
 // Wait for pending GPU work to complete.
