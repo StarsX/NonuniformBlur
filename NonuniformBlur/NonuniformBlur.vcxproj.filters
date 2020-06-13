@@ -102,25 +102,25 @@
     <FxCompile Include="Content\Shaders\CSResample.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Content\Shaders\PSUpSample.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
     <FxCompile Include="Content\Shaders\VSScreenQuad.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Content\Shaders\CSUpSample.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\Shaders\PSResample.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Content\Shaders\PSFinal.hlsl">
+    <FxCompile Include="Content\Shaders\CSUpSample_in_place.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Content\Shaders\CSFinal.hlsl">
+    <FxCompile Include="Content\Shaders\CSUpSample_typeless.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Content\Shaders\CSUpSampleU.hlsl">
+    <FxCompile Include="Content\Shaders\CSUpSample.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\PSUpSample_blend.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Content\Shaders\PSUpSample.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

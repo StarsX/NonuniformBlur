@@ -5,31 +5,27 @@
 #include "MipGaussian.hlsli"
 
 //--------------------------------------------------------------------------------------
-// Structure
-//--------------------------------------------------------------------------------------
-struct PSIn
-{
-	float4 Pos : SV_POSITION;
-	float2 Tex : TEXCOORD;
-};
-
-//--------------------------------------------------------------------------------------
 // Textures
 //--------------------------------------------------------------------------------------
-Texture2D<float3>	g_txSource;
-Texture2D<float3>	g_txCoarser;
+Texture2D			g_txCoarser;
+RWTexture2D<float4>	g_txDest;
 
 //--------------------------------------------------------------------------------------
-// Pixel shader
+// Compute shader
 //--------------------------------------------------------------------------------------
-float4 main(PSIn input) : SV_TARGET
+[numthreads(8, 8, 1)]
+void main(uint2 DTid : SV_DispatchThreadID)
 {
-	// Fetch the color of the resolved color at the coarser level
-	const float3 src = g_txSource[input.Pos.xy];
-	const float3 coarser = g_txCoarser.SampleLevel(g_smpLinear, input.Tex, 0.0);
+	float2 imageSize;
+	g_txDest.GetDimensions(imageSize.x, imageSize.y);
+
+	// Fetch the color of the current level and the resolved color at the coarser level
+	const float2 tex = (DTid + 0.5) / imageSize;
+	const float4 src = g_txDest[DTid];
+	const float4 coarser = g_txCoarser.SampleLevel(g_smpLinear, tex, 0.0);
 
 	// Gaussian-approximating Haar coefficients (weights of box filters)
-	const float weight = MipGaussianBlendWeight(input.Tex);
+	const float weight = MipGaussianBlendWeight(tex);
 
-	return float4(lerp(coarser, src, weight), 1.0);
+	g_txDest[DTid] = lerp(coarser, src, weight);
 }

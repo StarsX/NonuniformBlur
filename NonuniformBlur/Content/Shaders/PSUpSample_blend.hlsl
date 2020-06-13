@@ -5,28 +5,29 @@
 #include "MipGaussian.hlsli"
 
 //--------------------------------------------------------------------------------------
+// Structure
+//--------------------------------------------------------------------------------------
+struct PSIn
+{
+	float4 Pos : SV_POSITION;
+	float2 Tex : TEXCOORD;
+};
+
+//--------------------------------------------------------------------------------------
 // Textures
 //--------------------------------------------------------------------------------------
-Texture2D			g_txSource;
-Texture2D			g_txCoarser;
-RWTexture2D<float4>	g_txDest;
+Texture2D<float3>	g_txCoarser;
 
 //--------------------------------------------------------------------------------------
-// Compute shader
+// Pixel shader
 //--------------------------------------------------------------------------------------
-[numthreads(8, 8, 1)]
-void main(uint2 DTid : SV_DispatchThreadID)
+float4 main(PSIn input) : SV_TARGET
 {
-	float2 imageSize;
-	g_txDest.GetDimensions(imageSize.x, imageSize.y);
-
-	// Fetch the color of the current level and the resolved color at the coarser level
-	const float2 tex = (DTid + 0.5) / imageSize;
-	const float4 src = g_txSource[DTid];
-	const float4 coarser = g_txCoarser.SampleLevel(g_smpLinear, tex, 0.0);
+	// Fetch the color of the resolved color at the coarser level
+	const float3 coarser = g_txCoarser.SampleLevel(g_smpLinear, input.Tex, 0.0);
 
 	// Gaussian-approximating Haar coefficients (weights of box filters)
-	const float weight = MipGaussianBlendWeight(tex);
+	const float weight = MipGaussianBlendWeight(input.Tex);
 
-	g_txDest[DTid] = lerp(coarser, src, weight);
+	return float4(coarser, 1.0 - weight);
 }
