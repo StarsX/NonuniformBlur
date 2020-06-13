@@ -137,7 +137,7 @@ bool Filter::createPipelineLayouts()
 			*m_pipelineLayoutCache, PipelineLayoutFlag::NONE, L"ResamplingLayout"), false);
 	}
 
-	// Up sampling graphics
+	// Up sampling graphics with alpha blending
 	{
 		const auto utilPipelineLayout = Util::PipelineLayout::MakeUnique();
 		utilPipelineLayout->SetRange(0, DescriptorType::SAMPLER, 1, 0);
@@ -147,10 +147,10 @@ bool Filter::createPipelineLayouts()
 		utilPipelineLayout->SetShaderStage(1, Shader::PS);
 		utilPipelineLayout->SetShaderStage(2, Shader::PS);
 		X_RETURN(m_pipelineLayouts[UP_SAMPLE_BLEND], utilPipelineLayout->GetPipelineLayout(
-			*m_pipelineLayoutCache, PipelineLayoutFlag::NONE, L"UpSamplingGraphicsLayout"), false);
+			*m_pipelineLayoutCache, PipelineLayoutFlag::NONE, L"UpSamplingBlendLayout"), false);
 	}
 
-	// Up sampling compute
+	// Up sampling compute, in-place
 	{
 		const auto utilPipelineLayout = Util::PipelineLayout::MakeUnique();
 		utilPipelineLayout->SetRange(0, DescriptorType::SAMPLER, 1, 0);
@@ -159,10 +159,10 @@ bool Filter::createPipelineLayouts()
 		utilPipelineLayout->SetRange(2, DescriptorType::SRV, 1, 0);
 		utilPipelineLayout->SetConstants(3, SizeOfInUint32(GaussianConstants), 0);
 		X_RETURN(m_pipelineLayouts[UP_SAMPLE_INPLACE], utilPipelineLayout->GetPipelineLayout(
-			*m_pipelineLayoutCache, PipelineLayoutFlag::NONE, L"UpSamplingComputeLayout"), false);
+			*m_pipelineLayoutCache, PipelineLayoutFlag::NONE, L"UpSamplingInPlaceLayout"), false);
 	}
 
-	// Final pass graphics
+	// Up sampling graphics, for the final pass
 	{
 		const auto utilPipelineLayout = Util::PipelineLayout::MakeUnique();
 		utilPipelineLayout->SetRange(0, DescriptorType::SAMPLER, 1, 0);
@@ -172,10 +172,10 @@ bool Filter::createPipelineLayouts()
 		utilPipelineLayout->SetShaderStage(1, Shader::PS);
 		utilPipelineLayout->SetShaderStage(2, Shader::PS);
 		X_RETURN(m_pipelineLayouts[UP_SAMPLE_GRAPHICS], utilPipelineLayout->GetPipelineLayout(
-			*m_pipelineLayoutCache, PipelineLayoutFlag::NONE, L"FinalPassGraphicsLayout"), false);
+			*m_pipelineLayoutCache, PipelineLayoutFlag::NONE, L"UpSamplingGraphicsLayout"), false);
 	}
 
-	// Final pass compute
+	// Up sampling compute, for the final pass
 	{
 		const auto utilPipelineLayout = Util::PipelineLayout::MakeUnique();
 		utilPipelineLayout->SetRange(0, DescriptorType::SAMPLER, 1, 0);
@@ -184,7 +184,7 @@ bool Filter::createPipelineLayouts()
 		utilPipelineLayout->SetRange(2, DescriptorType::SRV, 2, 0);
 		utilPipelineLayout->SetConstants(3, SizeOfInUint32(GaussianConstants), 0);
 		X_RETURN(m_pipelineLayouts[UP_SAMPLE_COMPUTE], utilPipelineLayout->GetPipelineLayout(
-			*m_pipelineLayoutCache, PipelineLayoutFlag::NONE, L"FinalPassComputeLayout"), false);
+			*m_pipelineLayoutCache, PipelineLayoutFlag::NONE, L"UpSamplingComputeLayout"), false);
 	}
 
 	return true;
