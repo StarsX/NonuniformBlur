@@ -160,7 +160,7 @@ void NonUniformBlur::LoadPipeline(vector<Resource>& uploaders)
 		&swapChain
 	));
 
-	ThrowIfFailed(swapChain.As(&m_swapChain));
+	ThrowIfFailed(swapChain->QueryInterface(IID_PPV_ARGS(&m_swapChain)));
 	m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
 
 	// Create frame resources.
