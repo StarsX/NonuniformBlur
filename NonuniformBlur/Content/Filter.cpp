@@ -25,8 +25,7 @@ struct GaussianConstants
 
 Filter::Filter(const Device& device) :
 	m_device(device),
-	m_imageSize(1, 1),
-	m_numMips(11)
+	m_imageSize(1, 1)
 {
 	m_shaderPool = ShaderPool::MakeUnique();
 	m_graphicsPipelineCache = Graphics::PipelineCache::MakeUnique(device);
@@ -57,12 +56,12 @@ bool Filter::Init(CommandList* pCommandList,  vector<Resource>& uploaders,
 	// Create resources and pipelines
 	m_imageSize.x = static_cast<uint32_t>(m_source->GetResource()->GetDesc().Width);
 	m_imageSize.y = m_source->GetResource()->GetDesc().Height;
-	m_numMips = (max)(Log2((max)(m_imageSize.x, m_imageSize.y)), 0ui8) + 1;
+	const auto numMips = (max)(Log2((max)(m_imageSize.x, m_imageSize.y)), 0ui8) + 1u;
 
 	m_filtered = RenderTarget::MakeShared();
 	m_filtered->Create(m_device, m_imageSize.x, m_imageSize.y, rtFormat, 1, typedUAV ?
 		ResourceFlag::ALLOW_UNORDERED_ACCESS : ResourceFlag::NEED_PACKED_UAV,
-		m_numMips, 1, nullptr, false, L"FilteredImage");
+		numMips, 1, nullptr, false, L"FilteredImage");
 
 	N_RETURN(createPipelineLayouts(), false);
 	N_RETURN(createPipelines(rtFormat), false);
@@ -97,7 +96,7 @@ void Filter::Process(const CommandList* pCommandList, XMFLOAT2 focus, float sigm
 		break;
 	default:
 		numBarriers = generateMipsCompute(pCommandList, barriers);
-		m_filtered->SetBarrier(barriers, m_numMips - 1, ResourceState::UNORDERED_ACCESS, --numBarriers);
+		m_filtered->SetBarrier(barriers, m_filtered->GetNumMips() - 1, ResourceState::UNORDERED_ACCESS, --numBarriers);
 		upsampleGraphics(pCommandList, barriers, numBarriers, focus, sigma);
 	}
 }
@@ -278,9 +277,11 @@ bool Filter::createPipelines(Format rtFormat)
 
 bool Filter::createDescriptorTables()
 {
+	const auto numMips = m_filtered->GetNumMips();
+
 	// Get UAVs for resampling
-	m_uavTables[UAV_TABLE_TYPED].resize(m_numMips);
-	for (auto i = 0ui8; i < m_numMips; ++i)
+	m_uavTables[UAV_TABLE_TYPED].resize(numMips);
+	for (auto i = 0ui8; i < numMips; ++i)
 	{
 		// Get UAV
 		const auto descriptorTable = Util::DescriptorTable::MakeUnique();
@@ -290,8 +291,8 @@ bool Filter::createDescriptorTables()
 
 	if (!m_typedUAV)
 	{
-		m_uavTables[UAV_TABLE_PACKED].resize(m_numMips);
-		for (auto i = 0ui8; i < m_numMips; ++i)
+		m_uavTables[UAV_TABLE_PACKED].resize(numMips);
+		for (auto i = 0ui8; i < numMips; ++i)
 		{
 			// Get UAV
 			const auto descriptorTable = Util::DescriptorTable::MakeUnique();
@@ -301,8 +302,8 @@ bool Filter::createDescriptorTables()
 	}
 
 	// Get SRVs for resampling
-	m_srvTables.resize(m_numMips);
-	for (auto i = 0ui8; i < m_numMips; ++i)
+	m_srvTables.resize(numMips);
+	for (auto i = 0ui8; i < numMips; ++i)
 	{
 		const auto descriptorTable = Util::DescriptorTable::MakeUnique();
 		descriptorTable->SetDescriptors(0, 1, i ? &m_filtered->GetSRVLevel(i) : &m_source->GetSRV());
@@ -344,7 +345,7 @@ void Filter::upsampleGraphics(const CommandList* pCommandList, ResourceBarrier* 
 	GaussianConstants cb = { focus, sigma };
 	pCommandList->SetGraphics32BitConstants(2, SizeOfInUint32(cb.Imm), &cb);
 
-	const uint8_t numPasses = m_numMips - 1;
+	const uint8_t numPasses = m_filtered->GetNumMips() - 1;
 	for (auto i = 0ui8; i + 1 < numPasses; ++i)
 	{
 		const auto c = numPasses - i;
@@ -374,7 +375,7 @@ void Filter::upsampleCompute(const CommandList* pCommandList, ResourceBarrier* p
 	GaussianConstants cb = { focus, sigma };
 	pCommandList->SetCompute32BitConstants(3, SizeOfInUint32(cb.Imm), &cb);
 
-	const uint8_t numPasses = m_numMips - 1;
+	const uint8_t numPasses = m_filtered->GetNumMips() - 1;
 	for (auto i = 0ui8; i + 1 < numPasses; ++i)
 	{
 		const auto c = numPasses - i;

@@ -83,7 +83,6 @@ protected:
 	XUSG::RenderTarget::sptr			m_filtered;
 
 	DirectX::XMUINT2					m_imageSize;
-	uint8_t								m_numMips;
 
 	bool								m_typedUAV;
 };
