@@ -95,7 +95,7 @@ void NonUniformBlur::LoadPipeline(vector<Resource>& uploaders)
 		// TypedUAVLoadAdditionalFormats contains a Boolean that tells you whether the feature is supported or not
 		if (featureData.TypedUAVLoadAdditionalFormats)
 		{
-			// Can assume “all-or-nothing” subset is supported (e.g. R32G32B32A32_FLOAT)
+			// Can assume "all-or-nothing" subset is supported (e.g. R32G32B32A32_FLOAT)
 			// Cannot assume other formats are supported, so we check:
 			D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport = { DXGI_FORMAT_B8G8R8A8_UNORM, D3D12_FORMAT_SUPPORT1_NONE, D3D12_FORMAT_SUPPORT2_NONE };
 			hr = m_device->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &formatSupport, sizeof(formatSupport));
