@@ -66,6 +66,12 @@
     <ClInclude Include="XUSG\Advanced\XUSGDDSLoader.h">
       <Filter>XUSG\Advanced</Filter>
     </ClInclude>
+    <ClInclude Include="XUSG\Core\XUSG.h">
+      <Filter>XUSG\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="XUSG\Core\XUSG_DX12.h">
+      <Filter>XUSG\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Common\DXFramework.cpp">

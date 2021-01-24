@@ -173,6 +173,8 @@ COPY /Y "$(ProjectDir)XUSG\Bin\$(Platform)\$(Configuration)\*.dll" "$(ProjectDir
     <ClInclude Include="NonuniformBlur.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="XUSG\Advanced\XUSGDDSLoader.h" />
+    <ClInclude Include="XUSG\Core\XUSG.h" />
+    <ClInclude Include="XUSG\Core\XUSG_DX12.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Common\DXFramework.cpp">
