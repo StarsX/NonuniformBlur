@@ -247,10 +247,10 @@ void NonUniformBlur::OnKeyUp(uint8_t key)
 {
 	switch (key)
 	{
-	case 0x20:	// case VK_SPACE:
+	case VK_SPACE:
 		m_isPaused = !m_isPaused;
 		break;
-	case 0x70:	//case VK_F1:
+	case VK_F1:
 		m_showFPS = !m_showFPS;
 		break;
 	case 'P':
