@@ -129,8 +129,7 @@ bool Filter::createPipelineLayouts()
 	{
 		const auto utilPipelineLayout = Util::PipelineLayout::MakeUnique();
 		utilPipelineLayout->SetRange(0, DescriptorType::SAMPLER, 1, 0);
-		utilPipelineLayout->SetRange(1, DescriptorType::UAV, 1, 0, 0,
-			DescriptorFlag::DATA_STATIC_WHILE_SET_AT_EXECUTE);
+		utilPipelineLayout->SetRange(1, DescriptorType::UAV, 1, 0, 0, DescriptorFlag::DATA_STATIC_WHILE_SET_AT_EXECUTE);
 		utilPipelineLayout->SetRange(2, DescriptorType::SRV, 1, 0);
 		X_RETURN(m_pipelineLayouts[RESAMPLE_COMPUTE], utilPipelineLayout->GetPipelineLayout(
 			*m_pipelineLayoutCache, PipelineLayoutFlag::NONE, L"ResamplingLayout"), false);
@@ -153,8 +152,7 @@ bool Filter::createPipelineLayouts()
 	{
 		const auto utilPipelineLayout = Util::PipelineLayout::MakeUnique();
 		utilPipelineLayout->SetRange(0, DescriptorType::SAMPLER, 1, 0);
-		utilPipelineLayout->SetRange(1, DescriptorType::UAV, 1, 0, 0,
-			DescriptorFlag::DATA_STATIC_WHILE_SET_AT_EXECUTE);
+		utilPipelineLayout->SetRange(1, DescriptorType::UAV, 1, 0, 0, DescriptorFlag::DATA_STATIC_WHILE_SET_AT_EXECUTE);
 		utilPipelineLayout->SetRange(2, DescriptorType::SRV, 1, 0);
 		utilPipelineLayout->SetConstants(3, SizeOfInUint32(GaussianConstants), 0);
 		X_RETURN(m_pipelineLayouts[UP_SAMPLE_INPLACE], utilPipelineLayout->GetPipelineLayout(
@@ -178,8 +176,7 @@ bool Filter::createPipelineLayouts()
 	{
 		const auto utilPipelineLayout = Util::PipelineLayout::MakeUnique();
 		utilPipelineLayout->SetRange(0, DescriptorType::SAMPLER, 1, 0);
-		utilPipelineLayout->SetRange(1, DescriptorType::UAV, 1, 0, 0,
-			DescriptorFlag::DATA_STATIC_WHILE_SET_AT_EXECUTE);
+		utilPipelineLayout->SetRange(1, DescriptorType::UAV, 1, 0, 0, DescriptorFlag::DATA_STATIC_WHILE_SET_AT_EXECUTE);
 		utilPipelineLayout->SetRange(2, DescriptorType::SRV, 2, 0);
 		utilPipelineLayout->SetConstants(3, SizeOfInUint32(GaussianConstants), 0);
 		X_RETURN(m_pipelineLayouts[UP_SAMPLE_COMPUTE], utilPipelineLayout->GetPipelineLayout(
