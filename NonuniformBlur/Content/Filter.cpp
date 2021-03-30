@@ -56,7 +56,7 @@ bool Filter::Init(CommandList* pCommandList,  vector<Resource>& uploaders,
 	// Create resources and pipelines
 	m_imageSize.x = static_cast<uint32_t>(m_source->GetResource()->GetDesc().Width);
 	m_imageSize.y = m_source->GetResource()->GetDesc().Height;
-	const auto numMips = (max)(Log2((max)(m_imageSize.x, m_imageSize.y)), 0ui8) + 1u;
+	const uint8_t numMips = max<uint8_t>(Log2((max)(m_imageSize.x, m_imageSize.y)), 0) + 1;
 
 	m_filtered = RenderTarget::MakeShared();
 	m_filtered->Create(m_device, m_imageSize.x, m_imageSize.y, rtFormat, 1, typedUAV ?
@@ -278,7 +278,7 @@ bool Filter::createDescriptorTables()
 
 	// Get UAVs for resampling
 	m_uavTables[UAV_TABLE_TYPED].resize(numMips);
-	for (auto i = 0ui8; i < numMips; ++i)
+	for (uint8_t i = 0; i < numMips; ++i)
 	{
 		// Get UAV
 		const auto descriptorTable = Util::DescriptorTable::MakeUnique();
@@ -289,7 +289,7 @@ bool Filter::createDescriptorTables()
 	if (!m_typedUAV)
 	{
 		m_uavTables[UAV_TABLE_PACKED].resize(numMips);
-		for (auto i = 0ui8; i < numMips; ++i)
+		for (uint8_t i = 0; i < numMips; ++i)
 		{
 			// Get UAV
 			const auto descriptorTable = Util::DescriptorTable::MakeUnique();
@@ -300,7 +300,7 @@ bool Filter::createDescriptorTables()
 
 	// Get SRVs for resampling
 	m_srvTables.resize(numMips);
-	for (auto i = 0ui8; i < numMips; ++i)
+	for (uint8_t i = 0; i < numMips; ++i)
 	{
 		const auto descriptorTable = Util::DescriptorTable::MakeUnique();
 		descriptorTable->SetDescriptors(0, 1, i ? &m_filtered->GetSRVLevel(i) : &m_source->GetSRV());
@@ -343,7 +343,7 @@ void Filter::upsampleGraphics(const CommandList* pCommandList, ResourceBarrier* 
 	pCommandList->SetGraphics32BitConstants(2, SizeOfInUint32(cb.Imm), &cb);
 
 	const uint8_t numPasses = m_filtered->GetNumMips() - 1;
-	for (auto i = 0ui8; i + 1 < numPasses; ++i)
+	for (uint8_t i = 0; i + 1 < numPasses; ++i)
 	{
 		const auto c = numPasses - i;
 		const auto level = c - 1;
@@ -373,7 +373,7 @@ void Filter::upsampleCompute(const CommandList* pCommandList, ResourceBarrier* p
 	pCommandList->SetCompute32BitConstants(3, SizeOfInUint32(cb.Imm), &cb);
 
 	const uint8_t numPasses = m_filtered->GetNumMips() - 1;
-	for (auto i = 0ui8; i + 1 < numPasses; ++i)
+	for (uint8_t i = 0; i + 1 < numPasses; ++i)
 	{
 		const auto c = numPasses - i;
 		const auto level = c - 1;
