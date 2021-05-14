@@ -13,14 +13,10 @@ using namespace std;
 using namespace DirectX;
 using namespace XUSG;
 
-struct GaussianConstants
+struct CBGaussian
 {
-	struct Immutable
-	{
-		XMFLOAT2	Focus;
-		float		Sigma;
-	} Imm;
-	uint32_t Level;
+	XMFLOAT2	Focus;
+	float		Sigma;
 };
 
 Filter::Filter(const Device& device) :
@@ -63,6 +59,9 @@ bool Filter::Init(CommandList* pCommandList,  vector<Resource>& uploaders,
 		ResourceFlag::ALLOW_UNORDERED_ACCESS : ResourceFlag::NEED_PACKED_UAV,
 		numMips, 1, nullptr, false, L"FilteredImage");
 
+	m_cbPerFrame = ConstantBuffer::MakeUnique();
+	N_RETURN(m_cbPerFrame->Create(m_device, sizeof(CBGaussian[FrameCount]), FrameCount, nullptr, MemoryType::UPLOAD, L"CBPerFrame"), false);
+
 	N_RETURN(createPipelineLayouts(), false);
 	N_RETURN(createPipelines(rtFormat), false);
 	N_RETURN(createDescriptorTables(), false);
@@ -70,8 +69,17 @@ bool Filter::Init(CommandList* pCommandList,  vector<Resource>& uploaders,
 	return true;
 }
 
-void Filter::Process(const CommandList* pCommandList, XMFLOAT2 focus, float sigma,
-	PipelineType pipelineType)
+void Filter::UpdateFrame(DirectX::XMFLOAT2 focus, float sigma, uint8_t frameIndex)
+{
+	// Update per-frame CB
+	{
+		const auto pCbData = reinterpret_cast<CBGaussian*>(m_cbPerFrame->Map(frameIndex));
+		pCbData->Focus = focus;
+		pCbData->Sigma = sigma;
+	}
+}
+
+void Filter::Process(const CommandList* pCommandList, uint8_t frameIndex, PipelineType pipelineType)
 {
 	// Set Descriptor pools
 	const DescriptorPool descriptorPools[] =
@@ -88,16 +96,16 @@ void Filter::Process(const CommandList* pCommandList, XMFLOAT2 focus, float sigm
 	{
 	case GRAPHICS:
 		numBarriers = generateMipsGraphics(pCommandList, barriers);
-		upsampleGraphics(pCommandList, barriers, numBarriers, focus, sigma);
+		upsampleGraphics(pCommandList, barriers, numBarriers, frameIndex);
 		break;
 	case COMPUTE:
 		numBarriers = generateMipsCompute(pCommandList, barriers);
-		upsampleCompute(pCommandList, barriers, numBarriers, focus, sigma);
+		upsampleCompute(pCommandList, barriers, numBarriers, frameIndex);
 		break;
 	default:
 		numBarriers = generateMipsCompute(pCommandList, barriers);
 		m_filtered->SetBarrier(barriers, m_filtered->GetNumMips() - 1, ResourceState::UNORDERED_ACCESS, --numBarriers);
-		upsampleGraphics(pCommandList, barriers, numBarriers, focus, sigma);
+		upsampleGraphics(pCommandList, barriers, numBarriers, frameIndex);
 	}
 }
 
@@ -140,10 +148,10 @@ bool Filter::createPipelineLayouts()
 		const auto utilPipelineLayout = Util::PipelineLayout::MakeUnique();
 		utilPipelineLayout->SetRange(0, DescriptorType::SAMPLER, 1, 0);
 		utilPipelineLayout->SetRange(1, DescriptorType::SRV, 1, 0);
-		utilPipelineLayout->SetConstants(2, SizeOfInUint32(GaussianConstants), 0);
+		utilPipelineLayout->SetRootCBV(2, 0, 0, Shader::PS);
+		utilPipelineLayout->SetConstants(3, SizeOfInUint32(uint32_t), 1, 0, Shader::PS);
 		utilPipelineLayout->SetShaderStage(0, Shader::PS);
 		utilPipelineLayout->SetShaderStage(1, Shader::PS);
-		utilPipelineLayout->SetShaderStage(2, Shader::PS);
 		X_RETURN(m_pipelineLayouts[UP_SAMPLE_BLEND], utilPipelineLayout->GetPipelineLayout(
 			*m_pipelineLayoutCache, PipelineLayoutFlag::NONE, L"UpSamplingBlendLayout"), false);
 	}
@@ -154,7 +162,8 @@ bool Filter::createPipelineLayouts()
 		utilPipelineLayout->SetRange(0, DescriptorType::SAMPLER, 1, 0);
 		utilPipelineLayout->SetRange(1, DescriptorType::UAV, 1, 0, 0, DescriptorFlag::DATA_STATIC_WHILE_SET_AT_EXECUTE);
 		utilPipelineLayout->SetRange(2, DescriptorType::SRV, 1, 0);
-		utilPipelineLayout->SetConstants(3, SizeOfInUint32(GaussianConstants), 0);
+		utilPipelineLayout->SetRootCBV(3, 0);
+		utilPipelineLayout->SetConstants(4, SizeOfInUint32(uint32_t), 1);
 		X_RETURN(m_pipelineLayouts[UP_SAMPLE_INPLACE], utilPipelineLayout->GetPipelineLayout(
 			*m_pipelineLayoutCache, PipelineLayoutFlag::NONE, L"UpSamplingInPlaceLayout"), false);
 	}
@@ -164,10 +173,10 @@ bool Filter::createPipelineLayouts()
 		const auto utilPipelineLayout = Util::PipelineLayout::MakeUnique();
 		utilPipelineLayout->SetRange(0, DescriptorType::SAMPLER, 1, 0);
 		utilPipelineLayout->SetRange(1, DescriptorType::SRV, 2, 0);
-		utilPipelineLayout->SetConstants(2, SizeOfInUint32(GaussianConstants), 0);
+		utilPipelineLayout->SetRootCBV(2, 0, 0, Shader::PS);
+		utilPipelineLayout->SetConstants(3, SizeOfInUint32(uint32_t), 1, 0, Shader::PS);
 		utilPipelineLayout->SetShaderStage(0, Shader::PS);
 		utilPipelineLayout->SetShaderStage(1, Shader::PS);
-		utilPipelineLayout->SetShaderStage(2, Shader::PS);
 		X_RETURN(m_pipelineLayouts[UP_SAMPLE_GRAPHICS], utilPipelineLayout->GetPipelineLayout(
 			*m_pipelineLayoutCache, PipelineLayoutFlag::NONE, L"UpSamplingGraphicsLayout"), false);
 	}
@@ -178,7 +187,8 @@ bool Filter::createPipelineLayouts()
 		utilPipelineLayout->SetRange(0, DescriptorType::SAMPLER, 1, 0);
 		utilPipelineLayout->SetRange(1, DescriptorType::UAV, 1, 0, 0, DescriptorFlag::DATA_STATIC_WHILE_SET_AT_EXECUTE);
 		utilPipelineLayout->SetRange(2, DescriptorType::SRV, 2, 0);
-		utilPipelineLayout->SetConstants(3, SizeOfInUint32(GaussianConstants), 0);
+		utilPipelineLayout->SetRootCBV(3, 0);
+		utilPipelineLayout->SetConstants(4, SizeOfInUint32(uint32_t), 1);
 		X_RETURN(m_pipelineLayouts[UP_SAMPLE_COMPUTE], utilPipelineLayout->GetPipelineLayout(
 			*m_pipelineLayoutCache, PipelineLayoutFlag::NONE, L"UpSamplingComputeLayout"), false);
 	}
@@ -332,22 +342,21 @@ uint32_t Filter::generateMipsCompute(const CommandList* pCommandList, ResourceBa
 }
 
 void Filter::upsampleGraphics(const CommandList* pCommandList, ResourceBarrier* pBarriers,
-	uint32_t numBarriers, XMFLOAT2 focus, float sigma)
+	uint32_t numBarriers, uint8_t frameIndex)
 {
 	// Up sampling
+	const auto cbvOffset = m_cbPerFrame->GetCBVOffset(frameIndex);
 	pCommandList->SetGraphicsPipelineLayout(m_pipelineLayouts[UP_SAMPLE_BLEND]);
 	pCommandList->SetPipelineState(m_pipelines[UP_SAMPLE_BLEND]);
 	pCommandList->SetGraphicsDescriptorTable(0, m_samplerTable);
-
-	GaussianConstants cb = { focus, sigma };
-	pCommandList->SetGraphics32BitConstants(2, SizeOfInUint32(cb.Imm), &cb);
+	pCommandList->SetGraphicsRootConstantBufferView(2, m_cbPerFrame->GetResource(), cbvOffset);
 
 	const uint8_t numPasses = m_filtered->GetNumMips() - 1;
 	for (uint8_t i = 0; i + 1 < numPasses; ++i)
 	{
 		const auto c = numPasses - i;
 		const auto level = c - 1;
-		pCommandList->SetGraphics32BitConstant(2, level, SizeOfInUint32(cb.Imm));
+		pCommandList->SetGraphics32BitConstant(3, level);
 		numBarriers = m_filtered->Blit(pCommandList, pBarriers, level, c,
 			ResourceState::PIXEL_SHADER_RESOURCE, m_srvTables[c], 1, numBarriers);
 	}
@@ -356,28 +365,28 @@ void Filter::upsampleGraphics(const CommandList* pCommandList, ResourceBarrier* 
 	pCommandList->SetGraphicsPipelineLayout(m_pipelineLayouts[UP_SAMPLE_GRAPHICS]);
 	pCommandList->SetPipelineState(m_pipelines[UP_SAMPLE_GRAPHICS]);
 	pCommandList->SetGraphicsDescriptorTable(0, m_samplerTable);
-	pCommandList->SetGraphics32BitConstants(2, SizeOfInUint32(cb), &cb);
+	pCommandList->SetGraphicsRootConstantBufferView(2, m_cbPerFrame->GetResource(), cbvOffset);
+	pCommandList->SetGraphics32BitConstant(3, 0);
 	numBarriers = m_filtered->Blit(pCommandList, pBarriers, 0, 1,
 		ResourceState::PIXEL_SHADER_RESOURCE, m_srvTables[0], 1, numBarriers);
 }
 
 void Filter::upsampleCompute(const CommandList* pCommandList, ResourceBarrier* pBarriers,
-	uint32_t numBarriers, XMFLOAT2 focus, float sigma)
+	uint32_t numBarriers, uint8_t frameIndex)
 {
 	// Up sampling
+	const auto cbvOffset = m_cbPerFrame->GetCBVOffset(frameIndex);
 	pCommandList->SetComputePipelineLayout(m_pipelineLayouts[UP_SAMPLE_INPLACE]);
 	pCommandList->SetPipelineState(m_pipelines[UP_SAMPLE_INPLACE]);
 	pCommandList->SetComputeDescriptorTable(0, m_samplerTable);
-
-	GaussianConstants cb = { focus, sigma };
-	pCommandList->SetCompute32BitConstants(3, SizeOfInUint32(cb.Imm), &cb);
+	pCommandList->SetComputeRootConstantBufferView(3, m_cbPerFrame->GetResource(), cbvOffset);
 
 	const uint8_t numPasses = m_filtered->GetNumMips() - 1;
 	for (uint8_t i = 0; i + 1 < numPasses; ++i)
 	{
 		const auto c = numPasses - i;
 		const auto level = c - 1;
-		pCommandList->SetCompute32BitConstant(3, level, SizeOfInUint32(cb.Imm));
+		pCommandList->SetCompute32BitConstant(4, level);
 		numBarriers = m_filtered->AsTexture2D()->Blit(pCommandList, pBarriers,
 			8, 8, 1, level, c, ResourceState::NON_PIXEL_SHADER_RESOURCE,
 			m_uavTables[m_typedUAV ? UAV_TABLE_TYPED : UAV_TABLE_PACKED][level],
@@ -388,7 +397,8 @@ void Filter::upsampleCompute(const CommandList* pCommandList, ResourceBarrier* p
 	pCommandList->SetComputePipelineLayout(m_pipelineLayouts[UP_SAMPLE_COMPUTE]);
 	pCommandList->SetPipelineState(m_pipelines[UP_SAMPLE_COMPUTE]);
 	pCommandList->SetComputeDescriptorTable(0, m_samplerTable);
-	pCommandList->SetCompute32BitConstants(3, SizeOfInUint32(cb), &cb);
+	pCommandList->SetComputeRootConstantBufferView(3, m_cbPerFrame->GetResource(), cbvOffset);
+	pCommandList->SetCompute32BitConstant(4, 0);
 	numBarriers = m_filtered->AsTexture2D()->Blit(pCommandList, pBarriers,
 		8, 8, 1, 0, 1, ResourceState::NON_PIXEL_SHADER_RESOURCE,
 		m_uavTables[UAV_TABLE_TYPED][0], 1, numBarriers, m_srvTables[0], 2);

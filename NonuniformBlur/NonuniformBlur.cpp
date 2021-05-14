@@ -216,6 +216,7 @@ void NonUniformBlur::OnUpdate()
 	}
 
 	if (m_isAutoSigma) m_sigma = 32.0f * (-static_cast<float>(cos(t)) * 0.5f + 0.5f);
+	m_filter->UpdateFrame(m_focus, m_sigma, m_frameIndex);
 }
 
 // Render the scene.
@@ -308,7 +309,7 @@ void NonUniformBlur::PopulateCommandList()
 	// Record commands.
 	const auto dstState = ResourceState::PIXEL_SHADER_RESOURCE |
 		ResourceState::NON_PIXEL_SHADER_RESOURCE | ResourceState::COPY_SOURCE;
-	m_filter->Process(pCommandList, m_focus, m_sigma, m_pipelineType);	// V-cycle
+	m_filter->Process(pCommandList, m_frameIndex, m_pipelineType);	// V-cycle
 
 	{
 		auto& result = m_filter->GetResult();

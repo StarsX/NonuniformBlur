@@ -25,11 +25,13 @@ public:
 	bool Init(XUSG::CommandList* pCommandList, std::vector<XUSG::Resource>& uploaders,
 		XUSG::Format rtFormat, const wchar_t* fileName, bool typedUAV);
 
-	void Process(const XUSG::CommandList* pCommandList, DirectX::XMFLOAT2 focus,
-		float sigma, PipelineType pipelineType);
+	void UpdateFrame(DirectX::XMFLOAT2 focus, float sigma, uint8_t frameIndex);
+	void Process(const XUSG::CommandList* pCommandList, uint8_t frameIndex, PipelineType pipelineType);
 
 	XUSG::ResourceBase& GetResult();
 	void GetImageSize(uint32_t& width, uint32_t& height) const;
+
+	static const uint8_t FrameCount = 3;
 
 protected:
 	enum PipelineIndex : uint8_t
@@ -60,9 +62,9 @@ protected:
 	uint32_t generateMipsCompute(const XUSG::CommandList* pCommandList, XUSG::ResourceBarrier* pBarriers);
 
 	void upsampleGraphics(const XUSG::CommandList* pCommandList, XUSG::ResourceBarrier* pBarriers,
-		uint32_t numBarriers, DirectX::XMFLOAT2 focus, float sigma);
+		uint32_t numBarriers, uint8_t frameIndex);
 	void upsampleCompute(const XUSG::CommandList* pCommandList, XUSG::ResourceBarrier* pBarriers,
-		uint32_t numBarriers, DirectX::XMFLOAT2 focus, float sigma);
+		uint32_t numBarriers, uint8_t frameIndex);
 
 	XUSG::Device m_device;
 
@@ -81,6 +83,8 @@ protected:
 
 	std::shared_ptr<XUSG::ResourceBase>	m_source;
 	XUSG::RenderTarget::sptr			m_filtered;
+
+	XUSG::ConstantBuffer::uptr			m_cbPerFrame;
 
 	DirectX::XMUINT2					m_imageSize;
 

@@ -6,12 +6,16 @@
 #define PI 3.141592654
 
 //--------------------------------------------------------------------------------------
-// Constant buffer
+// Constant buffers
 //--------------------------------------------------------------------------------------
-cbuffer cb
+cbuffer cbPerFrame
 {
 	float2	g_focus;
 	float	g_sigma;
+};
+
+cbuffer cbPerPass
+{
 	uint	g_level;
 };
 
