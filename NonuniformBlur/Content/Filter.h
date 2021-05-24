@@ -19,16 +19,16 @@ public:
 		NUM_PIPE_TYPE
 	};
 
-	Filter(const XUSG::Device& device);
+	Filter(const XUSG::Device::sptr& device);
 	virtual ~Filter();
 
-	bool Init(XUSG::CommandList* pCommandList, std::vector<XUSG::Resource>& uploaders,
+	bool Init(XUSG::CommandList* pCommandList, std::vector<XUSG::Resource::uptr>& uploaders,
 		XUSG::Format rtFormat, const wchar_t* fileName, bool typedUAV);
 
 	void UpdateFrame(DirectX::XMFLOAT2 focus, float sigma, uint8_t frameIndex);
 	void Process(const XUSG::CommandList* pCommandList, uint8_t frameIndex, PipelineType pipelineType);
 
-	XUSG::ResourceBase& GetResult();
+	XUSG::Resource* GetResult();
 	void GetImageSize(uint32_t& width, uint32_t& height) const;
 
 	static const uint8_t FrameCount = 3;
@@ -66,7 +66,7 @@ protected:
 	void upsampleCompute(const XUSG::CommandList* pCommandList, XUSG::ResourceBarrier* pBarriers,
 		uint32_t numBarriers, uint8_t frameIndex);
 
-	XUSG::Device m_device;
+	XUSG::Device::sptr m_device;
 
 	XUSG::ShaderPool::uptr				m_shaderPool;
 	XUSG::Graphics::PipelineCache::uptr	m_graphicsPipelineCache;
@@ -81,8 +81,8 @@ protected:
 	std::vector<XUSG::DescriptorTable>	m_srvTables;
 	XUSG::DescriptorTable				m_samplerTable;
 
-	std::shared_ptr<XUSG::ResourceBase>	m_source;
-	XUSG::RenderTarget::sptr			m_filtered;
+	XUSG::ShaderResource::sptr			m_source;
+	XUSG::RenderTarget::uptr			m_filtered;
 
 	XUSG::ConstantBuffer::uptr			m_cbPerFrame;
 

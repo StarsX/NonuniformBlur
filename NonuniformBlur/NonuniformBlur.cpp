@@ -44,13 +44,13 @@ NonUniformBlur::~NonUniformBlur()
 
 void NonUniformBlur::OnInit()
 {
-	vector<Resource> uploaders(0);
+	vector<Resource::uptr> uploaders(0);
 	LoadPipeline(uploaders);
 	LoadAssets();
 }
 
 // Load the rendering pipeline dependencies.
-void NonUniformBlur::LoadPipeline(vector<Resource>& uploaders)
+void NonUniformBlur::LoadPipeline(vector<Resource::uptr>& uploaders)
 {
 	auto dxgiFactoryFlags = 0u;
 
@@ -80,7 +80,9 @@ void NonUniformBlur::LoadPipeline(vector<Resource>& uploaders)
 	{
 		dxgiAdapter = nullptr;
 		ThrowIfFailed(factory->EnumAdapters1(i, &dxgiAdapter));
-		hr = D3D12CreateDevice(dxgiAdapter.get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&m_device));
+
+		m_device = Device::MakeShared();
+		hr = m_device->Create(dxgiAdapter.get(), D3D_FEATURE_LEVEL_11_0);
 	}
 
 	dxgiAdapter->GetDesc1(&dxgiAdapterDesc);
@@ -88,8 +90,10 @@ void NonUniformBlur::LoadPipeline(vector<Resource>& uploaders)
 		m_title += dxgiAdapterDesc.VendorId == 0x1414 && dxgiAdapterDesc.DeviceId == 0x8c ? L" (WARP)" : L" (Software)";
 	ThrowIfFailed(hr);
 
+	com_ptr<ID3D12Device> device;
 	D3D12_FEATURE_DATA_D3D12_OPTIONS featureData = {};
-	hr = m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &featureData, sizeof(featureData));
+	ThrowIfFailed(D3D12CreateDevice(dxgiAdapter.get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device)));
+	hr = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &featureData, sizeof(featureData));
 	if (SUCCEEDED(hr))
 	{
 		// TypedUAVLoadAdditionalFormats contains a Boolean that tells you whether the feature is supported or not
@@ -98,27 +102,33 @@ void NonUniformBlur::LoadPipeline(vector<Resource>& uploaders)
 			// Can assume "all-or-nothing" subset is supported (e.g. R32G32B32A32_FLOAT)
 			// Cannot assume other formats are supported, so we check:
 			D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport = { DXGI_FORMAT_B8G8R8A8_UNORM, D3D12_FORMAT_SUPPORT1_NONE, D3D12_FORMAT_SUPPORT2_NONE };
-			hr = m_device->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &formatSupport, sizeof(formatSupport));
+			hr = device->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &formatSupport, sizeof(formatSupport));
 			if (SUCCEEDED(hr) && (formatSupport.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD))
 				m_typedUAV = true;
 		}
 	}
 
 	// Create the command queue.
-	N_RETURN(m_device->GetCommandQueue(m_commandQueue, CommandListType::DIRECT, CommandQueueFlag::NONE), ThrowIfFailed(E_FAIL));
+	m_commandQueue = CommandQueue::MakeUnique();
+	N_RETURN(m_commandQueue->Create(m_device.get(), CommandListType::DIRECT, CommandQueueFlag::NONE,
+		0, 0, L"CommandQueue"), ThrowIfFailed(E_FAIL));
 
 	// This sample does not support fullscreen transitions.
 	ThrowIfFailed(factory->MakeWindowAssociation(Win32Application::GetHwnd(), DXGI_MWA_NO_ALT_ENTER));
 
 	// Create a command allocator for each frame.
 	for (uint8_t n = 0; n < FrameCount; ++n)
-		N_RETURN(m_device->GetCommandAllocator(m_commandAllocators[n], CommandListType::DIRECT), ThrowIfFailed(E_FAIL));
+	{
+		m_commandAllocators[n] = CommandAllocator::MakeUnique();
+		N_RETURN(m_commandAllocators[n]->Create(m_device.get(), CommandListType::DIRECT,
+			(L"CommandAllocator" + to_wstring(n)).c_str()), ThrowIfFailed(E_FAIL));
+	}
 
 	// Create the command list.
 	m_commandList = CommandList::MakeUnique();
 	const auto pCommandList = m_commandList.get();
-	N_RETURN(m_device->GetCommandList(pCommandList, 0, CommandListType::DIRECT,
-		m_commandAllocators[0], nullptr), ThrowIfFailed(E_FAIL));
+	N_RETURN(pCommandList->Create(m_device.get(), 0, CommandListType::DIRECT,
+		m_commandAllocators[m_frameIndex].get(), nullptr), ThrowIfFailed(E_FAIL));
 
 	m_filter = make_unique<Filter>(m_device);
 	if (!m_filter) ThrowIfFailed(E_FAIL);
@@ -141,26 +151,10 @@ void NonUniformBlur::LoadPipeline(vector<Resource>& uploaders)
 	}
 
 	// Describe and create the swap chain.
-	DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
-	swapChainDesc.BufferCount = FrameCount;
-	swapChainDesc.Width = m_width;
-	swapChainDesc.Height = m_height;
-	swapChainDesc.Format = GetDXGIFormat(Format::B8G8R8A8_UNORM);
-	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-	swapChainDesc.SampleDesc.Count = 1;
+	m_swapChain = SwapChain::MakeUnique();
+	N_RETURN(m_swapChain->Create(factory.Get(), Win32Application::GetHwnd(), m_commandQueue.get(),
+		FrameCount, m_width, m_height, Format::B8G8R8A8_UNORM), ThrowIfFailed(E_FAIL));
 
-	com_ptr<IDXGISwapChain1> swapChain;
-	ThrowIfFailed(factory->CreateSwapChainForHwnd(
-		m_commandQueue.get(),		// Swap chain needs the queue so that it can force a flush on it.
-		Win32Application::GetHwnd(),
-		&swapChainDesc,
-		nullptr,
-		nullptr,
-		&swapChain
-	));
-
-	ThrowIfFailed(swapChain->QueryInterface(IID_PPV_ARGS(&m_swapChain)));
 	m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
 
 	// Create frame resources.
@@ -168,7 +162,7 @@ void NonUniformBlur::LoadPipeline(vector<Resource>& uploaders)
 	for (uint8_t n = 0; n < FrameCount; ++n)
 	{
 		m_renderTargets[n] = RenderTarget::MakeUnique();
-		N_RETURN(m_renderTargets[n]->CreateFromSwapChain(m_device, m_swapChain, n), ThrowIfFailed(E_FAIL));
+		N_RETURN(m_renderTargets[n]->CreateFromSwapChain(m_device.get(), m_swapChain.get(), n), ThrowIfFailed(E_FAIL));
 	}
 }
 
@@ -181,7 +175,11 @@ void NonUniformBlur::LoadAssets()
 
 	// Create synchronization objects and wait until assets have been uploaded to the GPU.
 	{
-		if (!m_fence) N_RETURN(m_device->GetFence(m_fence, m_fenceValues[m_frameIndex]++, FenceFlag::NONE), ThrowIfFailed(E_FAIL));
+		if (!m_fence)
+		{
+			m_fence = Fence::MakeUnique();
+			N_RETURN(m_fence->Create(m_device.get(), m_fenceValues[m_frameIndex]++, FenceFlag::NONE, L"Fence"), ThrowIfFailed(E_FAIL));
+		}
 
 		// Create an event handle to use for frame synchronization.
 		m_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
@@ -254,6 +252,9 @@ void NonUniformBlur::OnKeyUp(uint8_t key)
 	case VK_F1:
 		m_showFPS = !m_showFPS;
 		break;
+	case VK_ESCAPE:
+		PostQuitMessage(0);
+		break;
 	case 'P':
 		m_pipelineType = static_cast<Filter::PipelineType>((m_pipelineType + 1) % Filter::NUM_PIPE_TYPE);
 		break;
@@ -304,7 +305,7 @@ void NonUniformBlur::PopulateCommandList()
 	// list, that command list can then be reset at any time and must be before 
 	// re-recording.
 	const auto pCommandList = m_commandList.get();
-	ThrowIfFailed(pCommandList->Reset(m_commandAllocators[m_frameIndex], nullptr));
+	ThrowIfFailed(pCommandList->Reset(m_commandAllocators[m_frameIndex].get(), nullptr));
 
 	// Record commands.
 	const auto dstState = ResourceState::PIXEL_SHADER_RESOURCE |
@@ -312,13 +313,13 @@ void NonUniformBlur::PopulateCommandList()
 	m_filter->Process(pCommandList, m_frameIndex, m_pipelineType);	// V-cycle
 
 	{
-		auto& result = m_filter->GetResult();
-		const TextureCopyLocation dst(m_renderTargets[m_frameIndex]->GetResource(), 0);
-		const TextureCopyLocation src(result.GetResource(), 0);
+		const auto pResult = m_filter->GetResult();
+		const TextureCopyLocation dst(m_renderTargets[m_frameIndex].get(), 0);
+		const TextureCopyLocation src(pResult, 0);
 
 		ResourceBarrier barriers[2];
 		auto numBarriers = m_renderTargets[m_frameIndex]->SetBarrier(barriers, ResourceState::COPY_DEST);
-		numBarriers = result.SetBarrier(barriers, dstState, numBarriers, 0);
+		numBarriers = pResult->SetBarrier(barriers, dstState, numBarriers, 0);
 		pCommandList->Barrier(numBarriers, barriers);
 
 		pCommandList->CopyTextureRegion(dst, 0, 0, 0, src);
