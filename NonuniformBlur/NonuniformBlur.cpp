@@ -170,8 +170,8 @@ void NonUniformBlur::LoadPipeline(vector<Resource::uptr>& uploaders)
 void NonUniformBlur::LoadAssets()
 {
 	// Close the command list and execute it to begin the initial GPU setup.
-	ThrowIfFailed(m_commandList->Close());
-	m_commandQueue->SubmitCommandList(m_commandList.get());
+	N_RETURN(m_commandList->Close(), ThrowIfFailed(E_FAIL));
+	m_commandQueue->ExecuteCommandList(m_commandList.get());
 
 	// Create synchronization objects and wait until assets have been uploaded to the GPU.
 	{
@@ -224,7 +224,7 @@ void NonUniformBlur::OnRender()
 	PopulateCommandList();
 
 	// Execute the command list.
-	m_commandQueue->SubmitCommandList(m_commandList.get());
+	m_commandQueue->ExecuteCommandList(m_commandList.get());
 
 	// Present the frame.
 	ThrowIfFailed(m_swapChain->Present(0, 0));
@@ -329,7 +329,7 @@ void NonUniformBlur::PopulateCommandList()
 		pCommandList->Barrier(numBarriers, barriers);
 	}
 
-	ThrowIfFailed(pCommandList->Close());
+	N_RETURN(pCommandList->Close(), ThrowIfFailed(E_FAIL));
 }
 
 // Wait for pending GPU work to complete.
