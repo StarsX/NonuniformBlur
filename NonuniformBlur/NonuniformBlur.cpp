@@ -299,13 +299,14 @@ void NonUniformBlur::PopulateCommandList()
 	// Command list allocators can only be reset when the associated 
 	// command lists have finished execution on the GPU; apps should use 
 	// fences to determine GPU execution progress.
-	ThrowIfFailed(m_commandAllocators[m_frameIndex]->Reset());
+	const auto pCommandAllocator = m_commandAllocators[m_frameIndex].get();
+	N_RETURN(pCommandAllocator->Reset(), ThrowIfFailed(E_FAIL));
 
 	// However, when ExecuteCommandList() is called on a particular command 
 	// list, that command list can then be reset at any time and must be before 
 	// re-recording.
 	const auto pCommandList = m_commandList.get();
-	ThrowIfFailed(pCommandList->Reset(m_commandAllocators[m_frameIndex].get(), nullptr));
+	N_RETURN(pCommandList->Reset(pCommandAllocator, nullptr), ThrowIfFailed(E_FAIL));
 
 	// Record commands.
 	const auto dstState = ResourceState::PIXEL_SHADER_RESOURCE |
