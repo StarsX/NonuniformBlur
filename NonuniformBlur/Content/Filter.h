@@ -28,7 +28,7 @@ public:
 	void UpdateFrame(DirectX::XMFLOAT2 focus, float sigma, uint8_t frameIndex);
 	void Process(const XUSG::CommandList* pCommandList, uint8_t frameIndex, PipelineType pipelineType);
 
-	XUSG::Resource* GetResult();
+	XUSG::Resource* GetResult() const;
 	void GetImageSize(uint32_t& width, uint32_t& height) const;
 
 	static const uint8_t FrameCount = 3;

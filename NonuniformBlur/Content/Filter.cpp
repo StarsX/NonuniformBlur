@@ -110,7 +110,7 @@ void Filter::Process(const CommandList* pCommandList, uint8_t frameIndex, Pipeli
 	}
 }
 
-Resource* Filter::GetResult()
+Resource* Filter::GetResult() const
 {
 	return m_filtered.get();
 }
