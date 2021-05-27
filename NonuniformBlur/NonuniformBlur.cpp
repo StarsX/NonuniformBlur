@@ -227,7 +227,7 @@ void NonUniformBlur::OnRender()
 	m_commandQueue->ExecuteCommandList(m_commandList.get());
 
 	// Present the frame.
-	ThrowIfFailed(m_swapChain->Present(0, 0));
+	N_RETURN(m_swapChain->Present(0, 0), ThrowIfFailed(E_FAIL));
 
 	MoveToNextFrame();
 }
@@ -337,10 +337,10 @@ void NonUniformBlur::PopulateCommandList()
 void NonUniformBlur::WaitForGpu()
 {
 	// Schedule a Signal command in the queue.
-	ThrowIfFailed(m_commandQueue->Signal(m_fence.get(), m_fenceValues[m_frameIndex]));
+	N_RETURN(m_commandQueue->Signal(m_fence.get(), m_fenceValues[m_frameIndex]), ThrowIfFailed(E_FAIL));
 
 	// Wait until the fence has been processed.
-	ThrowIfFailed(m_fence->SetEventOnCompletion(m_fenceValues[m_frameIndex], m_fenceEvent));
+	N_RETURN(m_fence->SetEventOnCompletion(m_fenceValues[m_frameIndex], m_fenceEvent), ThrowIfFailed(E_FAIL));
 	WaitForSingleObjectEx(m_fenceEvent, INFINITE, FALSE);
 
 	// Increment the fence value for the current frame.
