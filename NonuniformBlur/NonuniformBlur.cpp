@@ -90,10 +90,9 @@ void NonUniformBlur::LoadPipeline(vector<Resource::uptr>& uploaders)
 		m_title += dxgiAdapterDesc.VendorId == 0x1414 && dxgiAdapterDesc.DeviceId == 0x8c ? L" (WARP)" : L" (Software)";
 	ThrowIfFailed(hr);
 
-	com_ptr<ID3D12Device> device;
 	D3D12_FEATURE_DATA_D3D12_OPTIONS featureData = {};
-	ThrowIfFailed(D3D12CreateDevice(dxgiAdapter.get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device)));
-	hr = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &featureData, sizeof(featureData));
+	const auto pDevice = static_cast<ID3D12Device*>(m_device->GetHandle());
+	hr = pDevice->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &featureData, sizeof(featureData));
 	if (SUCCEEDED(hr))
 	{
 		// TypedUAVLoadAdditionalFormats contains a Boolean that tells you whether the feature is supported or not
@@ -102,7 +101,7 @@ void NonUniformBlur::LoadPipeline(vector<Resource::uptr>& uploaders)
 			// Can assume "all-or-nothing" subset is supported (e.g. R32G32B32A32_FLOAT)
 			// Cannot assume other formats are supported, so we check:
 			D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport = { DXGI_FORMAT_B8G8R8A8_UNORM, D3D12_FORMAT_SUPPORT1_NONE, D3D12_FORMAT_SUPPORT2_NONE };
-			hr = device->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &formatSupport, sizeof(formatSupport));
+			hr = pDevice->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &formatSupport, sizeof(formatSupport));
 			if (SUCCEEDED(hr) && (formatSupport.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD))
 				m_typedUAV = true;
 		}
