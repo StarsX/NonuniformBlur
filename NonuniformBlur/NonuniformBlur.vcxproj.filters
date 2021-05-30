@@ -69,9 +69,6 @@
     <ClInclude Include="XUSG\Core\XUSG.h">
       <Filter>XUSG\Core</Filter>
     </ClInclude>
-    <ClInclude Include="XUSG\Core\XUSG_DX12.h">
-      <Filter>XUSG\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Common\d3d12.h">
       <Filter>Common\Header Files</Filter>
     </ClInclude>
