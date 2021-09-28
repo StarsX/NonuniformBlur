@@ -57,11 +57,11 @@ bool Filter::Init(CommandList* pCommandList,  vector<Resource::uptr>& uploaders,
 	m_filtered = RenderTarget::MakeUnique();
 	m_filtered->Create(m_device.get(), m_imageSize.x, m_imageSize.y, rtFormat, 1, typedUAV ?
 		ResourceFlag::ALLOW_UNORDERED_ACCESS : ResourceFlag::NEED_PACKED_UAV,
-		numMips, 1, nullptr, false, L"FilteredImage");
+		numMips, 1, nullptr, false, MemoryFlag::NONE, L"FilteredImage");
 
 	m_cbPerFrame = ConstantBuffer::MakeUnique();
 	N_RETURN(m_cbPerFrame->Create(m_device.get(), sizeof(CBGaussian[FrameCount]),
-		FrameCount, nullptr, MemoryType::UPLOAD, L"CBPerFrame"), false);
+		FrameCount, nullptr, MemoryType::UPLOAD, MemoryFlag::NONE, L"CBPerFrame"), false);
 
 	N_RETURN(createPipelineLayouts(), false);
 	N_RETURN(createPipelines(rtFormat), false);
