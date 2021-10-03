@@ -7,8 +7,8 @@
 //--------------------------------------------------------------------------------------
 struct VSOut
 {
-	float4 Pos : SV_POSITION;
-	float2 Tex : TEXCOORD;
+	float4 Pos	: SV_POSITION;
+	float2 UV	: TEXCOORD;
 };
 
 //--------------------------------------------------------------------------------------
@@ -18,8 +18,8 @@ VSOut main(uint vid : SV_VertexID)
 {
 	VSOut output;
 
-	output.Tex = float2((vid << 1) & 2, vid & 2);
-	output.Pos = float4(output.Tex * float2(2.0, -2.0) + float2(-1.0, 1.0), 1.0.xx);
+	output.UV = float2((vid << 1) & 2, vid & 2);
+	output.Pos = float4(output.UV * float2(2.0, -2.0) + float2(-1.0, 1.0), 1.0.xx);
 
 	return output;
 }

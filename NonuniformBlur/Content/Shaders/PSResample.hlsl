@@ -9,8 +9,8 @@
 //--------------------------------------------------------------------------------------
 struct PSIn
 {
-	float4 Pos : SV_POSITION;
-	float2 Tex : TEXCOORD;
+	float4 Pos	: SV_POSITION;
+	float2 UV	: TEXCOORD;
 };
 
 //--------------------------------------------------------------------------------------
@@ -18,5 +18,5 @@ struct PSIn
 //--------------------------------------------------------------------------------------
 float4 main(PSIn input) : SV_TARGET
 {
-	return Resample(input.Tex);
+	return Resample(input.UV);
 }

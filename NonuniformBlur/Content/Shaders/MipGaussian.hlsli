@@ -29,7 +29,7 @@ SamplerState	g_smpLinear;
 //--------------------------------------------------------------------------------------
 float GaussianExp(float sigma2, uint level)
 {
-	return -(1 << (level << 1)) / (2.0 * PI * sigma2);
+	return -(1 << (level << 1)) / (4.0 * PI * sigma2);
 };
 
 //--------------------------------------------------------------------------------------
@@ -53,20 +53,20 @@ float MipGaussianWeight(float sigma2, uint level)
 //--------------------------------------------------------------------------------------
 // Calculate blending weight
 //--------------------------------------------------------------------------------------
-float MipGaussianBlendWeight(float2 tex)
+float MipGaussianBlendWeight(float2 uv)
 {
 	// Compute deviation
 	float sigma = g_sigma;
 	if (asuint(g_focus.x) != 0xffffffff)
 	{
-		const float2 r = (2.0 * tex - 1.0) - g_focus;
+		const float2 r = (2.0 * uv - 1.0) - g_focus;
 		sigma *= dot(r, r);
 	}
 	const float sigma2 = sigma * sigma;
 
 	// Gaussian-approximating Haar coefficients (weights of box filters)
 #ifdef _PREINTEGRATED_
-	const float c = 2.0 * PI * sigma2;
+	const float c = 4.0 * PI * sigma2;
 	//const float numerator = pow(16.0, g_level) * log(4.0);
 	//const float denorminator = c * (pow(4.0, g_level) + c);
 	//const float numerator = pow(2.0, g_level * 4.0) * log(4.0);

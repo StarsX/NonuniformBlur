@@ -1,1 +1,1 @@
-start NonuniformBlur.exe -image Me.dds
+start NonuniformBlur.exe -image Assets/Me.dds

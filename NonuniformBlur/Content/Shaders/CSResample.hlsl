@@ -18,7 +18,7 @@ void main(uint2 DTid : SV_DispatchThreadID)
 	float2 imageSize;
 	g_txDest.GetDimensions(imageSize.x, imageSize.y);
 
-	const float2 tex = (DTid + 0.5) / imageSize;
+	const float2 uv = (DTid + 0.5) / imageSize;
 
-	g_txDest[DTid] = Resample(tex);
+	g_txDest[DTid] = Resample(uv);
 }
