@@ -337,7 +337,7 @@ uint32_t Filter::generateMipsGraphics(const CommandList* pCommandList, ResourceB
 uint32_t Filter::generateMipsCompute(const CommandList* pCommandList, ResourceBarrier* pBarriers)
 {
 	// Generate mipmaps
-	return m_filtered->AsTexture2D()->GenerateMips(pCommandList, pBarriers, 8, 8, 1,
+	return m_filtered->AsTexture()->GenerateMips(pCommandList, pBarriers, 8, 8, 1,
 		ResourceState::NON_PIXEL_SHADER_RESOURCE, m_pipelineLayouts[RESAMPLE_COMPUTE],
 		m_pipelines[RESAMPLE_COMPUTE], &m_uavTables[UAV_TABLE_TYPED][1], 1, m_samplerTable, 0, 0, &m_srvTables[0], 2);
 }
@@ -388,7 +388,7 @@ void Filter::upsampleCompute(const CommandList* pCommandList, ResourceBarrier* p
 		const auto c = numPasses - i;
 		const auto level = c - 1;
 		pCommandList->SetCompute32BitConstant(4, level);
-		numBarriers = m_filtered->AsTexture2D()->Blit(pCommandList, pBarriers,
+		numBarriers = m_filtered->AsTexture()->Blit(pCommandList, pBarriers,
 			8, 8, 1, level, c, ResourceState::NON_PIXEL_SHADER_RESOURCE,
 			m_uavTables[m_typedUAV ? UAV_TABLE_TYPED : UAV_TABLE_PACKED][level],
 			1, numBarriers, m_srvTables[c], 2);
@@ -400,7 +400,7 @@ void Filter::upsampleCompute(const CommandList* pCommandList, ResourceBarrier* p
 	pCommandList->SetComputeDescriptorTable(0, m_samplerTable);
 	pCommandList->SetComputeRootConstantBufferView(3, m_cbPerFrame.get(), cbvOffset);
 	pCommandList->SetCompute32BitConstant(4, 0);
-	numBarriers = m_filtered->AsTexture2D()->Blit(pCommandList, pBarriers,
+	numBarriers = m_filtered->AsTexture()->Blit(pCommandList, pBarriers,
 		8, 8, 1, 0, 1, ResourceState::NON_PIXEL_SHADER_RESOURCE,
 		m_uavTables[UAV_TABLE_TYPED][0], 1, numBarriers, m_srvTables[0], 2);
 }

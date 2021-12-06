@@ -81,7 +81,7 @@ protected:
 	std::vector<XUSG::DescriptorTable>	m_srvTables;
 	XUSG::DescriptorTable				m_samplerTable;
 
-	XUSG::ShaderResource::sptr			m_source;
+	XUSG::Texture::sptr					m_source;
 	XUSG::RenderTarget::uptr			m_filtered;
 
 	XUSG::ConstantBuffer::uptr			m_cbPerFrame;
