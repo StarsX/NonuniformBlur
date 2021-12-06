@@ -80,7 +80,7 @@ void Filter::UpdateFrame(DirectX::XMFLOAT2 focus, float sigma, uint8_t frameInde
 	}
 }
 
-void Filter::Process(const CommandList* pCommandList, uint8_t frameIndex, PipelineType pipelineType)
+void Filter::Process(CommandList* pCommandList, uint8_t frameIndex, PipelineType pipelineType)
 {
 	// Set Descriptor pools
 	const DescriptorPool descriptorPools[] =
@@ -327,14 +327,14 @@ bool Filter::createDescriptorTables()
 	return true;
 }
 
-uint32_t Filter::generateMipsGraphics(const CommandList* pCommandList, ResourceBarrier* pBarriers)
+uint32_t Filter::generateMipsGraphics(CommandList* pCommandList, ResourceBarrier* pBarriers)
 {
 	// Generate mipmaps
 	return m_filtered->GenerateMips(pCommandList, pBarriers, ResourceState::PIXEL_SHADER_RESOURCE,
 		m_pipelineLayouts[RESAMPLE_GRAPHICS], m_pipelines[RESAMPLE_GRAPHICS], m_srvTables.data(), 1, m_samplerTable, 0);
 }
 
-uint32_t Filter::generateMipsCompute(const CommandList* pCommandList, ResourceBarrier* pBarriers)
+uint32_t Filter::generateMipsCompute(CommandList* pCommandList, ResourceBarrier* pBarriers)
 {
 	// Generate mipmaps
 	return m_filtered->AsTexture()->GenerateMips(pCommandList, pBarriers, 8, 8, 1,
@@ -342,7 +342,7 @@ uint32_t Filter::generateMipsCompute(const CommandList* pCommandList, ResourceBa
 		m_pipelines[RESAMPLE_COMPUTE], &m_uavTables[UAV_TABLE_TYPED][1], 1, m_samplerTable, 0, 0, &m_srvTables[0], 2);
 }
 
-void Filter::upsampleGraphics(const CommandList* pCommandList, ResourceBarrier* pBarriers,
+void Filter::upsampleGraphics(CommandList* pCommandList, ResourceBarrier* pBarriers,
 	uint32_t numBarriers, uint8_t frameIndex)
 {
 	// Up sampling
@@ -372,7 +372,7 @@ void Filter::upsampleGraphics(const CommandList* pCommandList, ResourceBarrier* 
 		ResourceState::PIXEL_SHADER_RESOURCE, m_srvTables[0], 1, numBarriers);
 }
 
-void Filter::upsampleCompute(const CommandList* pCommandList, ResourceBarrier* pBarriers,
+void Filter::upsampleCompute(CommandList* pCommandList, ResourceBarrier* pBarriers,
 	uint32_t numBarriers, uint8_t frameIndex)
 {
 	// Up sampling

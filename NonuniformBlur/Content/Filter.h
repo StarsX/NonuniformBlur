@@ -26,7 +26,7 @@ public:
 		XUSG::Format rtFormat, const wchar_t* fileName, bool typedUAV);
 
 	void UpdateFrame(DirectX::XMFLOAT2 focus, float sigma, uint8_t frameIndex);
-	void Process(const XUSG::CommandList* pCommandList, uint8_t frameIndex, PipelineType pipelineType);
+	void Process(XUSG::CommandList* pCommandList, uint8_t frameIndex, PipelineType pipelineType);
 
 	XUSG::Resource* GetResult() const;
 	void GetImageSize(uint32_t& width, uint32_t& height) const;
@@ -58,12 +58,12 @@ protected:
 	bool createPipelines(XUSG::Format rtFormat);
 	bool createDescriptorTables();
 
-	uint32_t generateMipsGraphics(const XUSG::CommandList* pCommandList, XUSG::ResourceBarrier* pBarriers);
-	uint32_t generateMipsCompute(const XUSG::CommandList* pCommandList, XUSG::ResourceBarrier* pBarriers);
+	uint32_t generateMipsGraphics(XUSG::CommandList* pCommandList, XUSG::ResourceBarrier* pBarriers);
+	uint32_t generateMipsCompute(XUSG::CommandList* pCommandList, XUSG::ResourceBarrier* pBarriers);
 
-	void upsampleGraphics(const XUSG::CommandList* pCommandList, XUSG::ResourceBarrier* pBarriers,
+	void upsampleGraphics(XUSG::CommandList* pCommandList, XUSG::ResourceBarrier* pBarriers,
 		uint32_t numBarriers, uint8_t frameIndex);
-	void upsampleCompute(const XUSG::CommandList* pCommandList, XUSG::ResourceBarrier* pBarriers,
+	void upsampleCompute(XUSG::CommandList* pCommandList, XUSG::ResourceBarrier* pBarriers,
 		uint32_t numBarriers, uint8_t frameIndex);
 
 	XUSG::Device::sptr m_device;
