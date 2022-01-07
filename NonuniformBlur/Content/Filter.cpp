@@ -7,8 +7,6 @@
 #include "Advanced/XUSGDDSLoader.h"
 #undef _INDEPENDENT_DDS_LOADER_
 
-#define SizeOfInUint32(obj)	DIV_UP(sizeof(obj), sizeof(uint32_t))
-
 using namespace std;
 using namespace DirectX;
 using namespace XUSG;
