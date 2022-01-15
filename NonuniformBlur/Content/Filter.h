@@ -19,7 +19,7 @@ public:
 		NUM_PIPE_TYPE
 	};
 
-	Filter(const XUSG::Device::sptr& device);
+	Filter();
 	virtual ~Filter();
 
 	bool Init(XUSG::CommandList* pCommandList, std::vector<XUSG::Resource::uptr>& uploaders,
@@ -65,8 +65,6 @@ protected:
 		uint32_t numBarriers, uint8_t frameIndex);
 	void upsampleCompute(XUSG::CommandList* pCommandList, XUSG::ResourceBarrier* pBarriers,
 		uint32_t numBarriers, uint8_t frameIndex);
-
-	XUSG::Device::sptr m_device;
 
 	XUSG::ShaderPool::uptr				m_shaderPool;
 	XUSG::Graphics::PipelineCache::uptr	m_graphicsPipelineCache;

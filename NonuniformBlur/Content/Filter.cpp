@@ -17,15 +17,10 @@ struct CBGaussian
 	float		Sigma;
 };
 
-Filter::Filter(const Device::sptr& device) :
-	m_device(device),
+Filter::Filter() :
 	m_imageSize(1, 1)
 {
 	m_shaderPool = ShaderPool::MakeUnique();
-	m_graphicsPipelineCache = Graphics::PipelineCache::MakeUnique(device.get());
-	m_computePipelineCache = Compute::PipelineCache::MakeUnique(device.get());
-	m_descriptorTableCache = DescriptorTableCache::MakeUnique(device.get());
-	m_pipelineLayoutCache = PipelineLayoutCache::MakeUnique(device.get());
 }
 
 Filter::~Filter()
@@ -35,6 +30,12 @@ Filter::~Filter()
 bool Filter::Init(CommandList* pCommandList,  vector<Resource::uptr>& uploaders,
 	Format rtFormat, const wchar_t* fileName, bool typedUAV)
 {
+	const auto pDevice = pCommandList->GetDevice();
+	m_graphicsPipelineCache = Graphics::PipelineCache::MakeUnique(pDevice);
+	m_computePipelineCache = Compute::PipelineCache::MakeUnique(pDevice);
+	m_descriptorTableCache = DescriptorTableCache::MakeUnique(pDevice);
+	m_pipelineLayoutCache = PipelineLayoutCache::MakeUnique(pDevice);
+
 	m_typedUAV = typedUAV;
 
 	// Load input image
@@ -43,7 +44,7 @@ bool Filter::Init(CommandList* pCommandList,  vector<Resource::uptr>& uploaders,
 		DDS::AlphaMode alphaMode;
 
 		uploaders.emplace_back(Resource::MakeUnique());
-		N_RETURN(textureLoader.CreateTextureFromFile(m_device.get(), pCommandList, fileName,
+		N_RETURN(textureLoader.CreateTextureFromFile(pCommandList, fileName,
 			8192, false, m_source, uploaders.back().get(), &alphaMode), false);
 	}
 
@@ -53,12 +54,12 @@ bool Filter::Init(CommandList* pCommandList,  vector<Resource::uptr>& uploaders,
 	const uint8_t numMips = max<uint8_t>(Log2((max)(m_imageSize.x, m_imageSize.y)), 0) + 1;
 
 	m_filtered = RenderTarget::MakeUnique();
-	m_filtered->Create(m_device.get(), m_imageSize.x, m_imageSize.y, rtFormat, 1, typedUAV ?
+	m_filtered->Create(pDevice, m_imageSize.x, m_imageSize.y, rtFormat, 1, typedUAV ?
 		ResourceFlag::ALLOW_UNORDERED_ACCESS : ResourceFlag::NEED_PACKED_UAV,
 		numMips, 1, nullptr, false, MemoryFlag::NONE, L"FilteredImage");
 
 	m_cbPerFrame = ConstantBuffer::MakeUnique();
-	N_RETURN(m_cbPerFrame->Create(m_device.get(), sizeof(CBGaussian[FrameCount]),
+	N_RETURN(m_cbPerFrame->Create(pDevice, sizeof(CBGaussian[FrameCount]),
 		FrameCount, nullptr, MemoryType::UPLOAD, MemoryFlag::NONE, L"CBPerFrame"), false);
 
 	N_RETURN(createPipelineLayouts(), false);
