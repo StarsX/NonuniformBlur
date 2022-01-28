@@ -51,7 +51,7 @@ bool Filter::Init(CommandList* pCommandList,  vector<Resource::uptr>& uploaders,
 	// Create resources and pipelines
 	m_imageSize.x = static_cast<uint32_t>(m_source->GetWidth());
 	m_imageSize.y = m_source->GetHeight();
-	const uint8_t numMips = max<uint8_t>(Log2((max)(m_imageSize.x, m_imageSize.y)), 0) + 1;
+	const auto numMips = CalculateMipLevels(m_imageSize.x, m_imageSize.y);
 
 	m_filtered = RenderTarget::MakeUnique();
 	m_filtered->Create(pDevice, m_imageSize.x, m_imageSize.y, rtFormat, 1, typedUAV ?
