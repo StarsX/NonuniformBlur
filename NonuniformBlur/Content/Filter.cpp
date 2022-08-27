@@ -27,14 +27,14 @@ Filter::~Filter()
 {
 }
 
-bool Filter::Init(CommandList* pCommandList,  vector<Resource::uptr>& uploaders,
-	Format rtFormat, const wchar_t* fileName, bool typedUAV)
+bool Filter::Init(CommandList* pCommandList, const DescriptorTableCache::sptr& descriptorTableCache,
+	vector<Resource::uptr>& uploaders, Format rtFormat, const wchar_t* fileName, bool typedUAV)
 {
 	const auto pDevice = pCommandList->GetDevice();
 	m_graphicsPipelineCache = Graphics::PipelineCache::MakeUnique(pDevice);
 	m_computePipelineCache = Compute::PipelineCache::MakeUnique(pDevice);
-	m_descriptorTableCache = DescriptorTableCache::MakeUnique(pDevice);
 	m_pipelineLayoutCache = PipelineLayoutCache::MakeUnique(pDevice);
+	m_descriptorTableCache = descriptorTableCache;
 
 	m_typedUAV = typedUAV;
 
@@ -81,14 +81,6 @@ void Filter::UpdateFrame(DirectX::XMFLOAT2 focus, float sigma, uint8_t frameInde
 
 void Filter::Process(CommandList* pCommandList, uint8_t frameIndex, PipelineType pipelineType)
 {
-	// Set Descriptor pools
-	const DescriptorPool descriptorPools[] =
-	{
-		m_descriptorTableCache->GetDescriptorPool(CBV_SRV_UAV_POOL),
-		m_descriptorTableCache->GetDescriptorPool(SAMPLER_POOL)
-	};
-	pCommandList->SetDescriptorPools(static_cast<uint32_t>(size(descriptorPools)), descriptorPools);
-
 	ResourceBarrier barriers[2];
 	uint32_t numBarriers;
 

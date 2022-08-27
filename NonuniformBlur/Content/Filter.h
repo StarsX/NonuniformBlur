@@ -22,8 +22,8 @@ public:
 	Filter();
 	virtual ~Filter();
 
-	bool Init(XUSG::CommandList* pCommandList, std::vector<XUSG::Resource::uptr>& uploaders,
-		XUSG::Format rtFormat, const wchar_t* fileName, bool typedUAV);
+	bool Init(XUSG::CommandList* pCommandList, const XUSG::DescriptorTableCache::sptr& descriptorTableCache,
+		std::vector<XUSG::Resource::uptr>& uploaders, XUSG::Format rtFormat, const wchar_t* fileName, bool typedUAV);
 
 	void UpdateFrame(DirectX::XMFLOAT2 focus, float sigma, uint8_t frameIndex);
 	void Process(XUSG::CommandList* pCommandList, uint8_t frameIndex, PipelineType pipelineType);
@@ -70,7 +70,7 @@ protected:
 	XUSG::Graphics::PipelineCache::uptr	m_graphicsPipelineCache;
 	XUSG::Compute::PipelineCache::uptr	m_computePipelineCache;
 	XUSG::PipelineLayoutCache::uptr		m_pipelineLayoutCache;
-	XUSG::DescriptorTableCache::uptr	m_descriptorTableCache;
+	XUSG::DescriptorTableCache::sptr	m_descriptorTableCache;
 
 	XUSG::PipelineLayout	m_pipelineLayouts[NUM_PIPELINE];
 	XUSG::Pipeline			m_pipelines[NUM_PIPELINE];
