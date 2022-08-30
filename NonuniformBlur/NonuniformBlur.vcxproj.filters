@@ -54,9 +54,6 @@
     <ClInclude Include="Content\Filter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Common\dds.h">
-      <Filter>Common\Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Common\d3d12.h">
       <Filter>Common\Header Files</Filter>
     </ClInclude>
