@@ -20,21 +20,21 @@ struct CBGaussian
 Filter::Filter() :
 	m_imageSize(1, 1)
 {
-	m_shaderPool = ShaderPool::MakeUnique();
+	m_shaderLib = ShaderLib::MakeUnique();
 }
 
 Filter::~Filter()
 {
 }
 
-bool Filter::Init(CommandList* pCommandList, const DescriptorTableCache::sptr& descriptorTableCache,
+bool Filter::Init(CommandList* pCommandList, const DescriptorTableLib::sptr& descriptorTableLib,
 	vector<Resource::uptr>& uploaders, Format rtFormat, const wchar_t* fileName, bool typedUAV)
 {
 	const auto pDevice = pCommandList->GetDevice();
-	m_graphicsPipelineCache = Graphics::PipelineCache::MakeUnique(pDevice);
-	m_computePipelineCache = Compute::PipelineCache::MakeUnique(pDevice);
-	m_pipelineLayoutCache = PipelineLayoutCache::MakeUnique(pDevice);
-	m_descriptorTableCache = descriptorTableCache;
+	m_graphicsPipelineLib = Graphics::PipelineLib::MakeUnique(pDevice);
+	m_computePipelineLib = Compute::PipelineLib::MakeUnique(pDevice);
+	m_pipelineLayoutLib = PipelineLayoutLib::MakeUnique(pDevice);
+	m_descriptorTableLib = descriptorTableLib;
 
 	m_typedUAV = typedUAV;
 
@@ -122,7 +122,7 @@ bool Filter::createPipelineLayouts()
 		utilPipelineLayout->SetShaderStage(0, Shader::PS);
 		utilPipelineLayout->SetShaderStage(1, Shader::PS);
 		XUSG_X_RETURN(m_pipelineLayouts[RESAMPLE_GRAPHICS], utilPipelineLayout->GetPipelineLayout(
-			m_pipelineLayoutCache.get(), PipelineLayoutFlag::NONE, L"ResamplingGraphicsLayout"), false);
+			m_pipelineLayoutLib.get(), PipelineLayoutFlag::NONE, L"ResamplingGraphicsLayout"), false);
 	}
 
 	// Resampling compute
@@ -132,7 +132,7 @@ bool Filter::createPipelineLayouts()
 		utilPipelineLayout->SetRange(1, DescriptorType::UAV, 1, 0, 0, DescriptorFlag::DATA_STATIC_WHILE_SET_AT_EXECUTE);
 		utilPipelineLayout->SetRange(2, DescriptorType::SRV, 1, 0);
 		XUSG_X_RETURN(m_pipelineLayouts[RESAMPLE_COMPUTE], utilPipelineLayout->GetPipelineLayout(
-			m_pipelineLayoutCache.get(), PipelineLayoutFlag::NONE, L"ResamplingLayout"), false);
+			m_pipelineLayoutLib.get(), PipelineLayoutFlag::NONE, L"ResamplingLayout"), false);
 	}
 
 	// Up sampling graphics with alpha blending
@@ -141,11 +141,11 @@ bool Filter::createPipelineLayouts()
 		utilPipelineLayout->SetRange(0, DescriptorType::SAMPLER, 1, 0);
 		utilPipelineLayout->SetRange(1, DescriptorType::SRV, 1, 0);
 		utilPipelineLayout->SetRootCBV(2, 0, 0, Shader::PS);
-		utilPipelineLayout->SetConstants(3, XUSG_SizeOfInUint32(uint32_t), 1, 0, Shader::PS);
+		utilPipelineLayout->SetConstants(3, XUSG_UINT32_SIZE_OF(uint32_t), 1, 0, Shader::PS);
 		utilPipelineLayout->SetShaderStage(0, Shader::PS);
 		utilPipelineLayout->SetShaderStage(1, Shader::PS);
 		XUSG_X_RETURN(m_pipelineLayouts[UP_SAMPLE_BLEND], utilPipelineLayout->GetPipelineLayout(
-			m_pipelineLayoutCache.get(), PipelineLayoutFlag::NONE, L"UpSamplingBlendLayout"), false);
+			m_pipelineLayoutLib.get(), PipelineLayoutFlag::NONE, L"UpSamplingBlendLayout"), false);
 	}
 
 	// Up sampling compute, in-place
@@ -155,9 +155,9 @@ bool Filter::createPipelineLayouts()
 		utilPipelineLayout->SetRange(1, DescriptorType::UAV, 1, 0, 0, DescriptorFlag::DATA_STATIC_WHILE_SET_AT_EXECUTE);
 		utilPipelineLayout->SetRange(2, DescriptorType::SRV, 1, 0);
 		utilPipelineLayout->SetRootCBV(3, 0);
-		utilPipelineLayout->SetConstants(4, XUSG_SizeOfInUint32(uint32_t), 1);
+		utilPipelineLayout->SetConstants(4, XUSG_UINT32_SIZE_OF(uint32_t), 1);
 		XUSG_X_RETURN(m_pipelineLayouts[UP_SAMPLE_INPLACE], utilPipelineLayout->GetPipelineLayout(
-			m_pipelineLayoutCache.get(), PipelineLayoutFlag::NONE, L"UpSamplingInPlaceLayout"), false);
+			m_pipelineLayoutLib.get(), PipelineLayoutFlag::NONE, L"UpSamplingInPlaceLayout"), false);
 	}
 
 	// Up sampling graphics, for the final pass
@@ -166,11 +166,11 @@ bool Filter::createPipelineLayouts()
 		utilPipelineLayout->SetRange(0, DescriptorType::SAMPLER, 1, 0);
 		utilPipelineLayout->SetRange(1, DescriptorType::SRV, 2, 0);
 		utilPipelineLayout->SetRootCBV(2, 0, 0, Shader::PS);
-		utilPipelineLayout->SetConstants(3, XUSG_SizeOfInUint32(uint32_t), 1, 0, Shader::PS);
+		utilPipelineLayout->SetConstants(3, XUSG_UINT32_SIZE_OF(uint32_t), 1, 0, Shader::PS);
 		utilPipelineLayout->SetShaderStage(0, Shader::PS);
 		utilPipelineLayout->SetShaderStage(1, Shader::PS);
 		XUSG_X_RETURN(m_pipelineLayouts[UP_SAMPLE_GRAPHICS], utilPipelineLayout->GetPipelineLayout(
-			m_pipelineLayoutCache.get(), PipelineLayoutFlag::NONE, L"UpSamplingGraphicsLayout"), false);
+			m_pipelineLayoutLib.get(), PipelineLayoutFlag::NONE, L"UpSamplingGraphicsLayout"), false);
 	}
 
 	// Up sampling compute, for the final pass
@@ -180,9 +180,9 @@ bool Filter::createPipelineLayouts()
 		utilPipelineLayout->SetRange(1, DescriptorType::UAV, 1, 0, 0, DescriptorFlag::DATA_STATIC_WHILE_SET_AT_EXECUTE);
 		utilPipelineLayout->SetRange(2, DescriptorType::SRV, 2, 0);
 		utilPipelineLayout->SetRootCBV(3, 0);
-		utilPipelineLayout->SetConstants(4, XUSG_SizeOfInUint32(uint32_t), 1);
+		utilPipelineLayout->SetConstants(4, XUSG_UINT32_SIZE_OF(uint32_t), 1);
 		XUSG_X_RETURN(m_pipelineLayouts[UP_SAMPLE_COMPUTE], utilPipelineLayout->GetPipelineLayout(
-			m_pipelineLayoutCache.get(), PipelineLayoutFlag::NONE, L"UpSamplingComputeLayout"), false);
+			m_pipelineLayoutLib.get(), PipelineLayoutFlag::NONE, L"UpSamplingComputeLayout"), false);
 	}
 
 	return true;
@@ -195,80 +195,80 @@ bool Filter::createPipelines(Format rtFormat)
 	auto csIndex = 0u;
 
 	// Resampling graphics
-	XUSG_N_RETURN(m_shaderPool->CreateShader(Shader::Stage::VS, vsIndex, L"VSScreenQuad.cso"), false);
+	XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::VS, vsIndex, L"VSScreenQuad.cso"), false);
 	{
-		XUSG_N_RETURN(m_shaderPool->CreateShader(Shader::Stage::PS, psIndex, L"PSResample.cso"), false);
+		XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::PS, psIndex, L"PSResample.cso"), false);
 
 		const auto state = Graphics::State::MakeUnique();
 		state->SetPipelineLayout(m_pipelineLayouts[RESAMPLE_GRAPHICS]);
-		state->SetShader(Shader::Stage::VS, m_shaderPool->GetShader(Shader::Stage::VS, vsIndex));
-		state->SetShader(Shader::Stage::PS, m_shaderPool->GetShader(Shader::Stage::PS, psIndex++));
-		state->DSSetState(Graphics::DEPTH_STENCIL_NONE, m_graphicsPipelineCache.get());
+		state->SetShader(Shader::Stage::VS, m_shaderLib->GetShader(Shader::Stage::VS, vsIndex));
+		state->SetShader(Shader::Stage::PS, m_shaderLib->GetShader(Shader::Stage::PS, psIndex++));
+		state->DSSetState(Graphics::DEPTH_STENCIL_NONE, m_graphicsPipelineLib.get());
 		state->IASetPrimitiveTopologyType(PrimitiveTopologyType::TRIANGLE);
 		state->OMSetNumRenderTargets(1);
 		state->OMSetRTVFormat(0, rtFormat);
-		XUSG_X_RETURN(m_pipelines[RESAMPLE_GRAPHICS], state->GetPipeline(m_graphicsPipelineCache.get(), L"Resampling_graphics"), false);
+		XUSG_X_RETURN(m_pipelines[RESAMPLE_GRAPHICS], state->GetPipeline(m_graphicsPipelineLib.get(), L"Resampling_graphics"), false);
 	}
 
 	// Resampling compute
 	{
-		XUSG_N_RETURN(m_shaderPool->CreateShader(Shader::Stage::CS, csIndex, L"CSResample.cso"), false);
+		XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::CS, csIndex, L"CSResample.cso"), false);
 
 		const auto state = Compute::State::MakeUnique();
 		state->SetPipelineLayout(m_pipelineLayouts[RESAMPLE_COMPUTE]);
-		state->SetShader(m_shaderPool->GetShader(Shader::Stage::CS, csIndex++));
-		XUSG_X_RETURN(m_pipelines[RESAMPLE_COMPUTE], state->GetPipeline(m_computePipelineCache.get(), L"Resampling_compute"), false);
+		state->SetShader(m_shaderLib->GetShader(Shader::Stage::CS, csIndex++));
+		XUSG_X_RETURN(m_pipelines[RESAMPLE_COMPUTE], state->GetPipeline(m_computePipelineLib.get(), L"Resampling_compute"), false);
 	}
 
 	// Up sampling graphics with alpha blending
 	{
-		XUSG_N_RETURN(m_shaderPool->CreateShader(Shader::Stage::PS, psIndex, L"PSUpSample_blend.cso"), false);
+		XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::PS, psIndex, L"PSUpSample_blend.cso"), false);
 
 		const auto state = Graphics::State::MakeUnique();
 		state->SetPipelineLayout(m_pipelineLayouts[UP_SAMPLE_BLEND]);
-		state->SetShader(Shader::Stage::VS, m_shaderPool->GetShader(Shader::Stage::VS, vsIndex));
-		state->SetShader(Shader::Stage::PS, m_shaderPool->GetShader(Shader::Stage::PS, psIndex++));
-		state->DSSetState(Graphics::DEPTH_STENCIL_NONE, m_graphicsPipelineCache.get());
+		state->SetShader(Shader::Stage::VS, m_shaderLib->GetShader(Shader::Stage::VS, vsIndex));
+		state->SetShader(Shader::Stage::PS, m_shaderLib->GetShader(Shader::Stage::PS, psIndex++));
+		state->DSSetState(Graphics::DEPTH_STENCIL_NONE, m_graphicsPipelineLib.get());
 		state->IASetPrimitiveTopologyType(PrimitiveTopologyType::TRIANGLE);
-		state->OMSetBlendState(Graphics::NON_PRE_MUL, m_graphicsPipelineCache.get());
+		state->OMSetBlendState(Graphics::NON_PRE_MUL, m_graphicsPipelineLib.get());
 		state->OMSetNumRenderTargets(1);
 		state->OMSetRTVFormat(0, rtFormat);
-		XUSG_X_RETURN(m_pipelines[UP_SAMPLE_BLEND], state->GetPipeline(m_graphicsPipelineCache.get(), L"UpSampling_alpha_blend"), false);
+		XUSG_X_RETURN(m_pipelines[UP_SAMPLE_BLEND], state->GetPipeline(m_graphicsPipelineLib.get(), L"UpSampling_alpha_blend"), false);
 	}
 
 	// Up sampling compute, in-place
 	{
-		XUSG_N_RETURN(m_shaderPool->CreateShader(Shader::Stage::CS, csIndex, m_typedUAV ? L"CSUpSample_in_place.cso" : L"CSUpSample_typeless.cso"), false);
+		XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::CS, csIndex, m_typedUAV ? L"CSUpSample_in_place.cso" : L"CSUpSample_typeless.cso"), false);
 
 		const auto state = Compute::State::MakeUnique();
 		state->SetPipelineLayout(m_pipelineLayouts[UP_SAMPLE_INPLACE]);
-		state->SetShader(m_shaderPool->GetShader(Shader::Stage::CS, csIndex++));
-		XUSG_X_RETURN(m_pipelines[UP_SAMPLE_INPLACE], state->GetPipeline(m_computePipelineCache.get(), L"UpSampling_in_place"), false);
+		state->SetShader(m_shaderLib->GetShader(Shader::Stage::CS, csIndex++));
+		XUSG_X_RETURN(m_pipelines[UP_SAMPLE_INPLACE], state->GetPipeline(m_computePipelineLib.get(), L"UpSampling_in_place"), false);
 	}
 
 	// Up sampling graphics, for the final pass
 	{
-		XUSG_N_RETURN(m_shaderPool->CreateShader(Shader::Stage::PS, psIndex, L"PSUpSample.cso"), false);
+		XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::PS, psIndex, L"PSUpSample.cso"), false);
 
 		const auto state = Graphics::State::MakeUnique();
 		state->SetPipelineLayout(m_pipelineLayouts[UP_SAMPLE_GRAPHICS]);
-		state->SetShader(Shader::Stage::VS, m_shaderPool->GetShader(Shader::Stage::VS, vsIndex));
-		state->SetShader(Shader::Stage::PS, m_shaderPool->GetShader(Shader::Stage::PS, psIndex));
-		state->DSSetState(Graphics::DEPTH_STENCIL_NONE, m_graphicsPipelineCache.get());
+		state->SetShader(Shader::Stage::VS, m_shaderLib->GetShader(Shader::Stage::VS, vsIndex));
+		state->SetShader(Shader::Stage::PS, m_shaderLib->GetShader(Shader::Stage::PS, psIndex));
+		state->DSSetState(Graphics::DEPTH_STENCIL_NONE, m_graphicsPipelineLib.get());
 		state->IASetPrimitiveTopologyType(PrimitiveTopologyType::TRIANGLE);
 		state->OMSetNumRenderTargets(1);
 		state->OMSetRTVFormat(0, rtFormat);
-		XUSG_X_RETURN(m_pipelines[UP_SAMPLE_GRAPHICS], state->GetPipeline(m_graphicsPipelineCache.get(), L"UpSampling_graphics"), false);
+		XUSG_X_RETURN(m_pipelines[UP_SAMPLE_GRAPHICS], state->GetPipeline(m_graphicsPipelineLib.get(), L"UpSampling_graphics"), false);
 	}
 
 	// Up sampling compute, for the final pass
 	{
-		XUSG_N_RETURN(m_shaderPool->CreateShader(Shader::Stage::CS, csIndex, L"CSUpSample.cso"), false);
+		XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::CS, csIndex, L"CSUpSample.cso"), false);
 
 		const auto state = Compute::State::MakeUnique();
 		state->SetPipelineLayout(m_pipelineLayouts[UP_SAMPLE_COMPUTE]);
-		state->SetShader(m_shaderPool->GetShader(Shader::Stage::CS, csIndex));
-		XUSG_X_RETURN(m_pipelines[UP_SAMPLE_COMPUTE], state->GetPipeline(m_computePipelineCache.get(), L"UpSampling_compute"), false);
+		state->SetShader(m_shaderLib->GetShader(Shader::Stage::CS, csIndex));
+		XUSG_X_RETURN(m_pipelines[UP_SAMPLE_COMPUTE], state->GetPipeline(m_computePipelineLib.get(), L"UpSampling_compute"), false);
 	}
 
 	return true;
@@ -285,7 +285,7 @@ bool Filter::createDescriptorTables()
 		// Get UAV
 		const auto descriptorTable = Util::DescriptorTable::MakeUnique();
 		descriptorTable->SetDescriptors(0, 1, &m_filtered->GetUAV(i));
-		XUSG_X_RETURN(m_uavTables[UAV_TABLE_TYPED][i], descriptorTable->GetCbvSrvUavTable(m_descriptorTableCache.get()), false);
+		XUSG_X_RETURN(m_uavTables[UAV_TABLE_TYPED][i], descriptorTable->GetCbvSrvUavTable(m_descriptorTableLib.get()), false);
 	}
 
 	if (!m_typedUAV)
@@ -296,7 +296,7 @@ bool Filter::createDescriptorTables()
 			// Get UAV
 			const auto descriptorTable = Util::DescriptorTable::MakeUnique();
 			descriptorTable->SetDescriptors(0, 1, &m_filtered->GetPackedUAV(i));
-			XUSG_X_RETURN(m_uavTables[UAV_TABLE_PACKED][i], descriptorTable->GetCbvSrvUavTable(m_descriptorTableCache.get()), false);
+			XUSG_X_RETURN(m_uavTables[UAV_TABLE_PACKED][i], descriptorTable->GetCbvSrvUavTable(m_descriptorTableLib.get()), false);
 		}
 	}
 
@@ -306,14 +306,14 @@ bool Filter::createDescriptorTables()
 	{
 		const auto descriptorTable = Util::DescriptorTable::MakeUnique();
 		descriptorTable->SetDescriptors(0, 1, i ? &m_filtered->GetSRVLevel(i) : &m_source->GetSRV());
-		XUSG_X_RETURN(m_srvTables[i], descriptorTable->GetCbvSrvUavTable(m_descriptorTableCache.get()), false);
+		XUSG_X_RETURN(m_srvTables[i], descriptorTable->GetCbvSrvUavTable(m_descriptorTableLib.get()), false);
 	}
 
 	// Create the sampler table
 	const auto descriptorTable = Util::DescriptorTable::MakeUnique();
 	const auto sampler = LINEAR_CLAMP;
-	descriptorTable->SetSamplers(0, 1, &sampler, m_descriptorTableCache.get());
-	XUSG_X_RETURN(m_samplerTable, descriptorTable->GetSamplerTable(m_descriptorTableCache.get()), false);
+	descriptorTable->SetSamplers(0, 1, &sampler, m_descriptorTableLib.get());
+	XUSG_X_RETURN(m_samplerTable, descriptorTable->GetSamplerTable(m_descriptorTableLib.get()), false);
 
 	return true;
 }
