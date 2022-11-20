@@ -14,6 +14,8 @@
 using namespace std;
 using namespace XUSG;
 
+#define USE_EZ 1
+
 NonUniformBlur::NonUniformBlur(uint32_t width, uint32_t height, wstring name) :
 	DXFramework(width, height, name),
 	m_typedUAV(false),
@@ -137,7 +139,13 @@ void NonUniformBlur::LoadPipeline(vector<Resource::uptr>& uploaders)
 	XUSG_N_RETURN(m_filter->Init(pCommandList, m_descriptorTableLib, uploaders,
 		Format::B8G8R8A8_UNORM, m_fileName.c_str(), m_typedUAV), ThrowIfFailed(E_FAIL));
 	
-	m_filter->GetImageSize(m_width, m_height);
+	//m_filter->GetImageSize(m_width, m_height);
+
+	m_filterEZ = make_unique<FilterEZ>();
+	XUSG_N_RETURN(m_filterEZ->Init(pCommandList, uploaders, Format::B8G8R8A8_UNORM,
+		m_fileName.c_str(), m_typedUAV), ThrowIfFailed(E_FAIL));
+
+	m_filterEZ->GetImageSize(m_width, m_height);
 
 	// Resize window
 	{
@@ -173,6 +181,10 @@ void NonUniformBlur::LoadAssets()
 	// Close the command list and execute it to begin the initial GPU setup.
 	XUSG_N_RETURN(m_commandList->Close(), ThrowIfFailed(E_FAIL));
 	m_commandQueue->ExecuteCommandList(m_commandList.get());
+
+	m_commandListEZ = EZ::CommandList::MakeUnique();
+	XUSG_N_RETURN(m_commandListEZ->Create(m_commandList.get(), 1, 137),
+		ThrowIfFailed(E_FAIL));
 
 	// Create synchronization objects and wait until assets have been uploaded to the GPU.
 	{
@@ -215,7 +227,11 @@ void NonUniformBlur::OnUpdate()
 	}
 
 	if (m_isAutoSigma) m_sigma = 32.0f * (-static_cast<float>(cos(t)) * 0.5f + 0.5f);
+#if USE_EZ
+	m_filterEZ->UpdateFrame(m_focus, m_sigma, m_frameIndex);
+#else
 	m_filter->UpdateFrame(m_focus, m_sigma, m_frameIndex);
+#endif
 }
 
 // Render the scene.
@@ -303,6 +319,25 @@ void NonUniformBlur::PopulateCommandList()
 	const auto pCommandAllocator = m_commandAllocators[m_frameIndex].get();
 	XUSG_N_RETURN(pCommandAllocator->Reset(), ThrowIfFailed(E_FAIL));
 
+	const auto renderTarget = m_renderTargets[m_frameIndex].get();
+#if USE_EZ
+	// However, when ExecuteCommandList() is called on a particular command 
+	// list, that command list can then be reset at any time and must be before 
+	// re-recording.
+	const auto pCommandList = m_commandListEZ.get();
+	XUSG_N_RETURN(pCommandList->Reset(pCommandAllocator, nullptr), ThrowIfFailed(E_FAIL));
+
+	// Record commands.
+	m_filterEZ->Process(pCommandList, m_frameIndex, static_cast<FilterEZ::PipelineType>(m_pipelineType));
+
+	const auto pResult = m_filterEZ->GetResult();
+	const TextureCopyLocation dst(renderTarget, 0);
+	const TextureCopyLocation src(pResult, 0);
+
+	pCommandList->CopyTextureRegion(dst, 0, 0, 0, src);
+
+	XUSG_N_RETURN(pCommandList->Close(renderTarget), ThrowIfFailed(E_FAIL));
+#else
 	// However, when ExecuteCommandList() is called on a particular command 
 	// list, that command list can then be reset at any time and must be before 
 	// re-recording.
@@ -324,22 +359,23 @@ void NonUniformBlur::PopulateCommandList()
 
 	{
 		const auto pResult = m_filter->GetResult();
-		const TextureCopyLocation dst(m_renderTargets[m_frameIndex].get(), 0);
+		const TextureCopyLocation dst(renderTarget, 0);
 		const TextureCopyLocation src(pResult, 0);
 
 		ResourceBarrier barriers[2];
-		auto numBarriers = m_renderTargets[m_frameIndex]->SetBarrier(barriers, ResourceState::COPY_DEST);
+		auto numBarriers = renderTarget->SetBarrier(barriers, ResourceState::COPY_DEST);
 		numBarriers = pResult->SetBarrier(barriers, dstState, numBarriers, 0);
 		pCommandList->Barrier(numBarriers, barriers);
 
 		pCommandList->CopyTextureRegion(dst, 0, 0, 0, src);
 
 		// Indicate that the back buffer will now be used to present.
-		numBarriers = m_renderTargets[m_frameIndex]->SetBarrier(barriers, ResourceState::PRESENT);
+		numBarriers = renderTarget->SetBarrier(barriers, ResourceState::PRESENT);
 		pCommandList->Barrier(numBarriers, barriers);
 	}
 
 	XUSG_N_RETURN(pCommandList->Close(), ThrowIfFailed(E_FAIL));
+#endif
 }
 
 // Wait for pending GPU work to complete.

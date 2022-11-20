@@ -14,6 +14,7 @@
 #include "DXFramework.h"
 #include "StepTimer.h"
 #include "Filter.h"
+#include "FilterEZ.h"
 
 using namespace DirectX;
 
@@ -50,9 +51,11 @@ private:
 	XUSG::Device::uptr				m_device;
 	XUSG::RenderTarget::uptr		m_renderTargets[FrameCount];
 	XUSG::CommandList::uptr			m_commandList;
+	XUSG::EZ::CommandList::uptr		m_commandListEZ;
 
 	// App resources.
-	std::unique_ptr<Filter> m_filter;
+	std::unique_ptr<Filter>		m_filter;
+	std::unique_ptr<FilterEZ>	m_filterEZ;
 
 	bool		m_typedUAV;
 
