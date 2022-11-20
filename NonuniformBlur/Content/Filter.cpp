@@ -114,25 +114,25 @@ void Filter::GetImageSize(uint32_t& width, uint32_t& height) const
 
 bool Filter::createPipelineLayouts()
 {
-	// Resampling graphics
+	// Blit graphics
 	{
 		const auto utilPipelineLayout = Util::PipelineLayout::MakeUnique();
 		utilPipelineLayout->SetRange(0, DescriptorType::SAMPLER, 1, 0);
 		utilPipelineLayout->SetRange(1, DescriptorType::SRV, 1, 0);
 		utilPipelineLayout->SetShaderStage(0, Shader::PS);
 		utilPipelineLayout->SetShaderStage(1, Shader::PS);
-		XUSG_X_RETURN(m_pipelineLayouts[RESAMPLE_GRAPHICS], utilPipelineLayout->GetPipelineLayout(
-			m_pipelineLayoutLib.get(), PipelineLayoutFlag::NONE, L"ResamplingGraphicsLayout"), false);
+		XUSG_X_RETURN(m_pipelineLayouts[BLIT_GRAPHICS], utilPipelineLayout->GetPipelineLayout(
+			m_pipelineLayoutLib.get(), PipelineLayoutFlag::NONE, L"GraphicsBlitLayout"), false);
 	}
 
-	// Resampling compute
+	// Blit compute
 	{
 		const auto utilPipelineLayout = Util::PipelineLayout::MakeUnique();
 		utilPipelineLayout->SetRange(0, DescriptorType::SAMPLER, 1, 0);
 		utilPipelineLayout->SetRange(1, DescriptorType::UAV, 1, 0, 0, DescriptorFlag::DATA_STATIC_WHILE_SET_AT_EXECUTE);
 		utilPipelineLayout->SetRange(2, DescriptorType::SRV, 1, 0);
-		XUSG_X_RETURN(m_pipelineLayouts[RESAMPLE_COMPUTE], utilPipelineLayout->GetPipelineLayout(
-			m_pipelineLayoutLib.get(), PipelineLayoutFlag::NONE, L"ResamplingLayout"), false);
+		XUSG_X_RETURN(m_pipelineLayouts[BLIT_COMPUTE], utilPipelineLayout->GetPipelineLayout(
+			m_pipelineLayoutLib.get(), PipelineLayoutFlag::NONE, L"ComputeBlitLayout"), false);
 	}
 
 	// Up sampling graphics with alpha blending
@@ -194,30 +194,30 @@ bool Filter::createPipelines(Format rtFormat)
 	auto psIndex = 0u;
 	auto csIndex = 0u;
 
-	// Resampling graphics
+	// Blit graphics
 	XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::VS, vsIndex, L"VSScreenQuad.cso"), false);
 	{
-		XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::PS, psIndex, L"PSResample.cso"), false);
+		XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::PS, psIndex, L"PSBlit2D.cso"), false);
 
 		const auto state = Graphics::State::MakeUnique();
-		state->SetPipelineLayout(m_pipelineLayouts[RESAMPLE_GRAPHICS]);
+		state->SetPipelineLayout(m_pipelineLayouts[BLIT_GRAPHICS]);
 		state->SetShader(Shader::Stage::VS, m_shaderLib->GetShader(Shader::Stage::VS, vsIndex));
 		state->SetShader(Shader::Stage::PS, m_shaderLib->GetShader(Shader::Stage::PS, psIndex++));
 		state->DSSetState(Graphics::DEPTH_STENCIL_NONE, m_graphicsPipelineLib.get());
 		state->IASetPrimitiveTopologyType(PrimitiveTopologyType::TRIANGLE);
 		state->OMSetNumRenderTargets(1);
 		state->OMSetRTVFormat(0, rtFormat);
-		XUSG_X_RETURN(m_pipelines[RESAMPLE_GRAPHICS], state->GetPipeline(m_graphicsPipelineLib.get(), L"Resampling_graphics"), false);
+		XUSG_X_RETURN(m_pipelines[BLIT_GRAPHICS], state->GetPipeline(m_graphicsPipelineLib.get(), L"Blit_graphics"), false);
 	}
 
-	// Resampling compute
+	// Blit compute
 	{
-		XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::CS, csIndex, L"CSResample.cso"), false);
+		XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::CS, csIndex, L"CSBlit2D.cso"), false);
 
 		const auto state = Compute::State::MakeUnique();
-		state->SetPipelineLayout(m_pipelineLayouts[RESAMPLE_COMPUTE]);
+		state->SetPipelineLayout(m_pipelineLayouts[BLIT_COMPUTE]);
 		state->SetShader(m_shaderLib->GetShader(Shader::Stage::CS, csIndex++));
-		XUSG_X_RETURN(m_pipelines[RESAMPLE_COMPUTE], state->GetPipeline(m_computePipelineLib.get(), L"Resampling_compute"), false);
+		XUSG_X_RETURN(m_pipelines[BLIT_COMPUTE], state->GetPipeline(m_computePipelineLib.get(), L"Blit_compute"), false);
 	}
 
 	// Up sampling graphics with alpha blending
@@ -322,15 +322,15 @@ uint32_t Filter::generateMipsGraphics(CommandList* pCommandList, ResourceBarrier
 {
 	// Generate mipmaps
 	return m_filtered->GenerateMips(pCommandList, pBarriers, ResourceState::PIXEL_SHADER_RESOURCE,
-		m_pipelineLayouts[RESAMPLE_GRAPHICS], m_pipelines[RESAMPLE_GRAPHICS], m_srvTables.data(), 1, m_samplerTable, 0);
+		m_pipelineLayouts[BLIT_GRAPHICS], m_pipelines[BLIT_GRAPHICS], m_srvTables.data(), 1, m_samplerTable, 0);
 }
 
 uint32_t Filter::generateMipsCompute(CommandList* pCommandList, ResourceBarrier* pBarriers)
 {
 	// Generate mipmaps
 	return m_filtered->AsTexture()->GenerateMips(pCommandList, pBarriers, 8, 8, 1,
-		ResourceState::NON_PIXEL_SHADER_RESOURCE, m_pipelineLayouts[RESAMPLE_COMPUTE],
-		m_pipelines[RESAMPLE_COMPUTE], &m_uavTables[UAV_TABLE_TYPED][1], 1, m_samplerTable, 0, 0, &m_srvTables[0], 2);
+		ResourceState::NON_PIXEL_SHADER_RESOURCE, m_pipelineLayouts[BLIT_COMPUTE],
+		m_pipelines[BLIT_COMPUTE], &m_uavTables[UAV_TABLE_TYPED][1], 1, m_samplerTable, 0, 0, &m_srvTables[0], 2);
 }
 
 void Filter::upsampleGraphics(CommandList* pCommandList, ResourceBarrier* pBarriers,

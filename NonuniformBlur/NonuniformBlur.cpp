@@ -14,8 +14,6 @@
 using namespace std;
 using namespace XUSG;
 
-#define USE_EZ 1
-
 NonUniformBlur::NonUniformBlur(uint32_t width, uint32_t height, wstring name) :
 	DXFramework(width, height, name),
 	m_typedUAV(false),
@@ -25,6 +23,7 @@ NonUniformBlur::NonUniformBlur(uint32_t width, uint32_t height, wstring name) :
 	m_sigma(24.0),
 	m_frameIndex(0),
 	m_pipelineType(Filter::COMPUTE),
+	m_useEZ(true),
 	m_showFPS(true),
 	m_fileName(L"Assets/Sashimi.dds")
 {
@@ -227,11 +226,8 @@ void NonUniformBlur::OnUpdate()
 	}
 
 	if (m_isAutoSigma) m_sigma = 32.0f * (-static_cast<float>(cos(t)) * 0.5f + 0.5f);
-#if USE_EZ
-	m_filterEZ->UpdateFrame(m_focus, m_sigma, m_frameIndex);
-#else
-	m_filter->UpdateFrame(m_focus, m_sigma, m_frameIndex);
-#endif
+	if (m_useEZ) m_filterEZ->UpdateFrame(m_focus, m_sigma, m_frameIndex);
+	else m_filter->UpdateFrame(m_focus, m_sigma, m_frameIndex);
 }
 
 // Render the scene.
@@ -274,6 +270,9 @@ void NonUniformBlur::OnKeyUp(uint8_t key)
 		break;
 	case 'P':
 		m_pipelineType = static_cast<Filter::PipelineType>((m_pipelineType + 1) % Filter::NUM_PIPE_TYPE);
+		break;
+	case 'X':
+		m_useEZ = !m_useEZ;
 		break;
 	}
 }
@@ -320,62 +319,65 @@ void NonUniformBlur::PopulateCommandList()
 	XUSG_N_RETURN(pCommandAllocator->Reset(), ThrowIfFailed(E_FAIL));
 
 	const auto renderTarget = m_renderTargets[m_frameIndex].get();
-#if USE_EZ
-	// However, when ExecuteCommandList() is called on a particular command 
-	// list, that command list can then be reset at any time and must be before 
-	// re-recording.
-	const auto pCommandList = m_commandListEZ.get();
-	XUSG_N_RETURN(pCommandList->Reset(pCommandAllocator, nullptr), ThrowIfFailed(E_FAIL));
-
-	// Record commands.
-	m_filterEZ->Process(pCommandList, m_frameIndex, static_cast<FilterEZ::PipelineType>(m_pipelineType));
-
-	const auto pResult = m_filterEZ->GetResult();
-	const TextureCopyLocation dst(renderTarget, 0);
-	const TextureCopyLocation src(pResult, 0);
-
-	pCommandList->CopyTextureRegion(dst, 0, 0, 0, src);
-
-	XUSG_N_RETURN(pCommandList->Close(renderTarget), ThrowIfFailed(E_FAIL));
-#else
-	// However, when ExecuteCommandList() is called on a particular command 
-	// list, that command list can then be reset at any time and must be before 
-	// re-recording.
-	const auto pCommandList = m_commandList.get();
-	XUSG_N_RETURN(pCommandList->Reset(pCommandAllocator, nullptr), ThrowIfFailed(E_FAIL));
-
-	// Record commands.
-	// Set Descriptor pools
-	const DescriptorPool descriptorPools[] =
+	if (m_useEZ)
 	{
-		m_descriptorTableLib->GetDescriptorPool(CBV_SRV_UAV_POOL),
-		m_descriptorTableLib->GetDescriptorPool(SAMPLER_POOL)
-	};
-	pCommandList->SetDescriptorPools(static_cast<uint32_t>(size(descriptorPools)), descriptorPools);
+		// However, when ExecuteCommandList() is called on a particular command 
+		// list, that command list can then be reset at any time and must be before 
+		// re-recording.
+		const auto pCommandList = m_commandListEZ.get();
+		XUSG_N_RETURN(pCommandList->Reset(pCommandAllocator, nullptr), ThrowIfFailed(E_FAIL));
 
-	const auto dstState = ResourceState::PIXEL_SHADER_RESOURCE |
-		ResourceState::NON_PIXEL_SHADER_RESOURCE | ResourceState::COPY_SOURCE;
-	m_filter->Process(pCommandList, m_frameIndex, m_pipelineType);	// V-cycle
+		// Record commands.
+		m_filterEZ->Process(pCommandList, m_frameIndex, static_cast<FilterEZ::PipelineType>(m_pipelineType));
 
-	{
-		const auto pResult = m_filter->GetResult();
+		const auto pResult = m_filterEZ->GetResult();
 		const TextureCopyLocation dst(renderTarget, 0);
 		const TextureCopyLocation src(pResult, 0);
 
-		ResourceBarrier barriers[2];
-		auto numBarriers = renderTarget->SetBarrier(barriers, ResourceState::COPY_DEST);
-		numBarriers = pResult->SetBarrier(barriers, dstState, numBarriers, 0);
-		pCommandList->Barrier(numBarriers, barriers);
-
 		pCommandList->CopyTextureRegion(dst, 0, 0, 0, src);
 
-		// Indicate that the back buffer will now be used to present.
-		numBarriers = renderTarget->SetBarrier(barriers, ResourceState::PRESENT);
-		pCommandList->Barrier(numBarriers, barriers);
+		XUSG_N_RETURN(pCommandList->Close(renderTarget), ThrowIfFailed(E_FAIL));
 	}
+	else
+	{
+		// However, when ExecuteCommandList() is called on a particular command 
+		// list, that command list can then be reset at any time and must be before 
+		// re-recording.
+		const auto pCommandList = m_commandList.get();
+		XUSG_N_RETURN(pCommandList->Reset(pCommandAllocator, nullptr), ThrowIfFailed(E_FAIL));
 
-	XUSG_N_RETURN(pCommandList->Close(), ThrowIfFailed(E_FAIL));
-#endif
+		// Record commands.
+		// Set Descriptor pools
+		const DescriptorPool descriptorPools[] =
+		{
+			m_descriptorTableLib->GetDescriptorPool(CBV_SRV_UAV_POOL),
+			m_descriptorTableLib->GetDescriptorPool(SAMPLER_POOL)
+		};
+		pCommandList->SetDescriptorPools(static_cast<uint32_t>(size(descriptorPools)), descriptorPools);
+
+		const auto dstState = ResourceState::PIXEL_SHADER_RESOURCE |
+			ResourceState::NON_PIXEL_SHADER_RESOURCE | ResourceState::COPY_SOURCE;
+		m_filter->Process(pCommandList, m_frameIndex, m_pipelineType);	// V-cycle
+
+		{
+			const auto pResult = m_filter->GetResult();
+			const TextureCopyLocation dst(renderTarget, 0);
+			const TextureCopyLocation src(pResult, 0);
+
+			ResourceBarrier barriers[2];
+			auto numBarriers = renderTarget->SetBarrier(barriers, ResourceState::COPY_DEST);
+			numBarriers = pResult->SetBarrier(barriers, dstState, numBarriers, 0);
+			pCommandList->Barrier(numBarriers, barriers);
+
+			pCommandList->CopyTextureRegion(dst, 0, 0, 0, src);
+
+			// Indicate that the back buffer will now be used to present.
+			numBarriers = renderTarget->SetBarrier(barriers, ResourceState::PRESENT);
+			pCommandList->Barrier(numBarriers, barriers);
+		}
+
+		XUSG_N_RETURN(pCommandList->Close(), ThrowIfFailed(E_FAIL));
+	}
 }
 
 // Wait for pending GPU work to complete.
@@ -448,6 +450,8 @@ double NonUniformBlur::CalculateFrameStats(float* pTimeStep)
 		default:
 			windowText << L"Hybrid pipelines (mip-gen by compute and up-sampling by graphics)";
 		}
+
+		windowText << L"    [X] " << (m_useEZ ? "XUSG-EZ" : "XUSGCore");
 
 		SetCustomWindowText(windowText.str().c_str());
 	}

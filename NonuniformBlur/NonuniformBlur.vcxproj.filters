@@ -106,18 +106,18 @@
     <None Include="Content\Shaders\D3DX_DXGIFormatConvert.inl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Content\Shaders\Resample.hlsli">
+    <None Include="Content\Shaders\Blit2D.hlsli">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Content\Shaders\CSResample.hlsl">
+    <FxCompile Include="Content\Shaders\CSBlit2D.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\Shaders\VSScreenQuad.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Content\Shaders\PSResample.hlsl">
+    <FxCompile Include="Content\Shaders\PSBlit2D.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Content\Shaders\CSUpSample_in_place.hlsl">

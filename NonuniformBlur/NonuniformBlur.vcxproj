@@ -137,7 +137,7 @@ COPY /Y "$(ProjectDir)XUSG\Bin\$(Platform)\$(Configuration)\*.dll" "$(ProjectDir
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Content\Shaders\Resample.hlsli" />
+    <None Include="Content\Shaders\Blit2D.hlsli" />
     <None Include="Content\Shaders\D3DX_DXGIFormatConvert.inl" />
     <None Include="Content\Shaders\MipGaussian.hlsli" />
   </ItemGroup>
@@ -150,7 +150,7 @@ COPY /Y "$(ProjectDir)XUSG\Bin\$(Platform)\$(Configuration)\*.dll" "$(ProjectDir
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_PREINTEGRATED_</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">_PREINTEGRATED_</PreprocessorDefinitions>
     </FxCompile>
-    <FxCompile Include="Content\Shaders\CSResample.hlsl">
+    <FxCompile Include="Content\Shaders\CSBlit2D.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
@@ -182,7 +182,7 @@ COPY /Y "$(ProjectDir)XUSG\Bin\$(Platform)\$(Configuration)\*.dll" "$(ProjectDir
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_PREINTEGRATED_</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">_PREINTEGRATED_</PreprocessorDefinitions>
     </FxCompile>
-    <FxCompile Include="Content\Shaders\PSResample.hlsl">
+    <FxCompile Include="Content\Shaders\PSBlit2D.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>

@@ -115,7 +115,7 @@ bool FilterEZ::createShaders()
 	XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::VS, vsIndex, L"VSScreenQuad.cso"), false);
 	m_shaders[VS_SCREEN_QUAD] = m_shaderLib->GetShader(Shader::Stage::VS, vsIndex++);
 
-	XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::PS, psIndex, L"PSResample.cso"), false);
+	XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::PS, psIndex, L"PSBlit2D.cso"), false);
 	m_shaders[PS_BLIT_2D] = m_shaderLib->GetShader(Shader::Stage::PS, psIndex++);
 
 	XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::PS, psIndex, L"PSUpSample.cso"), false);
@@ -124,7 +124,7 @@ bool FilterEZ::createShaders()
 	XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::PS, psIndex, L"PSUpSample_blend.cso"), false);
 	m_shaders[PS_UP_SAMPLE_BLEND] = m_shaderLib->GetShader(Shader::Stage::PS, psIndex++);
 
-	XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::CS, csIndex, L"CSResample.cso"), false);
+	XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::CS, csIndex, L"CSBlit2D.cso"), false);
 	m_shaders[CS_BLIT_2D] = m_shaderLib->GetShader(Shader::Stage::CS, csIndex++);
 
 	XUSG_N_RETURN(m_shaderLib->CreateShader(Shader::Stage::CS, csIndex, L"CSUpSample.cso"), false);

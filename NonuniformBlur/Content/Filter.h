@@ -35,8 +35,8 @@ public:
 protected:
 	enum PipelineIndex : uint8_t
 	{
-		RESAMPLE_GRAPHICS,
-		RESAMPLE_COMPUTE,
+		BLIT_GRAPHICS,
+		BLIT_COMPUTE,
 		UP_SAMPLE_BLEND,
 		UP_SAMPLE_INPLACE,
 		UP_SAMPLE_GRAPHICS,

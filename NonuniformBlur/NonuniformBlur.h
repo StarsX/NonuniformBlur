@@ -73,6 +73,7 @@ private:
 
 	// Application state
 	Filter::PipelineType m_pipelineType;
+	bool		m_useEZ;
 	bool		m_showFPS;
 	bool		m_isPaused;
 	StepTimer	m_timer;
