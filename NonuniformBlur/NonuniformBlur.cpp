@@ -347,13 +347,13 @@ void NonUniformBlur::PopulateCommandList()
 		XUSG_N_RETURN(pCommandList->Reset(pCommandAllocator, nullptr), ThrowIfFailed(E_FAIL));
 
 		// Record commands.
-		// Set Descriptor pools
-		const DescriptorPool descriptorPools[] =
+		// Set descriptor heaps
+		const DescriptorHeap descriptorPools[] =
 		{
-			m_descriptorTableLib->GetDescriptorPool(CBV_SRV_UAV_POOL),
-			m_descriptorTableLib->GetDescriptorPool(SAMPLER_POOL)
+			m_descriptorTableLib->GetDescriptorHeap(CBV_SRV_UAV_HEAP),
+			m_descriptorTableLib->GetDescriptorHeap(SAMPLER_HEAP)
 		};
-		pCommandList->SetDescriptorPools(static_cast<uint32_t>(size(descriptorPools)), descriptorPools);
+		pCommandList->SetDescriptorHeaps(static_cast<uint32_t>(size(descriptorPools)), descriptorPools);
 
 		const auto dstState = ResourceState::PIXEL_SHADER_RESOURCE |
 			ResourceState::NON_PIXEL_SHADER_RESOURCE | ResourceState::COPY_SOURCE;
