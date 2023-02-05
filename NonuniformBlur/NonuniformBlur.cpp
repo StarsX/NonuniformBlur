@@ -283,26 +283,26 @@ void NonUniformBlur::ParseCommandLineArgs(wchar_t* argv[], int argc)
 
 	for (auto i = 1; i < argc; ++i)
 	{
-		if (_wcsnicmp(argv[i], L"-image", wcslen(argv[i])) == 0 ||
-			_wcsnicmp(argv[i], L"/image", wcslen(argv[i])) == 0)
+		if (wcsncmp(argv[i], L"-image", wcslen(argv[i])) == 0 ||
+			wcsncmp(argv[i], L"/image", wcslen(argv[i])) == 0)
 		{
 			if (i + 1 < argc) m_fileName = argv[i + 1];
 		}
-		else if (_wcsnicmp(argv[i], L"-sigma", wcslen(argv[i])) == 0 ||
-			_wcsnicmp(argv[i], L"/sigma", wcslen(argv[i])) == 0)
+		else if (wcsncmp(argv[i], L"-sigma", wcslen(argv[i])) == 0 ||
+			wcsncmp(argv[i], L"/sigma", wcslen(argv[i])) == 0)
 		{
 			if (i + 1 < argc) m_sigma = stof(argv[i + 1]);
 			m_isAutoSigma = false;
 		}
-		else if (_wcsnicmp(argv[i], L"-focus", wcslen(argv[i])) == 0 ||
-				_wcsnicmp(argv[i], L"/focus", wcslen(argv[i])) == 0)
+		else if (wcsncmp(argv[i], L"-focus", wcslen(argv[i])) == 0 ||
+			wcsncmp(argv[i], L"/focus", wcslen(argv[i])) == 0)
 		{
 			if (i + 1 < argc) m_focus.x = stof(argv[i + 1]);
 			if (i + 2 < argc) m_focus.y = stof(argv[i + 2]);
 			m_isAutoFocus = false;
 		}
-		else if (_wcsnicmp(argv[i], L"-uniform", wcslen(argv[i])) == 0 ||
-			_wcsnicmp(argv[i], L"/uniform", wcslen(argv[i])) == 0)
+		else if (wcsncmp(argv[i], L"-uniform", wcslen(argv[i])) == 0 ||
+			wcsncmp(argv[i], L"/uniform", wcslen(argv[i])) == 0)
 		{
 			reinterpret_cast<uint32_t&>(m_focus.x) = UINT32_MAX;
 			m_isAutoFocus = false;
