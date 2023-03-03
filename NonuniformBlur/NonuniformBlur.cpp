@@ -286,19 +286,19 @@ void NonUniformBlur::ParseCommandLineArgs(wchar_t* argv[], int argc)
 		if (wcsncmp(argv[i], L"-image", wcslen(argv[i])) == 0 ||
 			wcsncmp(argv[i], L"/image", wcslen(argv[i])) == 0)
 		{
-			if (i + 1 < argc) m_fileName = argv[i + 1];
+			if (i + 1 < argc) m_fileName = argv[++i];
 		}
 		else if (wcsncmp(argv[i], L"-sigma", wcslen(argv[i])) == 0 ||
 			wcsncmp(argv[i], L"/sigma", wcslen(argv[i])) == 0)
 		{
-			if (i + 1 < argc) m_sigma = stof(argv[i + 1]);
+			if (i + 1 < argc) m_sigma = stof(argv[++i]);
 			m_isAutoSigma = false;
 		}
 		else if (wcsncmp(argv[i], L"-focus", wcslen(argv[i])) == 0 ||
 			wcsncmp(argv[i], L"/focus", wcslen(argv[i])) == 0)
 		{
-			if (i + 1 < argc) m_focus.x = stof(argv[i + 1]);
-			if (i + 2 < argc) m_focus.y = stof(argv[i + 2]);
+			if (i + 1 < argc) m_focus.x = stof(argv[++i]);
+			if (i + 1 < argc) m_focus.y = stof(argv[++i]);
 			m_isAutoFocus = false;
 		}
 		else if (wcsncmp(argv[i], L"-uniform", wcslen(argv[i])) == 0 ||
