@@ -71,12 +71,18 @@ private:
 	XUSG::Fence::uptr m_fence;
 	uint64_t	m_fenceValues[FrameCount];
 
+	// Screen-shot helper
+	XUSG::Buffer::uptr		m_readBuffer;
+
 	// Application state
 	Filter::PipelineType m_pipelineType;
 	bool		m_useEZ;
 	bool		m_showFPS;
 	bool		m_isPaused;
 	StepTimer	m_timer;
+
+	// Screen-shot state
+	uint8_t		m_screenShot;
 
 	// User external settings
 	std::wstring m_fileName;
@@ -87,5 +93,6 @@ private:
 	void PopulateCommandList();
 	void WaitForGpu();
 	void MoveToNextFrame();
+	void SaveImage(char const* fileName, XUSG::Buffer* imageBuffer, uint32_t w, uint32_t h, uint8_t comp = 3);
 	double CalculateFrameStats(float* fTimeStep = nullptr);
 };
