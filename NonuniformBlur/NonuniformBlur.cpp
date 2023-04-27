@@ -443,7 +443,7 @@ void NonUniformBlur::MoveToNextFrame()
 			tm dateTime;
 			const auto now = time(nullptr);
 			if (!localtime_s(&dateTime, &now) && strftime(timeStr, sizeof(timeStr), "%Y%m%d%H%M%S", &dateTime))
-				SaveImage((string("RenderingX_") + timeStr + ".png").c_str(), m_readBuffer.get(), m_width, m_height);
+				SaveImage((string("NonuniformBlur_") + timeStr + ".png").c_str(), m_readBuffer.get(), m_width, m_height);
 			m_screenShot = 0;
 		}
 		else ++m_screenShot;
