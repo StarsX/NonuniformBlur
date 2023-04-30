@@ -15,6 +15,8 @@
 using namespace std;
 using namespace XUSG;
 
+const auto g_backBufferFormat = Format::R8G8B8A8_UNORM;
+
 NonUniformBlur::NonUniformBlur(uint32_t width, uint32_t height, wstring name) :
 	DXFramework(width, height, name),
 	m_typedUAV(false),
@@ -103,7 +105,7 @@ void NonUniformBlur::LoadPipeline(vector<Resource::uptr>& uploaders)
 		{
 			// Can assume "all-or-nothing" subset is supported (e.g. R32G32B32A32_FLOAT)
 			// Cannot assume other formats are supported, so we check:
-			D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport = { DXGI_FORMAT_B8G8R8A8_UNORM, D3D12_FORMAT_SUPPORT1_NONE, D3D12_FORMAT_SUPPORT2_NONE };
+			D3D12_FEATURE_DATA_FORMAT_SUPPORT formatSupport = { DXGI_FORMAT_R8G8B8A8_UNORM, D3D12_FORMAT_SUPPORT1_NONE, D3D12_FORMAT_SUPPORT2_NONE };
 			hr = pDevice->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &formatSupport, sizeof(formatSupport));
 			if (SUCCEEDED(hr) && (formatSupport.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD))
 				m_typedUAV = true;
@@ -137,12 +139,12 @@ void NonUniformBlur::LoadPipeline(vector<Resource::uptr>& uploaders)
 
 	m_filter = make_unique<Filter>();
 	XUSG_N_RETURN(m_filter->Init(pCommandList, m_descriptorTableLib, uploaders,
-		Format::B8G8R8A8_UNORM, m_fileName.c_str(), m_typedUAV), ThrowIfFailed(E_FAIL));
+		g_backBufferFormat, m_fileName.c_str(), m_typedUAV), ThrowIfFailed(E_FAIL));
 	
 	//m_filter->GetImageSize(m_width, m_height);
 
 	m_filterEZ = make_unique<FilterEZ>();
-	XUSG_N_RETURN(m_filterEZ->Init(pCommandList, uploaders, Format::B8G8R8A8_UNORM,
+	XUSG_N_RETURN(m_filterEZ->Init(pCommandList, uploaders, g_backBufferFormat,
 		m_fileName.c_str(), m_typedUAV), ThrowIfFailed(E_FAIL));
 
 	m_filterEZ->GetImageSize(m_width, m_height);
@@ -162,7 +164,7 @@ void NonUniformBlur::LoadPipeline(vector<Resource::uptr>& uploaders)
 	// Describe and create the swap chain.
 	m_swapChain = SwapChain::MakeUnique();
 	XUSG_N_RETURN(m_swapChain->Create(factory.get(), Win32Application::GetHwnd(), m_commandQueue->GetHandle(),
-		FrameCount, m_width, m_height, Format::B8G8R8A8_UNORM, SwapChainFlag::ALLOW_TEARING), ThrowIfFailed(E_FAIL));
+		FrameCount, m_width, m_height, g_backBufferFormat, SwapChainFlag::ALLOW_TEARING), ThrowIfFailed(E_FAIL));
 
 	m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
 
