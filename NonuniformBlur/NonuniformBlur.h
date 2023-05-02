@@ -59,6 +59,10 @@ private:
 
 	bool		m_typedUAV;
 
+	// Screen-shot helper
+	XUSG::Buffer::uptr	m_readBuffer;
+	uint32_t			m_rowPitch;
+
 	// Animation
 	bool		m_isAutoFocus;
 	bool		m_isAutoSigma;
@@ -70,10 +74,6 @@ private:
 	HANDLE		m_fenceEvent;
 	XUSG::Fence::uptr m_fence;
 	uint64_t	m_fenceValues[FrameCount];
-
-	// Screen-shot helper
-	XUSG::Buffer::uptr	m_readBuffer;
-	uint32_t			m_rowPitch;
 
 	// Application state
 	Filter::PipelineType m_pipelineType;
