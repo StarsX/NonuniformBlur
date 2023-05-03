@@ -56,12 +56,7 @@ private:
 	// App resources.
 	std::unique_ptr<Filter>		m_filter;
 	std::unique_ptr<FilterEZ>	m_filterEZ;
-
 	bool		m_typedUAV;
-
-	// Screen-shot helper
-	XUSG::Buffer::uptr	m_readBuffer;
-	uint32_t			m_rowPitch;
 
 	// Animation
 	bool		m_isAutoFocus;
@@ -85,8 +80,10 @@ private:
 	// User external settings
 	std::wstring m_fileName;
 
-	// Screen-shot state
-	uint8_t		m_screenShot;
+	// Screen-shot helpers and state
+	XUSG::Buffer::uptr	m_readBuffer;
+	uint32_t			m_rowPitch;
+	uint8_t				m_screenShot;
 
 	void LoadPipeline(std::vector<XUSG::Resource::uptr>& uploaders);
 	void LoadAssets();

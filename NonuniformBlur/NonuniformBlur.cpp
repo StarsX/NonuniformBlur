@@ -28,7 +28,8 @@ NonUniformBlur::NonUniformBlur(uint32_t width, uint32_t height, wstring name) :
 	m_pipelineType(Filter::COMPUTE),
 	m_useEZ(true),
 	m_showFPS(true),
-	m_fileName(L"Assets/Sashimi.dds")
+	m_fileName(L"Assets/Sashimi.dds"),
+	m_screenShot(0)
 {
 #if defined (_DEBUG)
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
