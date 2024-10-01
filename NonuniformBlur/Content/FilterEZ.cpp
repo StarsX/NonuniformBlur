@@ -46,18 +46,19 @@ bool FilterEZ::Init(CommandList* pCommandList, vector<Resource::uptr>& uploaders
 	// Create resources and pipelines
 	m_imageSize.x = static_cast<uint32_t>(m_source->GetWidth());
 	m_imageSize.y = m_source->GetHeight();
-	const auto numMips = CalculateMipLevels(m_imageSize.x, m_imageSize.y);
 
+	const auto numUavFormats = typedUAV ? 0u : 1u;
+	const auto uavFormat = Format::R32_UINT;
 	m_filtered = RenderTarget::MakeUnique();
-	m_filtered->Create(pDevice, m_imageSize.x, m_imageSize.y, rtFormat, 1, typedUAV ?
-		ResourceFlag::ALLOW_UNORDERED_ACCESS : ResourceFlag::NEED_PACKED_UAV,
-		numMips, 1, nullptr, false, MemoryFlag::NONE, L"FilteredImage");
+	m_filtered->Create(pDevice, m_imageSize.x, m_imageSize.y, rtFormat, 1, ResourceFlag::ALLOW_UNORDERED_ACCESS,
+		0, 1, nullptr, false, MemoryFlag::NONE, L"FilteredImage", XUSG_DEFAULT_SRV_COMPONENT_MAPPING,
+		TextureLayout::UNKNOWN, numUavFormats, typedUAV ? nullptr : &uavFormat);
 
 	m_cbPerFrame = ConstantBuffer::MakeUnique();
 	XUSG_N_RETURN(m_cbPerFrame->Create(pDevice, sizeof(CBGaussian[FrameCount]),
 		FrameCount, nullptr, MemoryType::UPLOAD, MemoryFlag::NONE, L"CBPerFrame"), false);
 
-	const uint8_t numPasses = numMips - 1;
+	const uint8_t numPasses = m_filtered->GetNumMips() - 1;
 	m_cbPerPass = ConstantBuffer::MakeUnique();
 	XUSG_N_RETURN(m_cbPerPass->Create(pDevice, sizeof(uint32_t) * numPasses,
 		numPasses, nullptr, MemoryType::UPLOAD, MemoryFlag::NONE, L"CBPerPass"), false);
@@ -162,7 +163,7 @@ void FilterEZ::generateMipsGraphics(EZ::CommandList* pCommandList)
 		pCommandList->OMSetRenderTargets(1, &rtv);
 
 		// Set SRV
-		const auto srv = i > 1 ? EZ::GetSRVLevel(m_filtered.get(), i - 1) : EZ::GetSRV(m_source.get());
+		const auto srv = i > 1 ? EZ::GetSRV(m_filtered.get(), i - 1, true) : EZ::GetSRV(m_source.get());
 		pCommandList->SetResources(Shader::Stage::PS, DescriptorType::SRV, 0, 1, &srv);
 
 		// Set viewport
@@ -198,7 +199,7 @@ void FilterEZ::generateMipsCompute(EZ::CommandList* pCommandList)
 		pCommandList->SetResources(Shader::Stage::CS, DescriptorType::UAV, 0, 1, &uav);
 
 		// Set SRV
-		const auto srv = i > 1 ? EZ::GetSRVLevel(m_filtered.get(), i - 1) : EZ::GetSRV(m_source.get());
+		const auto srv = i > 1 ? EZ::GetSRV(m_filtered.get(), i - 1, true) : EZ::GetSRV(m_source.get());
 		pCommandList->SetResources(Shader::Stage::CS, DescriptorType::SRV, 0, 1, &srv);
 
 		// Dispatch grid
@@ -244,7 +245,7 @@ void FilterEZ::upsampleGraphics(EZ::CommandList* pCommandList, uint8_t frameInde
 		pCommandList->SetResources(Shader::Stage::PS, DescriptorType::CBV, 0, static_cast<uint32_t>(size(cbvs)), cbvs);
 
 		// Set SRV
-		const auto srv = EZ::GetSRVLevel(m_filtered.get(), c);
+		const auto srv = EZ::GetSRV(m_filtered.get(), c, true);
 		pCommandList->SetResources(Shader::Stage::PS, DescriptorType::SRV, 0, 1, &srv);
 
 		// Set viewport
@@ -278,7 +279,7 @@ void FilterEZ::upsampleGraphics(EZ::CommandList* pCommandList, uint8_t frameInde
 	const EZ::ResourceView srvs[] =
 	{
 		EZ::GetSRV(m_source.get()),
-		EZ::GetSRVLevel(m_filtered.get(), 1)
+		EZ::GetSRV(m_filtered.get(), 1, true)
 	};
 	pCommandList->SetResources(Shader::Stage::PS, DescriptorType::SRV, 0, static_cast<uint32_t>(size(srvs)), srvs);
 
@@ -311,7 +312,7 @@ void FilterEZ::upsampleCompute(EZ::CommandList* pCommandList, uint8_t frameIndex
 		const auto level = c - 1;
 
 		// Set UAV
-		const auto uav = m_typedUAV ? EZ::GetUAV(m_filtered.get(), level) : EZ::GetPackedUAV(m_filtered.get(), level);
+		const auto uav = m_typedUAV ? EZ::GetUAV(m_filtered.get(), level) : EZ::GetUAV(m_filtered.get(), level, Format::R32_UINT);
 		pCommandList->SetResources(Shader::Stage::CS, DescriptorType::UAV, 0, 1, &uav);
 
 		// Set CBVs
@@ -323,7 +324,7 @@ void FilterEZ::upsampleCompute(EZ::CommandList* pCommandList, uint8_t frameIndex
 		pCommandList->SetResources(Shader::Stage::CS, DescriptorType::CBV, 0, static_cast<uint32_t>(size(cbvs)), cbvs);
 
 		// Set SRV
-		const auto srv = EZ::GetSRVLevel(m_filtered.get(), c);
+		const auto srv = EZ::GetSRV(m_filtered.get(), c, true);
 		pCommandList->SetResources(Shader::Stage::CS, DescriptorType::SRV, 0, 1, &srv);
 
 		// Dispatch grid
@@ -351,7 +352,7 @@ void FilterEZ::upsampleCompute(EZ::CommandList* pCommandList, uint8_t frameIndex
 	const EZ::ResourceView srvs[] =
 	{
 		EZ::GetSRV(m_source.get()),
-		EZ::GetSRVLevel(m_filtered.get(), 1)
+		EZ::GetSRV(m_filtered.get(), 1, true)
 	};
 	pCommandList->SetResources(Shader::Stage::CS, DescriptorType::SRV, 0, static_cast<uint32_t>(size(srvs)), srvs);
 

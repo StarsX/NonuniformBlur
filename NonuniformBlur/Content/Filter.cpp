@@ -51,12 +51,13 @@ bool Filter::Init(CommandList* pCommandList, const DescriptorTableLib::sptr& des
 	// Create resources and pipelines
 	m_imageSize.x = static_cast<uint32_t>(m_source->GetWidth());
 	m_imageSize.y = m_source->GetHeight();
-	const auto numMips = CalculateMipLevels(m_imageSize.x, m_imageSize.y);
 
+	const auto numUavFormats = typedUAV ? 0u : 1u;
+	const auto uavFormat = Format::R32_UINT;
 	m_filtered = RenderTarget::MakeUnique();
-	m_filtered->Create(pDevice, m_imageSize.x, m_imageSize.y, rtFormat, 1, typedUAV ?
-		ResourceFlag::ALLOW_UNORDERED_ACCESS : ResourceFlag::NEED_PACKED_UAV,
-		numMips, 1, nullptr, false, MemoryFlag::NONE, L"FilteredImage");
+	m_filtered->Create(pDevice, m_imageSize.x, m_imageSize.y, rtFormat, 1, ResourceFlag::ALLOW_UNORDERED_ACCESS,
+		0, 1, nullptr, false, MemoryFlag::NONE, L"FilteredImage", XUSG_DEFAULT_SRV_COMPONENT_MAPPING,
+		TextureLayout::UNKNOWN, numUavFormats, typedUAV ? nullptr : &uavFormat);
 
 	m_cbPerFrame = ConstantBuffer::MakeUnique();
 	XUSG_N_RETURN(m_cbPerFrame->Create(pDevice, sizeof(CBGaussian[FrameCount]),
@@ -295,7 +296,7 @@ bool Filter::createDescriptorTables()
 		{
 			// Get UAV
 			const auto descriptorTable = Util::DescriptorTable::MakeUnique();
-			descriptorTable->SetDescriptors(0, 1, &m_filtered->GetPackedUAV(i));
+			descriptorTable->SetDescriptors(0, 1, &m_filtered->GetUAV(i, Format::R32_UINT));
 			XUSG_X_RETURN(m_uavTables[UAV_TABLE_PACKED][i], descriptorTable->GetCbvSrvUavTable(m_descriptorTableLib.get()), false);
 		}
 	}
@@ -305,7 +306,7 @@ bool Filter::createDescriptorTables()
 	for (uint8_t i = 0; i < numMips; ++i)
 	{
 		const auto descriptorTable = Util::DescriptorTable::MakeUnique();
-		descriptorTable->SetDescriptors(0, 1, i ? &m_filtered->GetSRVLevel(i) : &m_source->GetSRV());
+		descriptorTable->SetDescriptors(0, 1, i ? &m_filtered->GetSRV(i, true) : &m_source->GetSRV());
 		XUSG_X_RETURN(m_srvTables[i], descriptorTable->GetCbvSrvUavTable(m_descriptorTableLib.get()), false);
 	}
 
@@ -328,9 +329,9 @@ uint32_t Filter::generateMipsGraphics(CommandList* pCommandList, ResourceBarrier
 uint32_t Filter::generateMipsCompute(CommandList* pCommandList, ResourceBarrier* pBarriers)
 {
 	// Generate mipmaps
-	return m_filtered->AsTexture()->GenerateMips(pCommandList, pBarriers, 8, 8, 1,
-		ResourceState::NON_PIXEL_SHADER_RESOURCE, m_pipelineLayouts[BLIT_COMPUTE],
-		m_pipelines[BLIT_COMPUTE], &m_uavTables[UAV_TABLE_TYPED][1], 1, m_samplerTable, 0, 0, &m_srvTables[0], 2);
+	return m_filtered->GenerateMips(pCommandList, pBarriers, 8, 8, 1, ResourceState::NON_PIXEL_SHADER_RESOURCE,
+		m_pipelineLayouts[BLIT_COMPUTE], m_pipelines[BLIT_COMPUTE], &m_uavTables[UAV_TABLE_TYPED][1], 1,
+		m_samplerTable, 0, 0, &m_srvTables[0], 2);
 }
 
 void Filter::upsampleGraphics(CommandList* pCommandList, ResourceBarrier* pBarriers,
@@ -379,10 +380,8 @@ void Filter::upsampleCompute(CommandList* pCommandList, ResourceBarrier* pBarrie
 		const auto c = numPasses - i;
 		const auto level = c - 1;
 		pCommandList->SetCompute32BitConstant(4, level);
-		numBarriers = m_filtered->AsTexture()->Blit(pCommandList, pBarriers,
-			8, 8, 1, level, c, ResourceState::NON_PIXEL_SHADER_RESOURCE,
-			m_uavTables[m_typedUAV ? UAV_TABLE_TYPED : UAV_TABLE_PACKED][level],
-			1, numBarriers, m_srvTables[c], 2);
+		numBarriers = m_filtered->Blit(pCommandList, pBarriers, 8, 8, 1, level, c, ResourceState::NON_PIXEL_SHADER_RESOURCE,
+			m_uavTables[m_typedUAV ? UAV_TABLE_TYPED : UAV_TABLE_PACKED][level], 1, numBarriers, m_srvTables[c], 2);
 	}
 
 	// Final pass
@@ -391,7 +390,6 @@ void Filter::upsampleCompute(CommandList* pCommandList, ResourceBarrier* pBarrie
 	pCommandList->SetComputeDescriptorTable(0, m_samplerTable);
 	pCommandList->SetComputeRootConstantBufferView(3, m_cbPerFrame.get(), cbvOffset);
 	pCommandList->SetCompute32BitConstant(4, 0);
-	numBarriers = m_filtered->AsTexture()->Blit(pCommandList, pBarriers,
-		8, 8, 1, 0, 1, ResourceState::NON_PIXEL_SHADER_RESOURCE,
+	numBarriers = m_filtered->Blit(pCommandList, pBarriers, 8, 8, 1, 0, 1, ResourceState::NON_PIXEL_SHADER_RESOURCE,
 		m_uavTables[UAV_TABLE_TYPED][0], 1, numBarriers, m_srvTables[0], 2);
 }
