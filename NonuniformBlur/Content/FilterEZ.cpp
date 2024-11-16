@@ -58,13 +58,6 @@ bool FilterEZ::Init(CommandList* pCommandList, vector<Resource::uptr>& uploaders
 	XUSG_N_RETURN(m_cbPerFrame->Create(pDevice, sizeof(CBGaussian[FrameCount]),
 		FrameCount, nullptr, MemoryType::UPLOAD, MemoryFlag::NONE, L"CBPerFrame"), false);
 
-	const uint8_t numPasses = m_filtered->GetNumMips() - 1;
-	m_cbPerPass = ConstantBuffer::MakeUnique();
-	XUSG_N_RETURN(m_cbPerPass->Create(pDevice, sizeof(uint32_t) * numPasses,
-		numPasses, nullptr, MemoryType::UPLOAD, MemoryFlag::NONE, L"CBPerPass"), false);
-	for (uint8_t i = 0; i < numPasses; ++i)
-		*static_cast<uint32_t*>(m_cbPerPass->Map(i)) = numPasses - (i + 1);
-
 	return createShaders();
 }
 
@@ -220,6 +213,10 @@ void FilterEZ::upsampleGraphics(EZ::CommandList* pCommandList, uint8_t frameInde
 	// Set IA
 	pCommandList->IASetPrimitiveTopology(PrimitiveTopology::TRIANGLELIST);
 
+	// Set CBV
+	const auto cbv = EZ::GetCBV(m_cbPerFrame.get(), frameIndex);
+	pCommandList->SetResources(Shader::Stage::PS, DescriptorType::CBV, 0, 1, &cbv);
+
 	// Set sampler
 	const auto sampler = LINEAR_CLAMP;
 	pCommandList->SetSamplerStates(Shader::Stage::PS, 0, 1, &sampler);
@@ -236,13 +233,8 @@ void FilterEZ::upsampleGraphics(EZ::CommandList* pCommandList, uint8_t frameInde
 		const auto rtv = EZ::GetRTV(m_filtered.get(), 0, level);
 		pCommandList->OMSetRenderTargets(1, &rtv);
 
-		// Set CBVs
-		const EZ::ResourceView cbvs[] =
-		{
-			EZ::GetCBV(m_cbPerFrame.get(), frameIndex),
-			EZ::GetCBV(m_cbPerPass.get(), i)
-		};
-		pCommandList->SetResources(Shader::Stage::PS, DescriptorType::CBV, 0, static_cast<uint32_t>(size(cbvs)), cbvs);
+		// Set constant
+		pCommandList->SetGraphics32BitConstant(Shader::Stage::PS, level);
 
 		// Set SRV
 		const auto srv = EZ::GetSRV(m_filtered.get(), c, true);
@@ -267,13 +259,8 @@ void FilterEZ::upsampleGraphics(EZ::CommandList* pCommandList, uint8_t frameInde
 	const auto rtv = EZ::GetRTV(m_filtered.get());
 	pCommandList->OMSetRenderTargets(1, &rtv);
 
-	// Set CBVs
-	const EZ::ResourceView cbvs[] =
-	{
-		EZ::GetCBV(m_cbPerFrame.get(), frameIndex),
-		EZ::GetCBV(m_cbPerPass.get(), numPasses - 1)
-	};
-	pCommandList->SetResources(Shader::Stage::PS, DescriptorType::CBV, 0, static_cast<uint32_t>(size(cbvs)), cbvs);
+	// Set constant
+	pCommandList->SetGraphics32BitConstant(Shader::Stage::PS, 0);
 
 	// Set SRV
 	const EZ::ResourceView srvs[] =
@@ -299,6 +286,10 @@ void FilterEZ::upsampleCompute(EZ::CommandList* pCommandList, uint8_t frameIndex
 	// Set pipeline state
 	pCommandList->SetComputeShader(m_shaders[CS_UP_SAMPLE_INPLACE]);
 
+	// Set CBV
+	const auto cbv = EZ::GetCBV(m_cbPerFrame.get(), frameIndex);
+	pCommandList->SetResources(Shader::Stage::CS, DescriptorType::CBV, 0, 1, &cbv);
+
 	// Set sampler
 	const auto sampler = LINEAR_CLAMP;
 	pCommandList->SetSamplerStates(Shader::Stage::CS, 0, 1, &sampler);
@@ -315,13 +306,8 @@ void FilterEZ::upsampleCompute(EZ::CommandList* pCommandList, uint8_t frameIndex
 		const auto uav = m_typedUAV ? EZ::GetUAV(m_filtered.get(), level) : EZ::GetUAV(m_filtered.get(), level, Format::R32_UINT);
 		pCommandList->SetResources(Shader::Stage::CS, DescriptorType::UAV, 0, 1, &uav);
 
-		// Set CBVs
-		const EZ::ResourceView cbvs[] =
-		{
-			EZ::GetCBV(m_cbPerFrame.get(), frameIndex),
-			EZ::GetCBV(m_cbPerPass.get(), i)
-		};
-		pCommandList->SetResources(Shader::Stage::CS, DescriptorType::CBV, 0, static_cast<uint32_t>(size(cbvs)), cbvs);
+		// Set constant
+		pCommandList->SetCompute32BitConstant(level);
 
 		// Set SRV
 		const auto srv = EZ::GetSRV(m_filtered.get(), c, true);
@@ -340,13 +326,8 @@ void FilterEZ::upsampleCompute(EZ::CommandList* pCommandList, uint8_t frameIndex
 	const auto uav = EZ::GetUAV(m_filtered.get());
 	pCommandList->SetResources(Shader::Stage::CS, DescriptorType::UAV, 0, 1, &uav);
 
-	// Set CBVs
-	const EZ::ResourceView cbvs[] =
-	{
-		EZ::GetCBV(m_cbPerFrame.get(), frameIndex),
-		EZ::GetCBV(m_cbPerPass.get(), numPasses - 1)
-	};
-	pCommandList->SetResources(Shader::Stage::CS, DescriptorType::CBV, 0, static_cast<uint32_t>(size(cbvs)), cbvs);
+	// Set constant
+	pCommandList->SetCompute32BitConstant(0);
 
 	// Set SRV
 	const EZ::ResourceView srvs[] =

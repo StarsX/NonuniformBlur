@@ -63,7 +63,6 @@ protected:
 	XUSG::RenderTarget::uptr			m_filtered;
 
 	XUSG::ConstantBuffer::uptr			m_cbPerFrame;
-	XUSG::ConstantBuffer::uptr			m_cbPerPass;
 
 	DirectX::XMUINT2					m_imageSize;
 

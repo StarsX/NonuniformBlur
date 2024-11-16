@@ -185,9 +185,12 @@ void NonUniformBlur::LoadAssets()
 	XUSG_N_RETURN(m_commandList->Close(), ThrowIfFailed(E_FAIL));
 	m_commandQueue->ExecuteCommandList(m_commandList.get());
 
+	const uint32_t max32BitConstants[Shader::Stage::NUM_STAGE] = { XUSG_UINT32_SIZE_OF(uint32_t), 0, 0, 0, 0, XUSG_UINT32_SIZE_OF(uint32_t) };
+	const uint32_t constantSlots[Shader::Stage::NUM_STAGE] = { 1, 0, 0, 0, 0, 1 };
 	m_commandListEZ = EZ::CommandList::MakeUnique();
-	XUSG_N_RETURN(m_commandListEZ->Create(m_commandList.get(), 1, 137),
-		ThrowIfFailed(E_FAIL));
+	XUSG_N_RETURN(m_commandListEZ->Create(m_commandList.get(), 1, 137,
+		nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+		max32BitConstants, constantSlots), ThrowIfFailed(E_FAIL));
 
 	// Create synchronization objects and wait until assets have been uploaded to the GPU.
 	{
