@@ -316,36 +316,51 @@ void NonUniformBlur::OnKeyUp(uint8_t key)
 
 void NonUniformBlur::ParseCommandLineArgs(wchar_t* argv[], int argc)
 {
+	const auto str_tolower = [](wstring s)
+	{
+		transform(s.begin(), s.end(), s.begin(), [](wchar_t c) { return towlower(c); });
+
+		return s;
+	};
+
+	const auto isArgMatched = [&argv, &str_tolower](int i, const wchar_t* paramName)
+	{
+		const auto& arg = argv[i];
+
+		return (arg[0] == L'-' || arg[0] == L'/')
+			&& str_tolower(&arg[1]) == str_tolower(paramName);
+	};
+
+	const auto hasNextArgValue = [&argv, &argc](int i)
+	{
+		const auto& arg = argv[i + 1];
+
+		return i + 1 < argc && arg[0] != L'/' &&
+			(arg[0] != L'-' || (arg[1] >= L'0' && arg[1] <= L'9') || arg[1] == L'.');
+	};
+
 	DXFramework::ParseCommandLineArgs(argv, argc);
 
 	for (auto i = 1; i < argc; ++i)
 	{
-		if (wcsncmp(argv[i], L"-warp", wcslen(argv[i])) == 0 ||
-			wcsncmp(argv[i], L"/warp", wcslen(argv[i])) == 0)
-			m_deviceType = DEVICE_WARP;
-		else if (wcsncmp(argv[i], L"-uma", wcslen(argv[i])) == 0 ||
-			wcsncmp(argv[i], L"/uma", wcslen(argv[i])) == 0)
-			m_deviceType = DEVICE_UMA;
-		else if (wcsncmp(argv[i], L"-image", wcslen(argv[i])) == 0 ||
-			wcsncmp(argv[i], L"/image", wcslen(argv[i])) == 0)
+		if (isArgMatched(i, L"warp")) m_deviceType = DEVICE_WARP;
+		else if (isArgMatched(i, L"uma")) m_deviceType = DEVICE_UMA;
+		else if (isArgMatched(i, L"i") || isArgMatched(i, L"image"))
 		{
-			if (i + 1 < argc) m_fileName = argv[++i];
+			if (hasNextArgValue(i)) m_fileName = argv[++i];
 		}
-		else if (wcsncmp(argv[i], L"-sigma", wcslen(argv[i])) == 0 ||
-			wcsncmp(argv[i], L"/sigma", wcslen(argv[i])) == 0)
+		else if (isArgMatched(i, L"s") || isArgMatched(i, L"sigma"))
 		{
-			if (i + 1 < argc) m_sigma = stof(argv[++i]);
+			if (hasNextArgValue(i)) i += swscanf_s(argv[i + 1], L"%f", &m_sigma);
 			m_isAutoSigma = false;
 		}
-		else if (wcsncmp(argv[i], L"-focus", wcslen(argv[i])) == 0 ||
-			wcsncmp(argv[i], L"/focus", wcslen(argv[i])) == 0)
+		else if (isArgMatched(i, L"f") || isArgMatched(i, L"focus"))
 		{
-			if (i + 1 < argc) m_focus.x = stof(argv[++i]);
-			if (i + 1 < argc) m_focus.y = stof(argv[++i]);
+			if (hasNextArgValue(i)) i += swscanf_s(argv[i + 1], L"%f", &m_focus.x);
+			if (hasNextArgValue(i)) i += swscanf_s(argv[i + 1], L"%f", &m_focus.y);
 			m_isAutoFocus = false;
 		}
-		else if (wcsncmp(argv[i], L"-uniform", wcslen(argv[i])) == 0 ||
-			wcsncmp(argv[i], L"/uniform", wcslen(argv[i])) == 0)
+		else if (isArgMatched(i, L"u") || isArgMatched(i, L"uniform"))
 		{
 			reinterpret_cast<uint32_t&>(m_focus.x) = UINT32_MAX;
 			m_isAutoFocus = false;
