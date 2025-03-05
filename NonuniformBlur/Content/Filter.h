@@ -22,7 +22,7 @@ public:
 	virtual ~Filter();
 
 	bool Init(XUSG::CommandList* pCommandList, const XUSG::DescriptorTableLib::sptr& descriptorTableLib,
-		std::vector<XUSG::Resource::uptr>& uploaders, XUSG::Format rtFormat, const wchar_t* fileName, bool typedUAV);
+		std::vector<XUSG::Resource::uptr>& uploaders, XUSG::Format rtFormat, const char* fileName, bool typedUAV);
 
 	void UpdateFrame(DirectX::XMFLOAT2 focus, float sigma, uint8_t frameIndex);
 	void Process(XUSG::CommandList* pCommandList, uint8_t frameIndex, PipelineType pipelineType);
@@ -53,6 +53,8 @@ protected:
 		NUM_UAV_TABLE_TYPE
 	};
 
+	bool loadImage(XUSG::CommandList* pCommandList, const char* fileName,
+		XUSG::Texture* pTexture, XUSG::Resource* pUploader, const wchar_t* name);
 	bool createPipelineLayouts();
 	bool createPipelines(XUSG::Format rtFormat);
 	bool createDescriptorTables();
@@ -78,7 +80,7 @@ protected:
 	std::vector<XUSG::DescriptorTable>	m_srvTables;
 	XUSG::DescriptorTable				m_samplerTable;
 
-	XUSG::Texture::sptr					m_source;
+	XUSG::Texture::uptr					m_source;
 	XUSG::RenderTarget::uptr			m_filtered;
 
 	XUSG::ConstantBuffer::uptr			m_cbPerFrame;

@@ -22,7 +22,7 @@ public:
 	virtual ~FilterEZ();
 
 	bool Init(XUSG::CommandList* pCommandList, std::vector<XUSG::Resource::uptr>& uploaders,
-		XUSG::Format rtFormat, const wchar_t* fileName, bool typedUAV);
+		XUSG::Format rtFormat, const char* fileName, bool typedUAV);
 
 	void UpdateFrame(DirectX::XMFLOAT2 focus, float sigma, uint8_t frameIndex);
 	void Process(XUSG::EZ::CommandList* pCommandList, uint8_t frameIndex, PipelineType pipelineType);
@@ -48,6 +48,8 @@ protected:
 		NUM_SHADER
 	};
 
+	bool loadImage(XUSG::CommandList* pCommandList, const char* fileName,
+		XUSG::Texture* pTexture, XUSG::Resource* pUploader, const wchar_t* name);
 	bool createShaders();
 
 	void generateMipsGraphics(XUSG::EZ::CommandList* pCommandList);
@@ -59,7 +61,7 @@ protected:
 	XUSG::ShaderLib::uptr				m_shaderLib;
 	XUSG::Blob m_shaders[NUM_SHADER];
 
-	XUSG::Texture::sptr					m_source;
+	XUSG::Texture::uptr					m_source;
 	XUSG::RenderTarget::uptr			m_filtered;
 
 	XUSG::ConstantBuffer::uptr			m_cbPerFrame;

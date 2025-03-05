@@ -1,1 +1,1 @@
-start NonuniformBlur.exe -image Assets/RenderingX12.dds
+start NonuniformBlur.exe -i Assets/RenderingX12.png

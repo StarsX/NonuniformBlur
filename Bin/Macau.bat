@@ -1,1 +1,1 @@
-start NonuniformBlur.exe -image Assets/Macau.dds
+start NonuniformBlur.exe -i Assets/Macau.png

@@ -1,1 +1,1 @@
-start NonuniformBlur.exe -image Assets/BrushShadeX.dds
+start NonuniformBlur.exe -i Assets/BrushShadeX.png
