@@ -48,8 +48,6 @@ protected:
 		NUM_SHADER
 	};
 
-	bool loadImage(XUSG::CommandList* pCommandList, const char* fileName,
-		XUSG::Texture* pTexture, XUSG::Resource* pUploader, const wchar_t* name);
 	bool createShaders();
 
 	void generateMipsGraphics(XUSG::EZ::CommandList* pCommandList);

@@ -3,8 +3,9 @@
 //--------------------------------------------------------------------------------------
 
 #include "Filter.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+
+#define _ENABLE_STB_IMAGE_LOADER_ONLY_
+#include "Advanced/XUSGTextureLoader.h"
 
 using namespace std;
 using namespace DirectX;
@@ -40,8 +41,8 @@ bool Filter::Init(CommandList* pCommandList, const DescriptorTableLib::sptr& des
 	// Load input image
 	m_source = Texture::MakeUnique();
 	uploaders.emplace_back(Resource::MakeUnique());
-	XUSG_N_RETURN(loadImage(pCommandList, fileName, m_source.get(),
-		uploaders.back().get(), L"Source"), false);
+	XUSG_N_RETURN(CreateTextureFromFile(pCommandList, fileName, m_source.get(),
+		uploaders.back().get(), ResourceState::COMMON, MemoryFlag::NONE, L"Source"), false);
 
 	// Create resources and pipelines
 	m_imageSize.x = static_cast<uint32_t>(m_source->GetWidth());
@@ -106,42 +107,6 @@ void Filter::GetImageSize(uint32_t& width, uint32_t& height) const
 {
 	width = m_imageSize.x;
 	height = m_imageSize.y;
-}
-
-bool Filter::loadImage(CommandList* pCommandList, const char* fileName,
-	Texture* pTexture, Resource* pUploader, const wchar_t* name)
-{
-	int width, height, channels;
-	const auto infoStat = stbi_info(fileName, &width, &height, &channels);
-	assert(infoStat);
-	const auto reqChannels = channels != 3 ? channels : 4;
-
-	Format format;
-	switch (reqChannels)
-	{
-	case 1:
-		format = Format::R8_UNORM;
-		break;
-	case 2:
-		format = Format::R8G8_UNORM;
-		break;
-	case 4:
-		format = Format::R8G8B8A8_UNORM;
-		break;
-	default:
-		assert(!"Wrong channels, unknown format!");
-	}
-
-	XUSG_N_RETURN(pTexture->Create(pCommandList->GetDevice(), width, height, format, 1,
-		ResourceFlag::NONE, 1, 1, false, MemoryFlag::NONE, name), false);
-
-	const auto pTexData = stbi_load(fileName, &width, &height, &channels, reqChannels);
-
-	XUSG_N_RETURN(pTexture->Upload(pCommandList, pUploader, pTexData, reqChannels,
-		ResourceState::ALL_SHADER_RESOURCE | ResourceState::COPY_SOURCE), false);
-	free(pTexData);
-
-	return true;
 }
 
 bool Filter::createPipelineLayouts()

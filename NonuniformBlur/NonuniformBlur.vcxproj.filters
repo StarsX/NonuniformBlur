@@ -72,6 +72,12 @@
     <ClInclude Include="XUSG\Helper\XUSG-EZ.h">
       <Filter>XUSG</Filter>
     </ClInclude>
+    <ClInclude Include="XUSG\Advanced\XUSGTextureLoader.h">
+      <Filter>XUSG</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\stb_image.h">
+      <Filter>Common\Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Common\DXFramework.cpp">
@@ -96,6 +102,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Common\stb_image_write.cpp">
+      <Filter>Common\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\stb_image.cpp">
       <Filter>Common\Source Files</Filter>
     </ClCompile>
   </ItemGroup>

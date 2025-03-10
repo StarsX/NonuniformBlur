@@ -53,8 +53,6 @@ protected:
 		NUM_UAV_TABLE_TYPE
 	};
 
-	bool loadImage(XUSG::CommandList* pCommandList, const char* fileName,
-		XUSG::Texture* pTexture, XUSG::Resource* pUploader, const wchar_t* name);
 	bool createPipelineLayouts();
 	bool createPipelines(XUSG::Format rtFormat);
 	bool createDescriptorTables();
